@@ -10,7 +10,8 @@ Covers:<br>
 * Raw sequencing data import
 * Processing using QIIME2
 <br>
-The Main outputs are:
+
+The Main outputs are:<br>
 * Taxonomy table
 * OTU/ASV tables
 * Phylogenetic tree
