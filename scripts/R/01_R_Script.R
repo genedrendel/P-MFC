@@ -3,13 +3,13 @@
 ##we will:
 ##make a phyloseq object
 ##learn how to subset a phyloseq object
-##perform rarfaction curves
+##perform rarefaction curves
 ##assess alpha diversity
 ##assess beta diveristy
-##creat exploratory barcharts
+##create exploratory barcharts
 ##script updated 3.04.2017 by JLWOOD
 ##script updated 4.05.2020 by JLWOOD - CLR normalisation added
-##Script updated and mofified by Gene Drendel 2020 - ongoing
+##Script updated and modified by Gene Drendel 2020 - Total Sum Scaling and P-MFC specific changes
 #23/11/2020 Script now uploaded to P-MFC github repo - changes to be tracked and maintained there
 #23/11/2020 Atom edit test
 #branch merge changes test
