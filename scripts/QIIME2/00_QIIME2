@@ -1,0 +1,116 @@
+#!/bin/bash
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=100000
+#SBATCH --time=120:00:00
+#SBATCH --partition=compute
+
+echo "Starting at: $(date)"
+
+module load qiime2/2017.12
+
+###-------------------------------QIIME 2 ANALYSIS PROCEDURE-------------------------------------
+
+###Required Files:
+
+###1)sequence data (fastq) - a single file for single ended, two files for paired end (DOWLOAD FROM THE EUROPEAN NUCLEOTIDE ARCHIVE (ncbi doesn't supply seperate forward and reverse reads)
+
+###2)manifest file (txt, tsv) - Create this yourself (see attached example)
+###3)metadata file (txt, tsv) - Create this yourself (see attached example)
+
+###4)MiDAS sequence file (.fasta) & MiDAS taxonomy file (.tax) - These are modifed versions of the publically available MiDAS files (I'll sent them to you).
+
+
+###IMPORTING
+
+###-------------------------------SINGLE ENDED MANIFEST IMPORT-------------------------------
+
+#qiime tools import --type 'SampleData[SequencesWithQuality]' --input-path manifest_forward.tsv --output-path sample_demux.qza --source-format SingleEndFastqManifestPhred33
+
+
+
+###-------------------------------PAIRED END MANIFEST IMPORT----------------------------------
+
+#qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' --input-path manifest_davcrek.tsv --output-path demux-paired-end.qza --source-format PairedEndFastqManifestPhred33
+
+
+
+###-------------------------------THEN RUN THIS TO LOOK AT SUMMARY----------------------------------
+
+#qiime demux summarize --i-data demux-trimmed.qza --o-visualization demux-trimmed.qzv
+
+###Run out put through QIIME2 visualise website
+
+###qiime tools view demux-single-end.qzv
+
+
+
+###-------------------------------CUT PRIMERS (under constrcution)----------------------------------
+
+#qiime cutadapt trim-single --i-demultiplexed-sequences single_demux.qza --p-front GTGYCAGCMGCCGCGGTAA --o-trimmed-sequences demux-trimmed-single.qza --verbose
+
+
+###QUALITY CONTROL  
+
+###Get trim and truncate values from the XXXXXXXX_demux.qzv visualization. At the top of the demux.qzv page there is an 'interactive quality plot(?)' link, where you can see the quality profiles for your imported reads. Select trim values that exclude low quality ends, however remember that your paired end data must meet in the middle of the amplicon and overlap (at least 10 bp...) to 'assemble'.
+
+###-------------------------------------DENOISE SINGLE END SEQS-------------------------------------
+
+qiime dada2 denoise-single --p-max-ee 5 --i-demultiplexed-seqs demux-trimmed-single.qza --o-representative-sequences single_rep_seqs.qza --o-table single_table.qza --p-trim-left 0 --p-trunc-len 200 --verbose
+
+
+###------------------------------------DENOISE PAIRED END SEQS--------------------------------------
+
+#qiime dada2 denoise-paired --p-max-ee 2  --i-demultiplexed-seqs demux-trimmed.qza --o-table paired_table_trimmed --o-representative-sequences paired_rep_seqs_trimmed.qza --p-trim-left-f 0 --p-trim-left-r 0 --p-trunc-len-f 200 --p-trunc-len-r 200 --verbose
+
+
+###IMPORTING MIDAS SEQUENCES AND TAXONOMY
+
+###use forward and reverse primers given in the publication associated with the data, truncate length to that appropriate for your imported data amplicon.
+
+
+###-----------------------------------SILVA IMPORT and TRAINING-------------------------------------
+
+#tar xzvf SILVA_132_SSURef_NR99_13_12_17_opt.arb.gz
+
+#qiime feature-classifier extract-reads --i-sequences 99-otus-515-806.qza --p-f-primer GTGYCAGCMGCCGCGGTAA --p-r-primer GGACTACNVGGGTWTCTAAT --o-reads 99-otus-515-806_extract.qza
+
+#qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads 99-otus-515-806_extract.qza --i-reference-taxonomy 7_level_taxonomy.qza --o-classifier SILVA-classifier.qza
+
+
+
+###----------------------------------TAXONOMIC ANALYSIS and PRESENTATION----------------------------
+
+#qiime feature-classifier classify-sklearn --i-classifier gg-13-8-99-515-806-nb-classifier.qza --i-reads single_rep_seqs.qza --o-classification taxonomy.qza
+
+#qiime metadata tabulate --m-input-file taxonomy.qza --o-visualization taxonomy.qzv
+  
+#qiime taxa barplot --i-table single_table.qza --i-taxonomy taxonomy.qza --m-metadata-file metadata_fire.tsv --o-visualization sample_taxa_bar_plots.qzv
+
+#qiime phylogeny fasttree --i-alignment single_rep_seqs.qza --o-tree phylogenetictree --verbose
+
+###https://docs.qiime2.org/2018.6/plugins/available/phylogeny/fasttree/?highlight=tree
+
+###qiime tools view GISfoam_taxa_bar_plots.qzv
+  
+###Export Level 6 taxonomy values via the button in the upper-left corner of the taxa_bar_plots.qzv visualization, and then use these values to calculate relative abundance (see spreadsheet file). Don't forget to look at the data to see if it looks ok - I have had one data set that showed only a single feature, in a single class, in each phylum identified, which I assume was due to an error....
+
+
+###-----------------------------------BUILD PHYLOGENETIC TREE-------------------------------------
+
+###carry out a multiple seqeunce alignment using Mafft
+#qiime alignment mafft --i-sequences single_rep_seqs.qza --o-alignment aligned-rep-seqs.qza
+
+###mask (or filter) the alignment to remove positions that are highly variable. These positions are generally considered to add noise to a resulting phylogenetic tree.
+#qiime alignment mask --i-alignment aligned-rep-seqs.qza --o-masked-alignment masked-aligned-rep-seqs.qza
+
+###create the tree using the Fasttree program
+#qiime phylogeny fasttree --i-alignment masked-aligned-rep-seqs.qza --o-tree unrooted-tree.qza
+
+###root the tree using the longest root
+#qiime phylogeny midpoint-root --i-tree unrooted-tree.qza --o-rooted-tree rooted-tree.qza
+
+#qiime tools export rooted-tree.qza --output-dir exported-tree
+
+
+
+echo "Finished at: $(date)"
