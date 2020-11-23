@@ -8,9 +8,10 @@
 ##assess beta diveristy
 ##creat exploratory barcharts
 ##script updated 3.04.2017 by JLWOOD
-##script updated 4.05.2020 by JLWOOD - CLR normalisation added 
+##script updated 4.05.2020 by JLWOOD - CLR normalisation added
 ##Script updated and mofified by Gene Drendel 2020 - ongoing
 #23/11/2020 Script now uploaded to P-MFC github repo - changes to be tracked and maintained there
+#23/11/2020 Atom edit test
 
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
@@ -55,7 +56,7 @@ rownames(otu_table)
 
 ##Load and create a metadata data frame
 ##run make this in excel:first row should be your sample names, subsequent rows are treatment aspects
-##IMPORTANT : you must have more than one column in your treatment file 
+##IMPORTANT : you must have more than one column in your treatment file
 ##(remember the first column will be pulled out to be used as labels so more than 2 coloums is needed)
 
 treat <- as.data.frame(read.csv("mapping_file.csv", row.names=1, header=TRUE))
@@ -230,7 +231,7 @@ BiocManager::install("microbiome")
 
 library(ggplot2)
 library(microbiome)
-##package microbiome needs to be loaded from bioconductor: 
+##package microbiome needs to be loaded from bioconductor:
 ##https://www.bioconductor.org/packages/release/bioc/html/microbiome.html
 
 #RAW
@@ -292,10 +293,10 @@ library(multcompView)
 # I need to group the treatments that are not different each other together.
 generate_label_df <- function(TUKEY, variable){
 
-   # Extract labels and factor levels from Tukey post-hoc 
+   # Extract labels and factor levels from Tukey post-hoc
      Tukey.levels <- TUKEY[[variable]][,4]
      Tukey.labels <- data.frame(multcompLetters(Tukey.levels)['Letters'])
-     
+
      #I need to put the labels in the same order as in the boxplot :
      Tukey.labels$treatment=rownames(Tukey.labels)
      Tukey.labels=Tukey.labels[order(Tukey.labels$treatment) , ]
@@ -316,13 +317,13 @@ text( c(1:nlevels(Div$Group)) , a$stats[nrow(a$stats),]+over , LABELS[,1]  , col
 ##End WORK IN PROGRESS
 
 ##example Kruskal wallis with post hoc test
-kruskal.test(Shannon ~ Location, Div) 
+kruskal.test(Shannon ~ Location, Div)
 
 library(FSA)
-PT = dunnTest(Shannon ~ Location, data=Div, method="bh")    
+PT = dunnTest(Shannon ~ Location, data=Div, method="bh")
 PT
 
-##BOXPLOTS 
+##BOXPLOTS
 library(ggplot2)
 
 Div
@@ -339,25 +340,25 @@ line <- "goldenrod2" #boxplot line colour
 s1 <- ggplot(Div, aes(Group,Shannon)) +  geom_boxplot()
 s1 <- s1  + theme_bw()+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 s1 <- s1 + stat_summary(geom = 'text', label = c("a","ab","a","b","b","ab"), fun.y = max, vjust = -1)
-s1 <- s1 + scale_x_discrete(name = "Title", limits= lim, labels = lim)  
+s1 <- s1 + scale_x_discrete(name = "Title", limits= lim, labels = lim)
 s1 <- s1 + scale_y_continuous(name = "Shannon diversty",  breaks = seq(5, 6.5, 0.5), limits=c(5, 6.5))
 s1 <- s1 + geom_boxplot(fill = fill, colour = line, alpha = 0.5)
 s1
 
 
-c1 <- ggplot(Div, aes(Group,Chao1)) +  geom_boxplot() 
+c1 <- ggplot(Div, aes(Group,Chao1)) +  geom_boxplot()
 c1 <- c1 + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 #c1 <- c1 + stat_summary(geom = 'text', label = c("a","a","a","b","b","b"), fun.y = max, vjust = -1)
-c1 <- c1 + scale_x_discrete(name = "Title", limits= lim, labels = lab)  
+c1 <- c1 + scale_x_discrete(name = "Title", limits= lim, labels = lab)
 c1 <- c1 + scale_y_continuous(name = "Chao1",  breaks = seq(0, 2000, 500), limits=c(0, 2000))
 c1 <- c1 + geom_boxplot(fill = fill, colour = line, alpha = 0.5)
 c1
 
 
-p1 <- ggplot(Div, aes(Group, simpson)) +  geom_boxplot() 
-p1 <- p1 + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 0.5)) 
+p1 <- ggplot(Div, aes(Group, simpson)) +  geom_boxplot()
+p1 <- p1 + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 #p1 <- p1 + stat_summary(geom = 'text', label = c("a","ab","a","b","b","ab"), fun.y = max, vjust = -1)
-p1 <- p1 + scale_x_discrete(name = "Title", limits= lim, labels = lab)  
+p1 <- p1 + scale_x_discrete(name = "Title", limits= lim, labels = lab)
 p1 <- p1 + scale_y_continuous(name = "Simpson",  breaks = seq(0,0.5,0.1), limits=c(0,0.5))
 p1 <- p1 + geom_boxplot(fill = fill, colour = line, alpha = 0.5)
 p1
@@ -567,7 +568,7 @@ help(ordinate)
 NMDS1 <- ordinate(OBJ1_ts, "PCoA", distance="unifrac", weighted=TRUE, parallel=TRUE)
 p1<-plot_ordination(OBJ1_ts, NMDS1 , color="Week", shape="Location", label=NULL) + theme_bw()
 print(p1)
-p1 <- p1 +  geom_point(aes(colour=factor(Group), fill = factor(Group), shape= factor(Location)), size = 3.5)+ ggtitle(NULL)+ theme(legend.position="none") 
+p1 <- p1 +  geom_point(aes(colour=factor(Group), fill = factor(Group), shape= factor(Location)), size = 3.5)+ ggtitle(NULL)+ theme(legend.position="none")
 p1 <- p1 + scale_shape_manual(values = c(21,24))
 p1 <- p1 + scale_colour_manual(values = black)
 p1 <- p1+ scale_fill_manual(values = colvec, breaks = c("Bulk_0", "Bulk_20", "Bulk_100","Rhizo_0", "Rhizo_20", "Rhizo_100"))
@@ -575,7 +576,7 @@ p1
 
 NMDS2 <- ordinate(OBJ1_r, "PCoA", distance="unifrac", weighted=FALSE, parallel=TRUE)
 p2 <- plot_ordination(OBJ1_r, NMDS2 , color="Group", shape="Location", label=NULL) + theme_bw()
-p2 <- p2 +  geom_point(aes(colour=factor(Group), fill = factor(Group), shape= factor(Location)), size = 3.5)+ ggtitle(NULL)+ theme(legend.position="none") 
+p2 <- p2 +  geom_point(aes(colour=factor(Group), fill = factor(Group), shape= factor(Location)), size = 3.5)+ ggtitle(NULL)+ theme(legend.position="none")
 p2<- p2+ scale_shape_manual(values = c(21,24))
 p2<- p2 + scale_colour_manual(values = black)
 p2<- p2 + scale_fill_manual(values = colvec, breaks = c("Bulk_0", "Bulk_20", "Bulk_100","Rhizo_0", "Rhizo_20", "Rhizo_100"))
@@ -588,7 +589,7 @@ multiplot(p1,p2, cols=2)
 
 ##NOW TO THE STATISTICS - ANOSIM AND PERMANOVA
 
- 
+
 library(vegan)
 #pull the variables you want to test:
 #By location at end
@@ -650,7 +651,7 @@ W14_Group_ado
 
 #Three way comparison of same, should be able to just add in inoculum (order of factors shouldn't matter)
 #Also added in permutations
-#adonis Analsysi of Variance, Perumatatioal 
+#adonis Analsysi of Variance, Perumatatioal
 #NOTE must make factor for inoculum (three way version), now fixed
 W14_Group_ado_w = adonis(OBJ1_W14perm_wu ~ Location * Connection * Inoculum, permutations = 9999)
 W14_Group_ado_w
@@ -702,7 +703,7 @@ unique(levels(get_variable(OBJ1_r, "Group")))
 
 #make  a vector that asscoiates colurs you want with labels
 colorscale<- c("green4","red3", "darkorange1","green4", "red3","darkorange1")
-colours_to_use <- colorscale[get_variable(OBJ1_r, "Group")] 
+colours_to_use <- colorscale[get_variable(OBJ1_r, "Group")]
 
 #put them in the right order adn add them to the dend object
 colours_to_use <- colours_to_use[order.dendrogram(dend)]
@@ -782,12 +783,12 @@ lim_Cd_dose <- c("0_mg","20_mg","100_mg")#order the axis how you want them
 ##PLOT3 - Cd-dose groups faceted by Location
 OBJ1_ord2 <- filter_taxa(OBJ1_ord, function(x) mean(x) > 0.005, TRUE)
 p3 <- plot_bar(OBJ1_ord2, "Cd_dose", fill="Order", facet_grid=~Location)
-p3 <- p3 + scale_x_discrete(name = "Title", limits= lim_Cd_dose)  
+p3 <- p3 + scale_x_discrete(name = "Title", limits= lim_Cd_dose)
 p3 <- p3 + scale_fill_manual(values=colvec)
 p3 <- p3 + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p3
-#note in this plot abundance goes to 5 b/c there are 5 reps 
-#(this is also why each colour has 5 segments) 
+#note in this plot abundance goes to 5 b/c there are 5 reps
+#(this is also why each colour has 5 segments)
 #in 0mg rhizo ther are only 4 reps so abundances apper lower
 
 ##you can pull out specific OTUs if you have a list of thier names in a vector object
@@ -812,7 +813,7 @@ colvec <- c(colvec1, colvec2,colvec3,colvec4,colvec5,colvec6)
 
 melt<-psmelt(OBJ1_ord2)#extract the information from the phyloseq object
 head(melt) #check column headings
-melt<-melt[sort.list(melt[,10]), ] #reorder 'melt' by the column we will be plotting by (in this cae 'order si in col 10) 
+melt<-melt[sort.list(melt[,10]), ] #reorder 'melt' by the column we will be plotting by (in this cae 'order si in col 10)
 
 ##ordering the x axis labels:
 melt$Cd_dose<- as.character(melt$Cd_dose)
@@ -823,8 +824,8 @@ melt$Cd_dose <- factor(melt$Cd_dose, levels=c("0_mg","20_mg","100_mg"))
 t1<-ggplot(melt, aes(Cd_dose, Abundance/5, fill=Order))+ geom_bar(stat = "identity",)
 t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7))+ scale_fill_manual(values = colvec)
 t1 <- t1+ labs(title = NULL, x=expression(Cadmium~dose~(mg~kg^{-1}~soil)), y= "Relative abundance")
-t1 <- t1 + scale_x_discrete(labels= c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5))) 
-t1 
+t1 <- t1 + scale_x_discrete(labels= c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
+t1
 
 #trends in Sphingomonadales and Sphingobacterales are way clearer
 #note we've devided abundance by 5 but the treatment missing a sample will still be skewed
@@ -853,7 +854,7 @@ sigtab_otu = cbind(as(sigtab, "data.frame"), as(tax_table(q1)[rownames(sigtab), 
 
 
 dim(sigtab_otu)
-sigtab_sigg <- subset(sigtab_otu, sigtab_otu$padj < 0.05) 
+sigtab_sigg <- subset(sigtab_otu, sigtab_otu$padj < 0.05)
 dim(sigtab_sigg) #149 OTus
 OTU <- rownames(sigtab_sigg)
 OBJ1_rr  = transform_sample_counts(OBJ1_r, function(x) x / sum(x) )
@@ -884,7 +885,5 @@ melt$Fig1 <- factor(melt$Fig1, levels=c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5",
 t1<-ggplot(melt, aes(Fig1, Abundance/5, fill=Order))+ geom_bar(stat = "identity",)
 t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7))+ scale_fill_manual(values = colvec)
 t1 <- t1+ labs(title = NULL, x=expression(Cadmium~dose~(mg~kg^{-1}~soil)), y= "Relative abundance")
-t1 <- t1 + scale_x_discrete(labels= c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5))) 
-t1 
-
-
+t1 <- t1 + scale_x_discrete(labels= c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
+t1
