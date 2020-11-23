@@ -17,4 +17,7 @@ The Main outputs being:
 
 ## R Script
 Base Script folder contains original script templates from Jennifer Wood, and modified working base script that all changes have since been made from.
-Covers data import from HPC outputs. Main packages used for analysis: <br>Phyloseq <br>AmpVis2 <br>PICRUST
+Covers data import from HPC outputs. Main packages used for analysis: 
+* Phyloseq 
+* AmpVis2 
+* PICRUST
