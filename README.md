@@ -4,7 +4,7 @@ Bioinformatic script storage and verison control for Gene Drendel PhD project an
 *Initial script uploads covering HPC and R data prep, processing and analysis, as below.*
 
 ## HPC Script
-Base Script folder contains original script templates from Dnaiel Rice, and modified working base script that all changes have since been made from.
+Base Script folder contains original script templates from Daniel Rice, and modified working base script that all changes have since been made from.
 Covers:<br>
 * Basic HPC setup commands
 * Raw sequencing data import
