@@ -13,6 +13,7 @@
 #23.11.2020 Script now uploaded to P-MFC github repo, changes to be tracked and maintained there
 
 #Comment edits to test push/pull and sync with Atom/Rstudio/GithubDesktop
+#Test branch edit for merging with main
 
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
