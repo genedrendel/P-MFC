@@ -14,6 +14,7 @@
 
 #Comment edits to test push/pull and sync with Atom/Rstudio/GithubDesktop
 #Test branch edit for merging with main
+#testbranch2 merge
 
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
