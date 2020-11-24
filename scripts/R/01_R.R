@@ -9,11 +9,12 @@
 ##create exploratory barcharts
 ##script updated 3.04.2017 by JLWOOD
 ##script updated 4.05.2020 by JLWOOD - CLR normalisation added
-##Script updated and modified by Gene Drendel 2020 - Total Sum Scaling and P-MFC specific changes
+
+##Script updated and modified by Gene Drendel 2020 - Total Sum Scaling and P-MFC project specific changes
 #23/11/2020 Script now uploaded to P-MFC github repo - changes to be tracked and maintained there
 #23/11/2020 Atom edit test
 #Branch Edit and Merge Test
-#vCOmment
+
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
 
@@ -73,7 +74,7 @@ TREAT = sample_data(treat)
 
 OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
 
-##you can use the following to confrim correct labels/treatments ect have been assigned
+##you can use the following to confirm correct labels/treatments ect have been assigned
 
 sample_data(OBJ1)
 
