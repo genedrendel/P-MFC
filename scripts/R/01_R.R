@@ -9,11 +9,10 @@
 ##create exploratory barcharts
 ##script updated 3.04.2017 by JLWOOD
 ##script updated 4.05.2020 by JLWOOD - CLR normalisation added
-
 ##Script updated and modified by Gene Drendel 2020 - Total Sum Scaling and P-MFC project specific changes
-#23/11/2020 Script now uploaded to P-MFC github repo - changes to be tracked and maintained there
-#23/11/2020 Atom edit test
-#Branch Edit and Merge Test
+#23.11.2020 Script now uploaded to P-MFC github repo, changes to be tracked and maintained there
+
+#Comment edits to test push/pull and sync with Atom/Rstudio/GithubDesktop
 
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
@@ -593,7 +592,8 @@ multiplot(p1,p2, cols=2)
 
 
 library(vegan)
-#pull the variables you want to test:
+#Setup objects for testing significance, effect size, correlation.
+#First pull the variables you want to test into objects:
 #By location at end
 Location <- get_variable(OBJ_W14_tss, "Location")
 Location <- get_variable(OBJ_W14_tss_GEN, "Location")
@@ -643,7 +643,7 @@ OBJ1_W14perm_wu_G <- distance(OBJ_W14_tss_GEN, "wunifrac")
 OBJ1_W14perm_wu_F <- distance(OBJ_W14_tss_FAM, "wunifrac")
 OBJ1_W14perm_wu_O <- distance(OBJ_W14_tss_ORD, "wunifrac")
 
-##Quick dirsty test of W0 too (see above)
+##Quick diversity test of W0 too (see above)
 OBJ1_W0perm_wu <- distance(OBJ_W0_tss, "wunifrac")
 OBJ1_W0perm_u <- distance(OBJ_W0_tss, "unifrac")
 
@@ -651,10 +651,10 @@ OBJ1_W0perm_u <- distance(OBJ_W0_tss, "unifrac")
 W14_Group_ado = adonis(OBJ1_W14perm_wu ~ Location * Connection, permutations = 9999)
 W14_Group_ado
 
-#Three way comparison of same, should be able to just add in inoculum (order of factors shouldn't matter)
+#Three way comparison, should be able to just add in inoculum (order of factors shouldn't matter)
 #Also added in permutations
-#adonis Analsysi of Variance, Perumatatioal
-#NOTE must make factor for inoculum (three way version), now fixed
+#adonis Analysis of Variance, Perumatatioal
+#NOTE must make factor for inoculum as above for location etc (three way version), *now fixed*
 W14_Group_ado_w = adonis(OBJ1_W14perm_wu ~ Location * Connection * Inoculum, permutations = 9999)
 W14_Group_ado_w
 
