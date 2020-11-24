@@ -10,9 +10,6 @@
 ##script updated 3.04.2017 by JLWOOD
 ##script updated 4.05.2020 by JLWOOD - CLR normalisation added
 ##Script updated and mofified by Gene Drendel 2020 - ongoing
-#23/11/2020 Script now uploaded to P-MFC github repo - changes to be tracked and maintained there
-#23/11/2020 Atom edit test
-#Branch Edit and Merge Test
 
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
