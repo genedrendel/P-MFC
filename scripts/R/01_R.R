@@ -112,7 +112,7 @@ OBJ1_exp_tss
 
 #Subsets on TSS data
 
-#Treatments (by connection) - for trying to get all the info on ordinations at once, using open and closed symboles + colour
+#Treatments (by connection) - for trying to get all the info on treatment combos in one (e.g keep in mind for ordinations = using open and closed symbols + colour
 #to distinguish the significant inoculum+connection effect that seems to be happening based on the permanova
 OBJ_Unin_Conn_tss <- subset_samples(OBJ1_exp_tss, Treatment == "Uninoculated Connected")
 OBJ_Unin_Unconn_tss <- subset_samples(OBJ1_exp_tss, Treatment == "Uninoculated Unconnected")
@@ -379,25 +379,44 @@ theme_set(theme_bw())
 
 #Overall
 gpt_all <- subset_taxa(OBJ1_exp_tss, Kingdom=="Bacteria")
-gpt_all <- prune_taxa(names(sort(taxa_sums(gpt_all),TRUE)[1:50]), gpt_all)
+gpt_all <- prune_taxa(names(sort(taxa_sums(gpt_all),TRUE)[1:30]), gpt_all)
 plot_heatmap(gpt_all, sample.label="Location")
 plot_heatmap(gpt_all, "NMDS", "unifrac", "Connection", "Family", sample.label="Location", weighted=FALSE)
 plot_heatmap(gpt_all, "NMDS", "unifrac", "Connection", "Family", sample.label="Location", weighted=TRUE)
 heatmap(otu_table(gpt))
 
 gpt_prot <- subset_taxa(OBJ1_exp_tss, Phylum=="Proteobacteria")
-gpt_prot <- prune_taxa(names(sort(taxa_sums(gpt_prot),TRUE)[1:50]), gpt_prot)
+gpt_prot <- prune_taxa(names(sort(taxa_sums(gpt_prot),TRUE)[1:30]), gpt_prot)
 plot_heatmap(gpt_prot)
 plot_heatmap(gpt_prot, "NMDS", "unifrac", "Connection", "Family", weighted=FALSE)
 plot_heatmap(gpt_prot, "NMDS", "unifrac", "Connection", "Family", weighted=TRUE)
 plot_heatmap(gpt_prot)
 
 #Subsetting...test to try to get labels legible and see time series
-gpt_sub <- subset_taxa(OBJ1_anode_tss, Kingdom=="Bacteria")
-gpt_sub <- prune_taxa(names(sort(taxa_sums(gpt_sub),TRUE)[1:50]), gpt_sub)
-plot_heatmap(gpt_sub, sample.label="Connection")
-plot_heatmap(gpt_sub, "NMDS", "unifrac", "Connection", "Genus")
-heatmap(otu_table(gpt_sub))
+gpt_sub_an <- subset_taxa(OBJ1_anode_tss, Kingdom=="Bacteria")
+gpt_sub_an <- prune_taxa(names(sort(taxa_sums(gpt_sub_an),TRUE)[1:30]), gpt_sub_an)
+plot_heatmap(gpt_sub_an, sample.label="Connection")
+plot_heatmap(gpt_sub_an, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Genus")
+heatmap(otu_table(gpt_sub_an))
+
+#Subsetting w14...test 
+gpt_sub14 <- subset_taxa(OBJ_W14_tss, Kingdom=="Bacteria")
+gpt_sub14 <- prune_taxa(names(sort(taxa_sums(gpt_sub14),TRUE)[1:30]), gpt_sub14)
+plot_heatmap(gpt_sub14, method = "MDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.label = "Family", weighted=TRUE)
+heatmap(otu_table(gpt_sub14))
+
+#Try everything by time for those asvs
+gpt_alltime <- subset_taxa(OBJ1_exp_tss, Kingdom=="Bacteria")
+gpt_alltime <- prune_taxa(names(sort(taxa_sums(gpt_alltime),TRUE)[1:30]), gpt_alltime)
+plot_heatmap(gpt_alltime, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+heatmap(otu_table(gpt_alltime))
+
+#Now agglomerate to diff taxa levels instead of asv
+OBJ_all_tss_FAM <- tax_glom(OBJ1_exp_tss,taxrank = "Family")
+OBJ_all_tss_FAM <- subset_taxa(OBJ_all_tss_FAM, Kingdom=="Bacteria")
+OBJ_all_tss_FAM <- prune_taxa(names(sort(taxa_sums(OBJ_all_tss_FAM),TRUE)[1:30]), OBJ_all_tss_FAM)
+plot_heatmap(OBJ_all_tss_FAM, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+heatmap(otu_table(OBJ_all_tss_FAM))
 
 ##BETA DIVERSITY_____________________________________________________________________________
 ##ORDINATIONS DENDROGRAMS ANOSIM PERMANOVA
