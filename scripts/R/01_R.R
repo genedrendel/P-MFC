@@ -87,6 +87,17 @@ OBJ1 <- OBJ1 %>%
     Class   != "Chloroplast"
   )
 
+
+##Additional filtering steps (if not already done through QIIME)
+#Prune singletone?
+#Prune taxa
+
+
+
+
+
+
+
 ##the following walkthrough detail many phyloseq preprocessing options
 ##https://joey711.github.io/phyloseq/preprocess.html
 
@@ -95,6 +106,9 @@ sample_data(OBJ1) #look at sample data table
 otu_table(OBJ1) #look at otu table
 tax_table(OBJ1) #look at taxonomy table
 
+#Install and run Shiny Phyloseq for interactive exploration of data (however can only import as .biom, .rdata or netwick trees)
+install.packages("shiny")
+shiny::runGitHub("shiny-phyloseq","joey711")
 
 
 ##Subsetting:
@@ -697,6 +711,45 @@ W14_Group_ado_w_F
 #Genus
 W14_Group_ado_w_G = adonis(OBJ1_W14perm_wu_G ~ Location * Connection * Inoculum, permutations = 9999)
 W14_Group_ado_w_G
+
+### DESQ FROM JOSH 17/12/2020
+###
+#Phyloseq to DESEQ
+diagdds = phyloseq_to_deseq2(OBJ13, ~ Treatment)
+ 
+diagdds$Treatment<- relevel(diagdds$Treatment, ref="DR")
+ 
+#Do the thing
+diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
+res = results(diagdds, cooksCutoff = FALSE)
+alpha = 0.01
+sigtab = res[which(res$padj < alpha), ]
+ 
+#convert to matrix
+sigtab_otu = cbind(as(sigtab, "data.frame"), as(tax_table(OBJSP)[rownames(sigtab), ], "matrix"))
+ 
+# Figure of results
+library("ggplot2")
+theme_set(theme_bw())
+scale_fill_discrete <- function(palname = "Set1", ...) {
+  scale_fill_brewer(palette = palname, ...)
+}
+ 
+# Phylum order
+x = tapply(sigtab_otu$log2FoldChange, sigtab_otu$Phylum, function(x) max(x))
+x = sort(x, TRUE)
+sigtab_otu$Phylum = factor(as.character(sigtab_otu$Phylum), levels=names(x))
+# Class order
+x = tapply(sigtab_otu$log2FoldChange, sigtab_otu$Phylum, function(x) max(x))
+x = sort(x, TRUE)
+sigtab_otu$Phylum = factor(as.character(sigtab_otu$Phylum), levels=names(x))
+ 
+#Visulise
+ggplot(sigtab_otu, aes(x=Phylum, y=log2FoldChange, color=Phylum)) + geom_point(size=6) +
+  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
+
+
+
 
 ##HEIRACHICAL CLUSTERING____________________________________________________________________
 library(vegan)
