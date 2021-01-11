@@ -1,3 +1,6 @@
+# Intro and script history ------------------------------------------------
+
+
 ##script created for analysis of metagenomic (16S amplicon) data
 ##script created by J L WOOD 03.12.2016
 ##we will:
@@ -23,6 +26,8 @@
 ##on first run you will need to open the .txt and remove the '#' from the first row
 ##otherwise R will not read it. also convert 'OTU ID' to 'OTU_ID'
 ##you can also make a excel file and read in as a .csv
+
+# Import and steup --------------------------------------------------------
 
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 
@@ -111,6 +116,10 @@ install.packages("shiny")
 shiny::runGitHub("shiny-phyloseq","joey711")
 
 
+# Subsetting --------------------------------------------------------------
+
+
+
 ##Subsetting:
 #First thing first GET RID OF THE CONTROL SAMPLE AND ONLY SUBSET FROM THAT OBJECT SO THAT IT STOPS FUCKING WITH ORDINATION DISTANCES
 #Similarly, will use this to remove probleamtic samples , e.g those with low read depth that entirely skew ordination patterns by being entirely alone
@@ -182,8 +191,7 @@ OBJ1_Desulf = subset_taxa(OBJ1_exp_tss, Order=="Desulfuromonadales")
 OBJ1_Geobacteraceae = subset_taxa(OBJ1_exp_tss, Family=="Geobacteraceae")
 OBJ1_Geobacter = subset_taxa(OBJ1_exp_tss, Genus=="Geobacter")
 
-
-#### Agglomerating at certain taxonomic levels ####
+#Agglomerating at certain taxonomic levels
 #Will be basing off of TSS'd Data objects, currently mainly interested in end point stats, so W14
 OBJ_W14_tss_ORD <- tax_glom(OBJ_W14_tss,taxrank = "Order")
 OBJ_W14_tss_FAM <- tax_glom(OBJ_W14_tss,taxrank = "Family")
@@ -235,6 +243,9 @@ OBJ1_ts_rounded
 # Microbiome analysis says can multiply by 1,000,000 for easier interpretation...let's test..?
 OBJ1_ts_multiplied = transform_sample_counts(OBJ1_ts, function(OTU) OTU*1000000 )
 otu_table(OBJ1_ts_multiplied)
+
+
+# Alpha Diversity ---------------------------------------------------------
 
 ##ALPHA DIVERSITY_____________________________________________________________________________
 ##BOXPLOTS, ANOVA, TUKEY TEST
@@ -307,8 +318,7 @@ TUKEY
 library(multcompView)
 # I need to group the treatments that are not different each other together.
 generate_label_df <- function(TUKEY, variable){
-
-   # Extract labels and factor levels from Tukey post-hoc
+# Extract labels and factor levels from Tukey post-hoc
      Tukey.levels <- TUKEY[[variable]][,4]
      Tukey.labels <- data.frame(multcompLetters(Tukey.levels)['Letters'])
 
@@ -431,6 +441,18 @@ OBJ_all_tss_FAM <- subset_taxa(OBJ_all_tss_FAM, Kingdom=="Bacteria")
 OBJ_all_tss_FAM <- prune_taxa(names(sort(taxa_sums(OBJ_all_tss_FAM),TRUE)[1:30]), OBJ_all_tss_FAM)
 plot_heatmap(OBJ_all_tss_FAM, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
 heatmap(otu_table(OBJ_all_tss_FAM))
+
+#Seperating out most variable asvs across trial for paper figure
+#Import heatmap subset .csv's (in this case: top30 ASVs sorted by abundance across locations and selected when above 0.8 specialisation index as caluclated)
+
+
+
+#asv_id
+otu_table <- as.data.frame(read.csv("readmap_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
+#taxonomy
+tax_spec_index.csv
+#metadata
+mapping_file_spec_index.csv
 
 ##BETA DIVERSITY_____________________________________________________________________________
 ##ORDINATIONS DENDROGRAMS ANOSIM PERMANOVA
