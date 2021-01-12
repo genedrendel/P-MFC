@@ -313,6 +313,9 @@ TUKEY<- TukeyHSD(ANOVA1,'Div$Location', conf.level=0.95)
 TUKEY
 
 
+# WIP - Boxplot labels ----------------------------------------------------
+
+
 ##WORK IN PROGRESS - AUTOMATING A WAY TO PUT THE LETTERS ON THE BOXPLOTS
 # library
 library(multcompView)
@@ -394,6 +397,9 @@ library(Rmisc)
 multiplot(s1,c1,p1, cols=3)
 
 
+# Heatmaps ----------------------------------------------------------------
+
+
 ##PHYLOSEQ HEATMAPS (WIP)_____________________________________________
 ##INPROGRESS
 
@@ -453,6 +459,11 @@ otu_table <- as.data.frame(read.csv("readmap_spec_index.csv", header=TRUE,row.na
 tax_spec_index.csv
 #metadata
 mapping_file_spec_index.csv
+
+
+# Beta diversity ----------------------------------------------------------
+
+
 
 ##BETA DIVERSITY_____________________________________________________________________________
 ##ORDINATIONS DENDROGRAMS ANOSIM PERMANOVA
@@ -734,6 +745,11 @@ W14_Group_ado_w_F
 W14_Group_ado_w_G = adonis(OBJ1_W14perm_wu_G ~ Location * Connection * Inoculum, permutations = 9999)
 W14_Group_ado_w_G
 
+
+# DESEQ -------------------------------------------------------------------
+
+
+
 ### DESQ FROM JOSH 17/12/2020
 ###
 #Phyloseq to DESEQ
@@ -770,6 +786,9 @@ sigtab_otu$Phylum = factor(as.character(sigtab_otu$Phylum), levels=names(x))
 ggplot(sigtab_otu, aes(x=Phylum, y=log2FoldChange, color=Phylum)) + geom_point(size=6) +
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
 
+
+
+# Heirarchical Clustering -------------------------------------------------
 
 
 
@@ -826,6 +845,7 @@ dend %>%
 abline(v = 350, lty = 2)
 
 
+# Barcharts ---------------------------------------------------------------
 
 ##BARCHARTS________________________________________________________________________________
 
