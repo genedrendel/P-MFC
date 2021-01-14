@@ -27,7 +27,7 @@
 ##otherwise R will not read it. also convert 'OTU ID' to 'OTU_ID'
 ##you can also make a excel file and read in as a .csv
 
-# Import and steup --------------------------------------------------------
+# Import and setup --------------------------------------------------------
 
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 
@@ -91,16 +91,6 @@ OBJ1 <- OBJ1 %>%
     Family  != "mitochondria" &
     Class   != "Chloroplast"
   )
-
-
-##Additional filtering steps (if not already done through QIIME)
-#Prune singletone?
-#Prune taxa
-
-
-
-
-
 
 
 ##the following walkthrough detail many phyloseq preprocessing options
@@ -272,6 +262,10 @@ a
 a <- plot_richness(OBJ1_ts_multiplied, x = "Location")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
 a
 
+
+## Normality Tests ---------------------------------------------------------
+
+
 ##we need to know if data meets normailtiy and homogeneity of varience assumptions
 ##so we can decide how to test for statistical differences
 
@@ -313,7 +307,7 @@ TUKEY<- TukeyHSD(ANOVA1,'Div$Location', conf.level=0.95)
 TUKEY
 
 
-# WIP - Boxplot labels ----------------------------------------------------
+## WIP - Boxplot labels ----------------------------------------------------
 
 
 ##WORK IN PROGRESS - AUTOMATING A WAY TO PUT THE LETTERS ON THE BOXPLOTS
@@ -350,6 +344,9 @@ kruskal.test(Shannon ~ Location, Div)
 library(FSA)
 PT = dunnTest(Shannon ~ Location, data=Div, method="bh")
 PT
+
+
+## Boxplots ----------------------------------------------------------------
 
 ##BOXPLOTS
 library(ggplot2)
@@ -398,8 +395,6 @@ multiplot(s1,c1,p1, cols=3)
 
 
 # Heatmaps ----------------------------------------------------------------
-
-
 ##PHYLOSEQ HEATMAPS (WIP)_____________________________________________
 ##INPROGRESS
 
@@ -448,18 +443,25 @@ OBJ_all_tss_FAM <- prune_taxa(names(sort(taxa_sums(OBJ_all_tss_FAM),TRUE)[1:30])
 plot_heatmap(OBJ_all_tss_FAM, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
 heatmap(otu_table(OBJ_all_tss_FAM))
 
+
+## Heatmap for specialisation index -------------------------------------
 #Seperating out most variable asvs across trial for paper figure
 #Import heatmap subset .csv's (in this case: top30 ASVs sorted by abundance across locations and selected when above 0.8 specialisation index as caluclated)
 
-
-
+library(phyloseq)
+library(ape)
 #asv_id
-otu_table <- as.data.frame(read.csv("readmap_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
+otu_table_spec <- as.data.frame(read.csv("readmap_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
 #taxonomy
-tax_spec_index.csv
+taxmat_spec <- as.matrix(read.csv("tax_spec_index.csv", row.names=1, header=TRUE))
 #metadata
-mapping_file_spec_index.csv
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
 
+OTU = otu_table(otu_table_spec, taxa_are_rows = TRUE)
+TAX = tax_table(taxmat_spec)
+TREAT = sample_data(treat_spec)
+TREE <- read.tree("rooted_tree.nwk")
+OBJ_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 
 # Beta diversity ----------------------------------------------------------
 
