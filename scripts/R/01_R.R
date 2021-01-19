@@ -1,6 +1,4 @@
 # Intro and script history ------------------------------------------------
-
-
 ##script created for analysis of metagenomic (16S amplicon) data
 ##script created by J L WOOD 03.12.2016
 ##we will:
@@ -19,7 +17,6 @@
 
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
-
 ##for alpha diversity and NMDS/PCOs we'll rarefy the data
 ##read in our OTU table and treatment file
 ##format should be samples as columns and OTUs as rows
@@ -44,7 +41,6 @@ plot(rare)
 
 ##next we need a tree - we use it for the ordinations
 ##this will generated in the UNIX script and placed in the 09R_files folder for us
-##install the package ape
 
 library(ape)
 
@@ -107,9 +103,6 @@ shiny::runGitHub("shiny-phyloseq","joey711")
 
 
 # Subsetting --------------------------------------------------------------
-
-
-
 ##Subsetting:
 #First thing first GET RID OF THE CONTROL SAMPLE AND ONLY SUBSET FROM THAT OBJECT SO THAT IT STOPS FUCKING WITH ORDINATION DISTANCES
 #Similarly, will use this to remove probleamtic samples , e.g those with low read depth that entirely skew ordination patterns by being entirely alone
@@ -187,13 +180,15 @@ OBJ_W14_tss_ORD <- tax_glom(OBJ_W14_tss,taxrank = "Order")
 OBJ_W14_tss_FAM <- tax_glom(OBJ_W14_tss,taxrank = "Family")
 OBJ_W14_tss_GEN <- tax_glom(OBJ_W14_tss,taxrank = "Genus")
 
+
+# Rarefy / TSS ---------------------------------------------
 ##normalisation opton 1: rarefy data
 set.seed(8385) #there is an element of randomness in rarfying. this eliminates that
 OBJ1_r <- rarefy_even_depth(OBJ1, sample.size = 3500,  rngseed = TRUE, replace = FALSE, trimOTUs = TRUE)
 
 #TSS Total Sum Scaling , do these before beta analyses, at the absolute least i.e use for ordinations
-#Perfectly valid to use for alpha diversity too though
-#diversity measures generally work on proportions so that's not a problem, but may be best to multiply by 100 and round to full numbers, mostly thinking about normality tests here)
+#Perfectly valid to use for alpha diversity too though apparently!
+#e.g Diversity measures generally work on proportions so that's not a problem, but may be best to multiply by 100 and round to full numbers, mostly thinking about normality tests here)
 #normalisation opton 2: transform to TSS (Total Sum Scaling)
 #Overall
 OBJ1_ts = transform_sample_counts(OBJ1, function(OTU) OTU/sum(OTU) )
@@ -236,7 +231,6 @@ otu_table(OBJ1_ts_multiplied)
 
 
 # Alpha Diversity ---------------------------------------------------------
-
 ##ALPHA DIVERSITY_____________________________________________________________________________
 ##BOXPLOTS, ANOVA, TUKEY TEST
 
@@ -450,6 +444,9 @@ heatmap(otu_table(OBJ_all_tss_FAM))
 
 library(phyloseq)
 library(ape)
+library(ggplot2)
+theme_set(theme_bw())
+
 #asv_id
 otu_table_spec <- as.data.frame(read.csv("readmap_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
 #taxonomy
@@ -462,6 +459,9 @@ TAX = tax_table(taxmat_spec)
 TREAT = sample_data(treat_spec)
 TREE <- read.tree("rooted_tree.nwk")
 OBJ_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
+
+OBJ1_spec_ts = transform_sample_counts(OBJ_SPEC, function(OTU) OTU/sum(OTU) )
+OBJ1_spec_ts
 
 # Beta diversity ----------------------------------------------------------
 
