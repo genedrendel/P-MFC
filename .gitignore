@@ -1,4 +1,9 @@
 
 .DS_Store
 .Rproj.user
-.Rproj
+.Rproj.user/
+.Ruserdata
+.Rhistory
+.Rapp.history
+.RData
+.Renviron
