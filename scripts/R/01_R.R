@@ -1,4 +1,4 @@
-# Intro and script history ------------------------------------------------
+# Intro / Old change history ------------------------------------------------
 ##script created for analysis of metagenomic (16S amplicon) data
 ##script created by J L WOOD 03.12.2016
 ##we will:
@@ -13,8 +13,9 @@
 ##Script updated and modified by Gene Drendel 2020 - Total Sum Scaling and P-MFC project specific changes
 #23.11.2020 Script now uploaded to P-MFC github repo, changes to be tracked and maintained there
 
-#Comment edits to test push/pull and sync with Atom/Rstudio/GithubDesktop
+#Comment edits to test push/pull and sync with Atom/Rstudio
 
+# Import and setup --------------------------------------------------------
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
 ##for alpha diversity and NMDS/PCOs we'll rarefy the data
@@ -24,13 +25,14 @@
 ##otherwise R will not read it. also convert 'OTU ID' to 'OTU_ID'
 ##you can also make a excel file and read in as a .csv
 
-# Import and setup --------------------------------------------------------
-
+#Set your working directory, location for data tables, tree, etc
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 
-#Jens version
+#Import OTU table
+####Jens version:
 #otu_table <- subset(as.data.frame(read.table("raw_readmap.txt", sep="\t", header=TRUE,row.names = "OTU_ID")), select = -taxonomy)
-#Replaced with the below: Not sure if any functional difference once imported like this?
+
+#Replaced import with the below: Not sure if any functional difference once imported like this? But the other one didn't work, assuming mostly just a txt vs csv thing
 otu_table <- as.data.frame(read.csv("raw_readmap.csv", header=TRUE,row.names = "OTU_ID"))
 
 ##look at the total reads per sample and decide on a rarefaction depth
@@ -78,6 +80,8 @@ OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
 
 sample_data(OBJ1)
 
+
+## Remove unwanted taxa ----------------------------------------------------
 ##you may wan to remove mitochondria and chloroplasts. you can use this script
 
 library(magrittr)
@@ -109,6 +113,8 @@ shiny::runGitHub("shiny-phyloseq","joey711")
 #To do this, created additional column of treatment file indicating Y (yes) and N (no) for all data minus the control
 #Lets call this OBJ1_exp as an indication of it being the proper "experimental" dataset
 
+
+## Experimental Sample Subset ----------------------------------------------
 #Main Experimental Data Subset - run this one EVERY TIME
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 #TSS Transform on ALL Experimental data as pre-treatment for ordinations (rather than doing TSS for each individual subset)
@@ -118,6 +124,7 @@ OBJ1_exp_tss
 
 #Subsets on TSS data
 
+## Treatment Subsets -------------------------------------------------------
 #Treatments (by connection) - for trying to get all the info on treatment combos in one (e.g keep in mind for ordinations = using open and closed symbols + colour
 #to distinguish the significant inoculum+connection effect that seems to be happening based on the permanova
 OBJ_Unin_Conn_tss <- subset_samples(OBJ1_exp_tss, Treatment == "Uninoculated Connected")
@@ -149,6 +156,7 @@ OBJ_Geo_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Geobacter")
 OBJ_Mont_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Montebello")
 OBJ_Pseudo_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Pseudomonas")
 
+## Non-transformed subsets ------------------------------------
 #Subsets for NON transformed dataset
 #Retained for if used/needed for non-beta
 
@@ -168,6 +176,8 @@ OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
 
 sample_data(OBJ1_anode)
 
+
+## Subset/Agglomerate taxa -------------------------------------------------
 #e.g subset for taxa too (ATTENTION RE:still need to change for tss vs norm if goin to do this for ordinations vs boxplots etc)
 #Experimental
 OBJ1_Desulf = subset_taxa(OBJ1_exp_tss, Order=="Desulfuromonadales")
