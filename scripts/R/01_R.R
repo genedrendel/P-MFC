@@ -473,6 +473,20 @@ OBJ_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 OBJ1_spec_ts = transform_sample_counts(OBJ_SPEC, function(OTU) OTU/sum(OTU) )
 OBJ1_spec_ts
 
+#Top 30 ASVs above 0.8 specialisation index - connection
+High_spec_gp <- subset_taxa(OBJ1_spec_ts, Kingdom=="Bacteria")
+High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:30]), High_spec_gp)
+plot_heatmap(High_spec_gp, sample.label="Connection")
+plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Order")
+plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order")
+heatmap(otu_table(High_spec_gp))
+
+OBJ_all_tss_FAM <- tax_glom(OBJ1_exp_tss,taxrank = "Family")
+OBJ_all_tss_FAM <- subset_taxa(OBJ_all_tss_FAM, Kingdom=="Bacteria")
+OBJ_all_tss_FAM <- prune_taxa(names(sort(taxa_sums(OBJ_all_tss_FAM),TRUE)[1:30]), OBJ_all_tss_FAM)
+plot_heatmap(OBJ_all_tss_FAM, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+heatmap(otu_table(OBJ_all_tss_FAM))
+
 # Beta diversity ----------------------------------------------------------
 
 
@@ -765,13 +779,16 @@ W14_Group_ado_w_G
 ### DESQ FROM JOSH 17/12/2020
 ###
 #Phyloseq to DESEQ
-diagdds = phyloseq_to_deseq2(OBJ13, ~ Treatment)
- 
+diagdds = phyloseq_to_deseq2(OBJ13, ~ Treatment + Location)
+#for the above ~ Treatment + Location , the order of these matters, first one is what is controlled for and second one afger the + is one is tested need to double check which is which
+#run this on everything instead of the subset, because context of the full dataset is important for this differential abundance 
 diagdds$Treatment<- relevel(diagdds$Treatment, ref="DR")
- 
+#look at te p adjusted value from the output NOT the regular p 
+
 #Do the thing
 diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
 res = results(diagdds, cooksCutoff = FALSE)
+#for printing out results, alpha is a filter, dont run if want to get everyhting and sort out yourself
 alpha = 0.01
 sigtab = res[which(res$padj < alpha), ]
  
