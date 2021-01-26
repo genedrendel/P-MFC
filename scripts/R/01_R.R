@@ -481,11 +481,50 @@ plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label =
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order")
 heatmap(otu_table(High_spec_gp))
 
-OBJ_all_tss_FAM <- tax_glom(OBJ1_exp_tss,taxrank = "Family")
-OBJ_all_tss_FAM <- subset_taxa(OBJ_all_tss_FAM, Kingdom=="Bacteria")
-OBJ_all_tss_FAM <- prune_taxa(names(sort(taxa_sums(OBJ_all_tss_FAM),TRUE)[1:30]), OBJ_all_tss_FAM)
-plot_heatmap(OBJ_all_tss_FAM, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
-heatmap(otu_table(OBJ_all_tss_FAM))
+#Lets try glom to group the asv's together
+#will give a  smaller heatmap but might be an interesting/quick way of seeing if trends hold
+#e.g will definitely combine all the individual Geobacter asv's but I'm unsure of the shared taxa between other ones
+
+#Genus
+High_spec_GEN <- tax_glom(OBJ1_spec_ts,taxrank = "Genus")
+High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom=="Bacteria")
+High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:30]), High_spec_GEN)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+heatmap(otu_table(High_spec_GEN))
+
+#Family
+High_spec_FAM <- tax_glom(OBJ1_spec_ts,taxrank = "Family")
+High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom=="Bacteria")
+High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:30]), High_spec_FAM)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
+heatmap(otu_table(High_spec_FAM))
+
+#Order
+High_spec_ORD <- tax_glom(OBJ1_spec_ts,taxrank = "Order")
+High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom=="Bacteria")
+High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:30]), High_spec_ORD)
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted=TRUE)
+heatmap(otu_table(High_spec_ORD))
+
+#Class
+High_spec_CLA <- tax_glom(OBJ1_spec_ts,taxrank = "Class")
+High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom=="Bacteria")
+High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:30]), High_spec_CLA)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted=TRUE)
+heatmap(otu_table(High_spec_CLA))
+
+#Phyla
+High_spec_PHY <- tax_glom(OBJ1_spec_ts,taxrank = "Phylum")
+High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom=="Bacteria")
+High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), High_spec_PHY)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted=TRUE)
+heatmap(otu_table(High_spec_PHY))
+
 
 # Beta diversity ----------------------------------------------------------
 
