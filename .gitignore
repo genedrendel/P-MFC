@@ -1,20 +1,5 @@
-
+#mac OS system
 .DS_Store
-.Rproj.user
-.Rproj.user/
-.Ruserdata
-.Rhistory
-.Rapp.history
-.RData
-.Renviron
-/.Rproj.user/BC69A4F0/build_options
-/.Rproj.user/BC69A4F0/pcs/.gitignore
-/.Rproj.user/BC69A4F0/pcs/debug-breakpoints.pper
-/.Rproj.user/BC69A4F0/persistent-state
-/.Rproj.user/BC69A4F0/sources/prop/.gitignore
-/.Rproj.user/BC69A4F0/sources/prop/2BCC2CA7
-/.Rproj.user/BC69A4F0/sources/prop/439369B1
-/.Rproj.user/BC69A4F0/sources/s-908051A9
 
 # History files
 .Rhistory
@@ -36,6 +21,7 @@
 /*.Rcheck/
 
 # RStudio files
+.Rproj.user
 .Rproj.user/
 
 # produced vignettes
@@ -61,3 +47,13 @@ docs/
 
 # translation temp files
 po/*~
+
+#Misc Rproj compponents leftover from before it was ignored
+/.Rproj.user/BC69A4F0/build_options
+/.Rproj.user/BC69A4F0/pcs/.gitignore
+/.Rproj.user/BC69A4F0/pcs/debug-breakpoints.pper
+/.Rproj.user/BC69A4F0/persistent-state
+/.Rproj.user/BC69A4F0/sources/prop/.gitignore
+/.Rproj.user/BC69A4F0/sources/prop/2BCC2CA7
+/.Rproj.user/BC69A4F0/sources/prop/439369B1
+/.Rproj.user/BC69A4F0/sources/s-908051A9
