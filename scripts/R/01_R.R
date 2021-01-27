@@ -485,6 +485,7 @@ heatmap(otu_table(High_spec_gp))
 #will give a  smaller heatmap but might be an interesting/quick way of seeing if trends hold
 #e.g will definitely combine all the individual Geobacter asv's but I'm unsure of the shared taxa between other ones
 
+
 #Genus
 High_spec_GEN <- tax_glom(OBJ1_spec_ts,taxrank = "Genus")
 High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom=="Bacteria")
