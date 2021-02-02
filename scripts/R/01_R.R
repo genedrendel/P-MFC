@@ -501,7 +501,7 @@ High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom=="Bacteria")
 High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:30]), High_spec_FAM)
 plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
 plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Familt", weighted=TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
 heatmap(otu_table(High_spec_FAM))
 
 #Order
