@@ -534,7 +534,7 @@ TREE <- read.tree("rooted_tree.nwk")
 OBJ_HYPER_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 
 # Note: doesn't seem to like making heatmaps from this particular TSS set....
-# possibly due to the lack of overlap in pressence of asvs (e.g entirely zeros for any two locations for each asv)
+# possibly due to the lack of overlap in presence of asvs (e.g entirely zeros for any two locations for each asv)
 OBJ1_hyper_spec_ts = transform_sample_counts(OBJ_HYPER_SPEC, function(OTU) OTU/sum(OTU) )
 OBJ1_hyper_spec_ts
 
