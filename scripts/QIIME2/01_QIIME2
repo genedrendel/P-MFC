@@ -4,11 +4,7 @@
 #SBATCH --time=168:00:00
 #SBATCH --partition=compute
 
-
-
 ### Make a blurb summary for project setup primers etc ***
-
-
 
 ### REFERENCE FOR THE ABOVE PARAMETERS
 ### CPUs per task 1 is probably fine unless you know you'll benefit from more, can go up to 8 at least, but according to online HPC docs, possibly up to 100-1000 ???
@@ -21,20 +17,15 @@
 
 echo "Starting at: $(date)"
 
-
 ### LOAD QIIME2
 
 #module load qiime2/2017.12
 
 module load qiime2/2020.02
 
-
 ### CURRENT WORKING DIRECTORY (OR SET MANUALLY)
 
 #cd /data/group/frankslab/project/GeneDrendel/2019_MergedRuns
-
-
-
 
 ### IMPORT SEQUENCES, (REQUIRES MANIFEST FILE)
 
@@ -103,7 +94,9 @@ module load qiime2/2020.02
 ## NOTE: THIS SCRIPT WILL UTILISE THE 99%, MAJORITY, LEVEL 7, TAXONOMY FILE FOUND IN THE SILVA RESOURCES, IN SUMMARY THIS IS PREFERABLE TO CREATING A CLASSIFIER USING THE RAW AND/OR ALL TAX FILES. RAW CAN LEAD TO INCORRECT CONFIDENCE OF ASSIGNMENTS, AND ALL WILL CONFUSE MOST TAXONOMY CLASSIFIERS DOWNSTREAM). MAJOIRTY TAX FILE INSTEAD ASIGNS BASED ON GREATER THAN OR EQUAL TO 90% OF TAXONOY STRINGS FOR EACH CLUSTER, AND WILL FALL BACK TO HIGHER TAXONOMY LEVELS IF MAJORITY CONDITIONS ARE NOT MET. SEE SILVA DOCUMENTATION FOR FURTHER DETAILS.
 
 ### DOWNLOAD
-#wget https://www.arb-silva.de/fileadmin/silva_databases/qiime/Silva_132_release.zip#unzip Silva_132_release.zip#rm Silva_132_release.zip
+#wget https://www.arb-silva.de/fileadmin/silva_databases/qiime/Silva_132_release.zip
+#unzip Silva_132_release.zip
+#rm Silva_132_release.zip
 
 ## IMPORT (IF TRAINING MULTIPLE CLASSIFIERS THEYWILL USE THE SAME OUTPUT FROM HERE REGARDLESS OF DOWNSTREAM PRIMER CHOICE SO ONLY NEED TO DO THIS THE ONE TIME )
 #time qiime tools import --type 'FeatureData[Sequence]' --input-path silva_132_99_16S.fna --output-path SILVA_Ref_99_otus.qza
