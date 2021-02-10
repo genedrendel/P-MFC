@@ -204,23 +204,6 @@ OBJ1_r <- rarefy_even_depth(OBJ1, sample.size = 3500,  rngseed = TRUE, replace =
 OBJ1_ts = transform_sample_counts(OBJ1, function(OTU) OTU/sum(OTU) )
 OBJ1_ts
 
-#TSS by subsets (not finished because seems easier to TSS whole set, then split out, but keep this section if find a reason to do this way later)
-#Weeks
-OBJ1_tss_wk0 = transform_sample_counts(OBJ_W0, function(OTU) OTU/sum(OTU) )
-#6
-#8
-OBJ1_tss_wk14 = transform_sample_counts(OBJ_W14, function(OTU) OTU/sum(OTU) )
-
-#Location (all, overview)
-
-#Location (just electrodes over time)
-
-#Location (all, at end point)
-
-#Connection
-
-#Treatments
-
 #Can doublecheck these again for transformed or normalised data
 sample_data(OBJ1_ts) #look at sample data table
 otu_table(OBJ1_ts) #look at otu table
@@ -230,19 +213,25 @@ tax_table(OBJ1_ts) #look at taxonomy table
 #THIS SCRIPT TO CUT OUT/SUBSET SAMPLES WIHTOUT THE PESKY OUTLIER SAMPLES THAT SKEW THE ORDINATIONS
 OBJ1_s <- subset_samples(OBJ1_pmta2, PortStar != "PORT") #assuming for e.g Portstar = Sanmple_Name and "PORT" = "W6UG3A", or Location and "Root"
 
-#Normality tests don't seem to like the TSS data, have to convert to integers
+#Normality tests don't seem to like the TSS data, have to convert to integers?
 OBJ1_ts_rounded = transform_sample_counts(OBJ1_ts, function(OTU) round(OTU,digits=0) )
 OBJ1_ts_rounded
 
-
-# Microbiome analysis says can multiply by 1,000,000 for easier interpretation...let's test..?
+#Re: TSS proportions and integers
+#Microbiome analysis says can multiply by 1,000,000 for easier interpretation...let's test..?
 OBJ1_ts_multiplied = transform_sample_counts(OBJ1_ts, function(OTU) OTU*1000000 )
 otu_table(OBJ1_ts_multiplied)
-
+#Josh Suggested trying by 100 insetad....may as well try a few variations 1000 etc... but question remains what should really be done
+#e.g are shannons and simpsons impacted ONLY by ratios, or do they need whole numbers? Need to test some comparisons and see what other people do
 
 # Alpha Diversity ---------------------------------------------------------
 ##ALPHA DIVERSITY_____________________________________________________________________________
 ##BOXPLOTS, ANOVA, TUKEY TEST
+
+# Update to latest version as of 3/2/21
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.12")
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -452,17 +441,21 @@ heatmap(otu_table(OBJ_all_tss_FAM))
 #Seperating out most variable asvs across trial for paper figure
 #Import heatmap subset .csv's (in this case: top30 ASVs sorted by abundance across locations and selected when above 0.8 specialisation index as caluclated)
 
+#Prep libraries and metadata regardless of which subset is being run
 library(phyloseq)
 library(ape)
 library(ggplot2)
 theme_set(theme_bw())
 
-#asv_id
-otu_table_spec <- as.data.frame(read.csv("readmap_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
-#taxonomy
-taxmat_spec <- as.matrix(read.csv("tax_spec_index.csv", row.names=1, header=TRUE))
-#metadata
+#metadata applies for both top and hyper specialists
 treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
+
+## Top specialists ---------------------------------------------------------
+
+#asv_id for top specialists by abundance across all samples
+otu_table_spec <- as.data.frame(read.csv("readmap_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
+#taxonomy for top specialists by abundance across all samples
+taxmat_spec <- as.matrix(read.csv("tax_spec_index.csv", row.names=1, header=TRUE))
 
 OTU = otu_table(otu_table_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_spec)
@@ -484,7 +477,6 @@ heatmap(otu_table(High_spec_gp))
 #Lets try glom to group the asv's together
 #will give a  smaller heatmap but might be an interesting/quick way of seeing if trends hold
 #e.g will definitely combine all the individual Geobacter asv's but I'm unsure of the shared taxa between other ones
-
 
 #Genus
 High_spec_GEN <- tax_glom(OBJ1_spec_ts,taxrank = "Genus")
@@ -528,6 +520,77 @@ plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order 
 plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted=TRUE)
 heatmap(otu_table(High_spec_PHY))
 
+# "Hyper" specialists -----------------------------------------------------
+
+#asv_id for "hyper" specialists
+otu_table_hyper_spec <- as.data.frame(read.csv("readmap_hyper_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
+#taxonomy for "hyper" specialists
+taxmat_hyper_spec <- as.matrix(read.csv("tax_hyper_spec_index.csv", row.names=1, header=TRUE))
+
+OTU = otu_table(otu_table_hyper_spec, taxa_are_rows = TRUE)
+TAX = tax_table(taxmat_hyper_spec)
+TREAT = sample_data(treat_spec)
+TREE <- read.tree("rooted_tree.nwk")
+OBJ_HYPER_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
+
+OBJ1_hyper_spec_ts = transform_sample_counts(OBJ_HYPER_SPEC, function(OTU) OTU/sum(OTU) )
+OBJ1_hyper_spec_ts
+
+#Top 30 ASVs
+High_spec_gp <- subset_taxa(OBJ1_hyper_spec_ts, Kingdom=="Bacteria")
+High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:30]), High_spec_gp)
+plot_heatmap(High_spec_gp, sample.label="Connection")
+plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Order")
+plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order")
+heatmap(otu_table(High_spec_gp))
+
+#Lets try glom to group the asv's together
+#will give a  smaller heatmap but might be an interesting/quick way of seeing if trends hold
+#e.g will definitely combine all the individual Geobacter asv's but I'm unsure of the shared taxa between other ones
+
+#Genus
+High_spec_GEN <- tax_glom(OBJ1_hyper_spec_ts,taxrank = "Genus")
+High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom=="Bacteria")
+High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:30]), High_spec_GEN)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+heatmap(otu_table(High_spec_GEN))
+
+#Family
+High_spec_FAM <- tax_glom(OBJ1_hyper_spec_ts,taxrank = "Family")
+High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom=="Bacteria")
+High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:30]), High_spec_FAM)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
+heatmap(otu_table(High_spec_FAM))
+
+#Order
+High_spec_ORD <- tax_glom(OBJ1_hyper_spec_ts,taxrank = "Order")
+High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom=="Bacteria")
+High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:30]), High_spec_ORD)
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted=TRUE)
+heatmap(otu_table(High_spec_ORD))
+
+#Class
+High_spec_CLA <- tax_glom(OBJ1_hyper_spec_ts,taxrank = "Class")
+High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom=="Bacteria")
+High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:30]), High_spec_CLA)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted=TRUE)
+heatmap(otu_table(High_spec_CLA))
+
+#Phyla
+High_spec_PHY <- tax_glom(OBJ1_hyper_spec_ts,taxrank = "Phylum")
+High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom=="Bacteria")
+High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), High_spec_PHY)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted=TRUE)
+heatmap(otu_table(High_spec_PHY))
+
+
 
 # Beta diversity ----------------------------------------------------------
 
@@ -536,6 +599,8 @@ heatmap(otu_table(High_spec_PHY))
 ##BETA DIVERSITY_____________________________________________________________________________
 ##ORDINATIONS DENDROGRAMS ANOSIM PERMANOVA
 
+
+## Ordinations -------------------------------------------------------------
 ##some ordinations first
 library("ggplot2")
 library("RColorBrewer")
