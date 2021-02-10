@@ -216,7 +216,7 @@ qiime tools export --input-path rooted-tree.qza --output-path exported-tree-unro
 
 qiime tools export --input-path unrooted-tree.qza --output-path exported-tree-rooted
 
-### ------Untested - PICRUSt2 (from Matt may need updates if versions have changed etc)------
+### ------Untested from here onwards ------ PICRUSt2 (from Matt may need updates if versions have changed etc)------
 
 ##remove singltons - they create too much noise
 
@@ -242,6 +242,69 @@ qiime tools export --input-path unrooted-tree.qza --output-path exported-tree-ro
 #module load picrust2/2.2.0_b
 ##picrust2_pipeline.py -s 04reads/filtered_sequences.fasta -i 05R_files/feature-table.biom -o picrust2_out_pipeline -p 2 --verbose
 #picrust2_pipeline.py -s filtered_sequences.fasta -i feature-table.biom -o picrust2_out_pipeline -p 2 --stratified --per_sequence_contrib --coverage --verbose
+
+### ---------PICRUSt2 added from Sarah, reported to be working on HPC, 2021--------------------------------
+###################OPTIONAL FUNCTIONAL DATA - RUN PICRUST2, Jen Wood's script-------------------------------------
+##Update commands if using forward reads only
+
+##Ensure you have completed Step 10 above
+
+##remove singletons - they create too much noise
+#qiime feature-table filter-features --i-table dada2_output/table.qza --p-min-frequency 2 --o-filtered-table dada2_output/filtered_otu_table.qza
+#qiime feature-table summarize --i-table dada2_output/filtered_otu_table.qza --o-visualization dada2_output/filtered_otu_summary.qzv
+
+##You need to work out what depth to rarefy to. Take the newly generated filtered_otu_summary.qzv file and upload it to https://view.qiime2.org/ as with other files and look at frequency per sample
+##remove low depth samples - this data we will use 12000 read cutoff. You may lose controls and some additional samples
+##ideal samples lost through low depth filtering should be the same ones you lose when you rarefy your OTU table in R
+
+#qiime feature-table filter-samples --i-table dada2_output/filtered_otu_table.qza --p-min-frequency 12000 --o-filtered-table dada2_output/filter_filtered_otu_table.qza
+#qiime feature-table summarize --i-table dada2_output/filter_filtered_otu_table.qza --o-visualization dada2_output/filter_filtered_otu_summary.qzv
+#qiime tools export --input-path dada2_output/filter_filtered_otu_table.qza --output-path dada2_output
+#biom convert -i dada2_output_exported/feature-table.biom -o dada2_output/filtered_feature-table.tsv --to-tsv
+
+##note the OTU table will have less features (ESVs) than your fasta file - we will filter the fasta file to match
+#mkdir refset
+#echo "$(tail -n +2 dada2_output/filtered_feature-table.tsv)" | awk '{print $1}' > refset/PICRUST_fasta_keep.txt
+
+#module load usearch-bin/11.0.667
+#usearch -fastx_getseqs dada2_output_exported/dna-sequences.fasta -labels refset/PICRUST_fasta_keep.txt -fastaout dada2_output_exported/filtered_sequences.fasta
+
+##run picrust :O - LOAD MODULE EACH TIME YOU RUN A COMMAND
+#module load picrust2/2.2.0_b
+#picrust2_pipeline.py -s dada2_output_exported/filtered_sequences.fasta -i dada2_output_exported/feature-table.biom -o picrust2_out_pipeline -p 2 --verbose
+
+#add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
+#add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+#add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+
+#module load picrust2/2.2.0_b #LOAD MODULE EACH TIME YOU RUN A COMMAND
+#picrust2_pipeline.py -s dada2_output_exported/filtered_sequences.fasta -i dada2_output_exported/feature-table.biom -o picrust2_out_pipeline2 -p 2 --stratified --per_sequence_contrib --coverage --verbose #LENGTHY PROCESS
+
+#add_descriptions.py -i picrust2_out_pipeline2/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline2/pathways_out/path_abun_unstrat_descrip.tsv
+#add_descriptions.py -i picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+#add_descriptions.py -i picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+
+#gunzip /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz
+#gunzip /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_contrib.tsv.gz
+#gunzip /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz
+#gunzip /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_contrib.tsv.gz
+
+##RENAME FILES so can export to same folder
+#mv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_unstrat.tsv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/EC_pred_metagenome_unstrat.tsv
+#mv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_contrib.tsv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/EC_pred_metagenome_contrib.tsv
+#mv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_unstrat.tsv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/KO_metagenome_out/KO_pred_metagenome_unstrat.tsv
+#mv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_contrib.tsv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/KO_metagenome_out/KO_pred_metagenome_contrib.tsv
+
+
+
+##advance picrust
+##custom pathway abundance.
+#module load picrust2/2.2.0_b
+#pathway_pipeline.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -o pathways_out --no_regroup --intermediate minpath_working -m /data/group/frankslab/project/SarahKnowler/Refset/KEGG_pathway_mapfiles/KEGG_modules_to_KO.tsv -o picrust2_out_pipeline/KO_pathways -p 1
+#pathway_pipeline.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -o pathways_out --no_regroup --intermediate minpath_working -m /data/group/frankslab/project/SarahKnowler/Refset/KEGG_pathway_mapfiles/KEGG_pathways_to_KO.tsv -o picrust2_out_pipeline/KO_modules -p 1
+
+
+
 
 
 ### END SCRIPT AND PRINT TIME

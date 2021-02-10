@@ -13,8 +13,6 @@
 ##Script updated and modified by Gene Drendel 2020 - Total Sum Scaling and P-MFC project specific changes
 #23.11.2020 Script now uploaded to P-MFC github repo, changes to be tracked and maintained there
 
-#Comment edits to test push/pull and sync with Atom/Rstudio
-
 # Import and setup --------------------------------------------------------
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
@@ -25,9 +23,11 @@
 ##otherwise R will not read it. also convert 'OTU ID' to 'OTU_ID'
 ##you can also make a excel file and read in as a .csv
 
+## Working Directory -------------------------------------------------------
 #Set your working directory, location for data tables, tree, etc
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 
+## Import ------------------------------------------------------------------
 #Import OTU table
 ####Jens version:
 #otu_table <- subset(as.data.frame(read.table("raw_readmap.txt", sep="\t", header=TRUE,row.names = "OTU_ID")), select = -taxonomy)
@@ -533,8 +533,22 @@ TREAT = sample_data(treat_spec)
 TREE <- read.tree("rooted_tree.nwk")
 OBJ_HYPER_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 
+# Note: doesn't seem to like making heatmaps from this particular TSS set....
+# possibly due to the lack of overlap in pressence of asvs (e.g entirely zeros for any two locations for each asv)
 OBJ1_hyper_spec_ts = transform_sample_counts(OBJ_HYPER_SPEC, function(OTU) OTU/sum(OTU) )
 OBJ1_hyper_spec_ts
+
+
+#All ASVs
+# Running on raw ASVs for now because it does not agree with taxa sorting otherwise
+High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
+High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:139]), High_spec_gp)
+plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order")
+plot_heatmap(High_spec_gp, sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Order", taxa.label = "Order")
+plot_heatmap(High_spec_gp, sample.order = "Connection", sample.label = "Connection", taxa.order = "Order", taxa.label = "Order")
+plot_heatmap(High_spec_gp, sample.order = "Inoculum", sample.label = "Inoculum", taxa.order = "Order", taxa.label = "Order")
+
+heatmap(otu_table(High_spec_gp))
 
 #Top 30 ASVs
 High_spec_gp <- subset_taxa(OBJ1_hyper_spec_ts, Kingdom=="Bacteria")
