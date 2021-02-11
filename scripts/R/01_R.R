@@ -547,7 +547,6 @@ plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location",
 plot_heatmap(High_spec_gp, sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Order", taxa.label = "Order")
 plot_heatmap(High_spec_gp, sample.order = "Connection", sample.label = "Connection", taxa.order = "Order", taxa.label = "Order")
 plot_heatmap(High_spec_gp, sample.order = "Inoculum", sample.label = "Inoculum", taxa.order = "Order", taxa.label = "Order")
-
 heatmap(otu_table(High_spec_gp))
 
 #Top 30 ASVs
