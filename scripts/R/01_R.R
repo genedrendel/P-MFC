@@ -114,7 +114,7 @@ shiny::runGitHub("shiny-phyloseq","joey711")
 #Lets call this OBJ1_exp as an indication of it being the proper "experimental" dataset
 
 
-## Experimental Sample Subset ----------------------------------------------
+## Experimental Sample Subset (and TSS it) ----------------------------------------------
 #Main Experimental Data Subset - run this one EVERY TIME
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 #TSS Transform on ALL Experimental data as pre-treatment for ordinations (rather than doing TSS for each individual subset)
@@ -892,29 +892,74 @@ W14_Group_ado_w_G = adonis(OBJ1_W14perm_wu_G ~ Location * Connection * Inoculum,
 W14_Group_ado_w_G
 
 
-# DESEQ -------------------------------------------------------------------
+# DESeq2 -------------------------------------------------------------------
 
+#html and bioclite may just be leftovers from old install processs, but keeping here in case they end up being needed
+# BiocManager should handle it all though
+install.packages("htmltools")
+library(htmltools)
 
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
 
-### DESQ FROM JOSH 17/12/2020
-###
+BiocManager::install("DESeq2")
+
+library(ggplot2)
+library("DESeq2")
+
+#Reminder if not already done: remove unwanted samples (the sampling control set, not relevant for logchange etc)
+#i.e don't use the TSS transformed data
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+
 #Phyloseq to DESEQ
-diagdds = phyloseq_to_deseq2(OBJ13, ~ Treatment + Location)
-#for the above ~ Treatment + Location , the order of these matters, first one is what is controlled for and second one afger the + is one is tested need to double check which is which
-#run this on everything instead of the subset, because context of the full dataset is important for this differential abundance 
-diagdds$Treatment<- relevel(diagdds$Treatment, ref="DR")
-#look at te p adjusted value from the output NOT the regular p 
+diagdds = phyloseq_to_deseq2(OBJ1_exp, ~ Connection + Location) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+#e.g for the above ~ Treatment + Location , the order of these matters, first one is what is controlled for and second one after the + is one is tested need to double check which is which
+#run this on everything instead of just the specialsits subset, because context of the full dataset is important for this differential abundance 
 
-#Do the thing
+diagdds$Location<- relevel(diagdds$Location, ref="Root") # sets the reference point, baseline or control to be compared against
+#look at the p adjusted value from the output NOT the regular p 
+
+#Subset Week 14
+diagdds <- diagdds[ , diagdds$Week == "Fourteen" ]
+#check that subset was done
+as.data.frame( colData(diagdds) )
+
+
+#Run model and factors
 diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
 res = results(diagdds, cooksCutoff = FALSE)
-#for printing out results, alpha is a filter, dont run if want to get everyhting and sort out yourself
+res # print out results
+
+#for printing out results, alpha is a filter, dont run this if you want to get everyhting and sort them out yourself
 alpha = 0.01
 sigtab = res[which(res$padj < alpha), ]
  
 #convert to matrix
 sigtab_otu = cbind(as(sigtab, "data.frame"), as(tax_table(OBJSP)[rownames(sigtab), ], "matrix"))
- 
+
+write.csv(as.data.frame(res), 
+          file="raw_results.csv")
+
+#only print out results with adjusted P higher than:
+resSig <- subset(res, padj < 0.1)
+resSig
+write.csv(as.data.frame(resSig), 
+          file="sig_results.csv")
+
+resultsNames(diagdds)
+
+#Different Comparison Directions
+sigtabA = results(diagdds, contrast=c("Location","Root","Anode"))
+sigtabB = results(diagdds, contrast=c("Location","Root","Cathode"))
+sigtabC = results(diagdds, contrast=c("Location","Anode","Cathode"))
+sigtabA
+sigtabB
+sigtabC
+
+#Bind logfold changes with OTU Taxa
+sigtab_otuA = cbind(as(sigtabA, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA), ], "matrix"))
+sigtab_otuA
+
 # Figure of results
 library("ggplot2")
 theme_set(theme_bw())
@@ -935,7 +980,61 @@ sigtab_otu$Phylum = factor(as.character(sigtab_otu$Phylum), levels=names(x))
 ggplot(sigtab_otu, aes(x=Phylum, y=log2FoldChange, color=Phylum)) + geom_point(size=6) +
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
 
+####Jen's DESEQ2 script to compare, figure out adapting commands
+#PLOT5 - plot of differentially abundant OTUs NB must understand how DESeq model design works FIRST
+#https://bioconductor.org/packages/release/bioc/html/DESeq2.html #for downloading the package
+#https://www.genomatix.de/online_help/help_regionminer/DESeq2.pdf
+#https://lashlock.github.io/compbio/R_presentation.html
+#https://bioc.ism.ac.jp/packages/2.14/bioc/vignettes/DESeq2/inst/doc/beginner.pdf
+#https://joey711.github.io/phyloseq-extensions/DESeq2.html
 
+library("DESeq2")
+
+q1 <- subset_samples(OBJ1, Fig1 != "0_mg4")#use unrarefied data for DE so manually remove the sample that we know is undersampled
+
+diagdds = phyloseq_to_deseq2(q1 , ~ Location + Cd_dose) #model for your DE analysis READ VINGITTE FIRST
+diagdds$Cd_dose <- relevel(diagdds$Cd_dose, ref="0_mg") ##reset reference level
+diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
+resultsNames(diagdds)
+
+sigtab = results(diagdds, contrast=c("Cd_dose","100_mg","0_mg"))
+sigtab_otu = cbind(as(sigtab, "data.frame"), as(tax_table(q1)[rownames(sigtab), ], "matrix"))
+
+
+dim(sigtab_otu)
+sigtab_sigg <- subset(sigtab_otu, sigtab_otu$padj < 0.05)
+dim(sigtab_sigg) #149 OTus
+OTU <- rownames(sigtab_sigg)
+OBJ1_rr  = transform_sample_counts(OBJ1_r, function(x) x / sum(x) )
+OBJ1_DE = prune_taxa(OTU, OBJ1_rr)
+OBJ1_DEo <- tax_glom(OBJ1_DE,taxrank = "Order")
+OBJ1_DE2 <- subset_taxa(OBJ1_DEo,rowMax(otu_table(OBJ1_DEo)) > 0.005)
+
+library(RColorBrewer)
+colvec2 <- brewer.pal(11, "RdYlBu")
+colvec3 <- brewer.pal(10, "PuOr")
+colvec3 <- brewer.pal(10, "BrBG")
+colvec1 <- brewer.pal(10, "PiYG")
+colvec5 <- brewer.pal(10, "PiYG")
+colvec6 <- brewer.pal(10, "BrBG")
+colvec <- c(colvec1, colvec2,colvec3,colvec4,colvec5,colvec6)
+
+melt<-psmelt(OBJ1_DE2)
+head(melt)
+melt<-melt[sort.list(melt[,11]), ]
+
+##ordering the x axis:
+
+melt$Fig1<- as.character(melt$Fig1)
+#Then turn it back into an ordered factor
+melt$Fig1 <- factor(melt$Fig1, levels=unique(melt$Fig1))
+melt$Fig1 <- factor(melt$Fig1, levels=c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5","20_mg1","20_mg2","20_mg3","20_mg4","20_mg5","100_mg1","100_mg2","100_mg3","100_mg4","100_mg5"))
+
+t1<-ggplot(melt, aes(Fig1, Abundance/5, fill=Order))+ geom_bar(stat = "identity",)
+t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7))+ scale_fill_manual(values = colvec)
+t1 <- t1+ labs(title = NULL, x=expression(Cadmium~dose~(mg~kg^{-1}~soil)), y= "Relative abundance")
+t1 <- t1 + scale_x_discrete(labels= c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
+t1
 
 # Heirarchical Clustering -------------------------------------------------
 
@@ -1096,7 +1195,6 @@ t1
 #note we've devided abundance by 5 but the treatment missing a sample will still be skewed
 #better to plot the individual sampels if you can
 #can do this by adding a custom column in your treamtent file (we have added 'Fig1' and use it in PLOT5)
-
 
 #PLOT5 - plot of differentially abundant OTUs NB must understand how DESeq model design works FIRST
 #https://bioconductor.org/packages/release/bioc/html/DESeq2.html #for downloading the package
