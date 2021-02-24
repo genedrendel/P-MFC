@@ -1,4 +1,4 @@
-# Intro / Old change history ------------------------------------------------
+# Intro and Starting Notes ------------------------------------------------
 ##script created for analysis of metagenomic (16S amplicon) data
 ##script created by J L WOOD 03.12.2016
 ##we will:
@@ -13,7 +13,6 @@
 ##Script updated and modified by Gene Drendel 2020 - Total Sum Scaling and P-MFC project specific changes
 #23.11.2020 Script now uploaded to P-MFC github repo, changes to be tracked and maintained there
 
-# Import and setup --------------------------------------------------------
 ##PHYLOSEQ OBJECTS_____________________________________________________________________________
 ##get started: change working dir to top folder of your metagenomic project
 ##for alpha diversity and NMDS/PCOs we'll rarefy the data
@@ -27,11 +26,8 @@
 #Set your working directory, location for data tables, tree, etc
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 
-x## Import ------------------------------------------------------------------
-#Import OTU table
-####Jens version:
-#otu_table <- subset(as.data.frame(read.table("raw_readmap.txt", sep="\t", header=TRUE,row.names = "OTU_ID")), select = -taxonomy)
-
+## Import ------------------------------------------------------------------
+#Import .csv as OTU table
 #Replaced import with the below: Not sure if any functional difference once imported like this? But the other one didn't work, assuming mostly just a txt vs csv thing
 otu_table <- as.data.frame(read.csv("raw_readmap.csv", header=TRUE,row.names = "OTU_ID"))
 
@@ -73,7 +69,6 @@ library(phyloseq)
 OTU = otu_table(otu_table, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat)
 TREAT = sample_data(treat)
-
 OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
 
 ##you can use the following to confirm correct labels/treatments ect have been assigned
@@ -465,6 +460,14 @@ TREAT = sample_data(treat_spec)
 TREE <- read.tree("rooted_tree.nwk")
 OBJ_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 
+library(magrittr)
+OBJ_SPEC <- OBJ_SPEC %>%
+  subset_taxa(
+    Kingdom == "Bacteria" &
+    Family  != "mitochondria" &
+    Class   != "Chloroplast"
+  )
+
 OBJ1_spec_ts = transform_sample_counts(OBJ_SPEC, function(OTU) OTU/sum(OTU) )
 OBJ1_spec_ts
 
@@ -676,9 +679,10 @@ NMDS_W14u
 NMDS_Desulf <- ordinate(OBJ1_exp_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
 NMDS_W0
 
-####
 
-#Experimental Play section for themes and colours (now integrated below for plots)
+## A Colour Palette Interlude ------------------------------------------------
+
+#Section to play with themes and colours (now integrated below for plots, must move move/delete this later)
 #- quick and dirty point and text size fix too (not sure if this will encounter problems down the line for shifting colvecs and mapp file ordering?)
 p1u + theme_bw() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_manual(values = c("#F0E442", "#0072B2", "#D55E00", "#CC79A7"))
 p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_manual(values = c("#56B4E9", "#E69F00", "#009E73", "#000000"))
@@ -689,10 +693,10 @@ p1u + theme_dark() + theme(text = element_text(size = 14)) + geom_point(size = 3
 #### The palette with black that above colours in grey_theme plot were chosen from:
 cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73","#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
-##Modifications to palletete to account for showing all treamtents in one ordination
+##Modifications to colour palette to account for showing all treatments in one ordination
 #Dark and light colours of each to indicate connected/unconnected circuit
 #e.g Geobacter connected: Dark Blue, Geobacter unconnected: Light Blue
-#New colour palette for full dataset in one ordination:
+#New colour palette for full dataset in one ordination is below:
 
 #Geobacter Connected: Blue:"#177BB5"
 #Geobacter Unconnected: Light Blue:"#56B4E9"
@@ -704,7 +708,6 @@ cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73","#F0E442", "#0072B2", "#D55
 #Uninoculated Unconnected: Grey ="#7A7A7A"
 my_colvec <- c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A")
 
-
 #### To use for fills, add
 bp + scale_fill_manual(values = cbp2)
 ### To use for line and point colors, add
@@ -714,10 +717,9 @@ sp + scale_colour_manual(values=cbp2)
 #Colours
 #### https://www.datanovia.com/en/blog/ggplot-colors-best-tricks-you-will-love/ , https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html
 
-###
 
-
-#Plotting Subsetted ordinations
+## Back to ordinations now -----------------------------------------------------
+#Plotting the subsetted ordinations to look at individual time points, treatments, locations
 #Week0
 #Unweighted
 p1u<-plot_ordination(OBJ_W0_tss, NMDS_W0u, color="Connection", shape="Location", label=NULL)
@@ -735,7 +737,6 @@ p1w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3
 #Same plot with sample names added if needing to single out problematic sames etc
 p1<-plot_ordination(OBJ_W0_tss, NMDS_W0, color="Inoculum", shape="Location", label="Sample_Name")
 p1
-
 
 #Week6
 #unweighted
@@ -786,9 +787,6 @@ p4w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3
 p4<-plot_ordination(OBJ_W14_tss, NMDS_W14, color="Connection", shape="Location", label="Sample_Name")
 p4
 
-
-
-
 ##PCoA:
 PCoA1 <- ordinate(OBJ1_ts, "PCoA", distance="unifrac", weighted=TRUE, parallel=TRUE)
 PCoA1$values #use to check eigen values if you wish
@@ -801,7 +799,6 @@ p2
 
 #work out the order of plot labels wiht in the facor we are using (i.e 'Group'):
 levels(p1$data$Week)
-
 
 colvec<-c("green4","red3","darkorange1","green4","red3","darkorange1") #make sure you colours appear in the order that corresponds to your factor levels
 black <- rep("black",6) #colour vector for shape outlines
@@ -830,9 +827,7 @@ p2
 library(Rmisc)
 multiplot(p1,p2, cols=2)
 
-
-##NOW TO THE STATISTICS - ANOSIM AND PERMANOVA
-
+## ANOSIM AND PERMANOVA ----------------------------
 
 library(vegan)
 #Setup objects for testing significance, effect size, correlation.
@@ -922,7 +917,6 @@ W14_Group_ado_w_F
 W14_Group_ado_w_G = adonis(OBJ1_W14perm_wu_G ~ Location * Connection * Inoculum, permutations = 9999)
 W14_Group_ado_w_G
 
-
 # DESeq2 -------------------------------------------------------------------
 
 #html and bioclite may just be leftovers from old install processs, but keeping here in case they end up being needed
@@ -952,7 +946,7 @@ diagdds$Location<- relevel(diagdds$Location, ref="Root") # sets the reference po
 
 #Subset Week 14
 diagdds <- diagdds[ , diagdds$Week == "Fourteen" ]
-#check that subset was done
+#check that subset was done as expected
 as.data.frame( colData(diagdds) )
 
 #Run model and factors
@@ -960,9 +954,33 @@ diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
 res = results(diagdds, cooksCutoff = FALSE)
 res # print out results
 
-#for printing out results, alpha is a filter, dont run this if you want to get everyhting and sort them out yourself
+#for printing out results, alpha is a filter, dont run this if you want to get everything and sort them out yourself
 alpha = 0.01
 sigtab = res[which(res$padj < alpha), ]
+
+# WIP FOR SUBSETTING: Subset deseq results BY ASV to bypass need for manual creation of specialist OTU and TAX tables..
+# Should be possible using the base R subset command (as opposed to subset_taxa) and specifiying your list of individual ASVs
+# Functions fine for results themselves, but still working on fixing agglomerated taxa for the subset...may now be fixed!
+#BPrepare W14 subsets
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+
+#Bind taxononmy to results
+res = cbind(as(res, "data.frame"), as(tax_table(OBJ_W14)[rownames(res), ], "matrix"))
+res
+
+#Aglommerate to certain taxa intead of ASV #I THINK THIS IS THE STUMBLING BLOCK, is overwriting deseq with the entire physeq objsect when we just want it to append taxa at the family level to match
+res <- tax_glom(OBJ_W14,taxrank = "Family")
+res
+write.csv(as.data.frame(res), 
+          file="DESeq2_specialist_subset_TEST.csv")
+
+#This one will only ever work at ASV level, but may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
+specialist_res_subset <- subset((res), rownames((res)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+write.csv(as.data.frame(specialist_res_subset), 
+          file="DESeq2_specialist_subset_TEST.csv")
+## END SUBSETTING WIP
+
 
 #Different Comparison Direction Sheets
 sigtabA = results(diagdds, contrast=c("Location","Root","Anode"))
