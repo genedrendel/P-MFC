@@ -101,7 +101,7 @@ install.packages("shiny")
 shiny::runGitHub("shiny-phyloseq","joey711")
 
 
-# Subsetting --------------------------------------------------------------
+## Subsetting --------------------------------------------------------------
 ##Subsetting:
 #First thing first GET RID OF THE CONTROL SAMPLE AND ONLY SUBSET FROM THAT OBJECT SO THAT IT STOPS FUCKING WITH ORDINATION DISTANCES
 #Similarly, will use this to remove probleamtic samples , e.g those with low read depth that entirely skew ordination patterns by being entirely alone
@@ -172,7 +172,7 @@ OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
 sample_data(OBJ1_anode)
 
 
-## Subset/Agglomerate taxa -------------------------------------------------
+## Agglomerate taxa -------------------------------------------------
 #e.g subset for taxa too (ATTENTION RE:still need to change for tss vs norm if goin to do this for ordinations vs boxplots etc)
 #Experimental
 OBJ1_Desulf = subset_taxa(OBJ1_exp_tss, Order=="Desulfuromonadales")
@@ -185,6 +185,20 @@ OBJ_W14_tss_ORD <- tax_glom(OBJ_W14_tss,taxrank = "Order")
 OBJ_W14_tss_FAM <- tax_glom(OBJ_W14_tss,taxrank = "Family")
 OBJ_W14_tss_GEN <- tax_glom(OBJ_W14_tss,taxrank = "Genus")
 
+## Subset specific ASVs/OTUs -----------------------------------------------
+
+## WIP
+#This one will only ever work at ASV level of course, but can then go back and agglomerate the subset if you with, and may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
+#If you read the help for subset_taxa in phyloseq it states it is just a convenience wrapper for the base R subset function that allows for easy passing of a variable in the sample_data to subset the phyloseq object by. It also provides details of how it uses the base subset function.
+#To subset your phyloseq object by a list of OTU ids (and there may be a better way of doing this) you can subset your otu_table using the base R subset function if the row names match your list of OTU ids, then merge the resulting OTU table back with the other components on your phyloseq object, e.g:
+#assuming you have a phyloseq object named 'physeq'
+OBJ1_ASVsubset <- subset(otu_table(OBJ1), rownames(otu_table(OBJ1)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+new_OBJ1_ASVsubset <- merge_phyloseq(OBJ1_ASVsubset, tax_table(OBJ1), sample_data(OBJ1), ...)
+#print out as csv to test export? Was easy enough with deseq results, but w/ phylo objects may need some extra steps to test between taxa and otu etc..
+write.csv(as.data.frame(specialist_res_subset), 
+          file="IndivdualASV_subset_TEST.csv")
+#This results in a new phyloseq object that is subset to the list of OTU ids you provided.
+## WIP
 
 # Rarefy / TSS ---------------------------------------------
 ##normalisation opton 1: rarefy data
