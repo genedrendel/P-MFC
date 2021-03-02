@@ -1,10 +1,12 @@
 #!/bin/bash
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=100000
-#SBATCH --time=168:00:00
+#SBATCH --mem-per-cpu=30000
+#SBATCH --time=72:00:00
 #SBATCH --partition=compute
 
-
+#### For anything that might run forever or have large memory requirements
+#### mem per cpu 100000
+#### time 168 00 00
 
 ### Make a blurb summary for project setup primers etc ***
 
@@ -238,9 +240,9 @@ module load qiime2/2020.8
 
 ##remove singletons - they create too much noise
 
-#qiime feature-table filter-features --i-table dada2_output/table.qza --p-min-frequency 2 --o-filtered-table dada2_output/filtered_otu_table.qza
+qiime feature-table filter-features --i-table table.qza --p-min-frequency 2 --o-filtered-table dada2_output/filtered_otu_table.qza
 
-#qiime feature-table summarize --i-table dada2_output/filtered_otu_table.qza --o-visualization dada2_output/filtered_otu_summary.qzv
+qiime feature-table summarize --i-table dada2_output/filtered_otu_table.qza --o-visualization dada2_output/filtered_otu_summary.qzv
 
 
 
