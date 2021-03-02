@@ -4,7 +4,11 @@
 #SBATCH --time=168:00:00
 #SBATCH --partition=compute
 
+
+
 ### Make a blurb summary for project setup primers etc ***
+
+
 
 ### REFERENCE FOR THE ABOVE PARAMETERS
 ### CPUs per task 1 is probably fine unless you know you'll benefit from more, can go up to 8 at least, but according to online HPC docs, possibly up to 100-1000 ???
@@ -13,23 +17,33 @@
 ### PARTITION 'compute' is likely fine for most things. Otherwise: 'bigmem' for jobs in excess of 128 GB memory, 'long' for long-term jobs, up to 200 days, '8hour' for short jobs requiring less than 8 CPUs
 
 
+
 ### START SCRIPT AND PRINT TIME
 
 echo "Starting at: $(date)"
 
+
+
 ### LOAD QIIME2
-
+### Old versions of QIIME2 that have been used for this script in the past, test these if a command is not recognised
 #module load qiime2/2017.12
+#module load qiime2/2020.02
 
-module load qiime2/2020.02
+module load qiime2/2020.8
 
-### CURRENT WORKING DIRECTORY (OR SET MANUALLY)
+
+
+### CURRENT WORKING DIRECTORY (OR SET MANUALLY THROUGH TERMINAL)
 
 #cd /data/group/frankslab/project/GeneDrendel/2019_MergedRuns
+
+
 
 ### IMPORT SEQUENCES, (REQUIRES MANIFEST FILE)
 
 #qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' --input-path manifest.tsv --output-path demux-paired-end.qza --source-format PairedEndFastqManifestPhred33
+
+
 
 ## VISUALISE FOR QUALITY CONTROL COMPARISONS
 
@@ -39,15 +53,15 @@ module load qiime2/2020.02
 
 
 
-
 ### REMOVE PRIMERS BASED ON SEQUENCE (2019 run using 341F-785R, modify for 2015 run / 341F-806R )
 
 #time qiime cutadapt trim-paired --i-demultiplexed-sequences demux-paired-end.qza --p-front-f CCTACGGGNGGCWGCAG --p-front-r GACTACHVGGGTATCTAATCC --p-discard-untrimmed --o-trimmed-sequences demux-trimmed.qza --verbose
 
+
+
 ## VISUALISE TRIM FOR COMPARISON
 
 #time qiime demux summarize --i-data demux-trimmed.qza --o-visualization demux-trimmed.qzv
-
 
 
 
@@ -67,7 +81,6 @@ module load qiime2/2020.02
 
 
 
-
 ### MERGING MULTIPLE RUNS
 
 ## IF USING MUTIPLE RUNS FOR THE SAME DATASET (AS ABOVE W/RUN1+2) MERGE BEFORE FURTHER TAXONOMY ASSIGNEMNT USING THE BELOW
@@ -78,7 +91,6 @@ module load qiime2/2020.02
 ##Merge sequences:
 #qiime feature-table merge-seqs --i-data paired_rep_seqs_trimmed1.qza --i-data paired_rep_seqs_trimmed2.qza --o-merged-data rep-seqs_merge.qza
 
-
 ## Summarising merged outputs
 #qiime feature-table summarize --i-table table_merge.qza --o-visualization table.qzv --m-sample-metadata-file sample-metadata.tsv
 
@@ -86,21 +98,24 @@ module load qiime2/2020.02
 
 
 
-
 ### TRAINING CLASSIFIERS (ALL 99%)
 
 ### TRAINING SILVA 132
 
-## NOTE: THIS SCRIPT WILL UTILISE THE 99%, MAJORITY, LEVEL 7, TAXONOMY FILE FOUND IN THE SILVA RESOURCES, IN SUMMARY THIS IS PREFERABLE TO CREATING A CLASSIFIER USING THE RAW AND/OR ALL TAX FILES. RAW CAN LEAD TO INCORRECT CONFIDENCE OF ASSIGNMENTS, AND ALL WILL CONFUSE MOST TAXONOMY CLASSIFIERS DOWNSTREAM). MAJOIRTY TAX FILE INSTEAD ASIGNS BASED ON GREATER THAN OR EQUAL TO 90% OF TAXONOY STRINGS FOR EACH CLUSTER, AND WILL FALL BACK TO HIGHER TAXONOMY LEVELS IF MAJORITY CONDITIONS ARE NOT MET. SEE SILVA DOCUMENTATION FOR FURTHER DETAILS.
+## NOTE: THIS SCRIPT WILL UTILISE THE 99%, MAJORITY, LEVEL 7, TAXONOMY FILE FOUND IN THE SILVA RESOURCES, IN SUMMARY THIS IS PREFERABLE TO CREATING A CLASSIFIER USING THE RAW AND/OR ALL TAX FILES. RAW CAN LEAD TO INCORRECT CONFIDENCE OF ASSIGNMENTS, AND ALL WILL CONFUSE MOST TAXONOMY CLASSIFIERS DOWNSTREAM). MAJOIRTY TAX FILE INSTEAD ASSIGNS BASED ON GREATER THAN OR EQUAL TO 90% OF TAXONOY STRINGS FOR EACH CLUSTER, AND WILL FALL BACK TO HIGHER TAXONOMY LEVELS IF MAJORITY CONDITIONS ARE NOT MET. SEE SILVA DOCUMENTATION FOR FURTHER DETAILS.
 
 ### DOWNLOAD
 #wget https://www.arb-silva.de/fileadmin/silva_databases/qiime/Silva_132_release.zip
 #unzip Silva_132_release.zip
 #rm Silva_132_release.zip
 
+
+
 ## IMPORT (IF TRAINING MULTIPLE CLASSIFIERS THEYWILL USE THE SAME OUTPUT FROM HERE REGARDLESS OF DOWNSTREAM PRIMER CHOICE SO ONLY NEED TO DO THIS THE ONE TIME )
 #time qiime tools import --type 'FeatureData[Sequence]' --input-path silva_132_99_16S.fna --output-path SILVA_Ref_99_otus.qza
 #time qiime tools import --type 'FeatureData[Taxonomy]' --input-format HeaderlessTSVTaxonomyFormat --input-path majority_taxonomy_7_levels.txt --output-path SILVA_ref_99_Majority_taxonomy.qza
+
+
 
 ## EXTRACT
 ## 2019 v3v4 Primers (341F-785R)
@@ -109,12 +124,15 @@ module load qiime2/2020.02
 ## AGRF 2015 v3v4 Primers (341F-806R)
 #time qiime feature-classifier extract-reads --i-sequences SILVA_Ref_99_otus.qza --p-f-primer CCTAYGGGRBGCASCAG --p-r-primer GGACTACNNGGGTATCTAAT --p-identity 0.9 --p-min-length 300 --p-max-length 600 --o-reads Silva132_99_16S-V3V4_341F-806R.qza --verbose
 
+
+
 ## TRAIN
 ## 2019 v3v4 Primers (341F-785R)
 #time qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads Silva132_99_16S_V3V4_341F-785R.qza --i-reference-taxonomy SILVA_ref_99_Majority_taxonomy.qza --o-classifier Silva_132_99_16S_V3V4_341F-785R_majority-tax_classifier.qza
 
 ## AGRF 2015 v3v4 Primers (341F-806R)
 #time qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads Silva132_99_16S-V3V4_341F-806R.qza --i-reference-taxonomy SILVA_ref_99_Majority_taxonomy.qza --o-classifier Silva_132_99_16S_V3V4_341F-806R_majority-tax_classifier.qza
+
 
 
 ### TRAINING GREENGENES 13.8
@@ -126,6 +144,8 @@ module load qiime2/2020.02
 #time qiime tools import --type 'FeatureData[Sequence]' --input-path GG_99_otus.fasta --output-path GG_13-8_Ref_99_otus.qza
 #time qiime tools import --type 'FeatureData[Taxonomy]' --input-format HeaderlessTSVTaxonomyFormat --input-path GG_99_otu_taxonomy.txt --output-path GG_13-8_Ref_99_taxonomy.qza
 
+
+
 ## EXTRACT
 ## 2019 v3v4 Primers (341F-785R)
 
@@ -135,13 +155,13 @@ module load qiime2/2020.02
 #time qiime feature-classifier extract-reads --i-sequences GG_13-8_Ref_99_otus.qza --p-f-primer CCTAYGGGRBGCASCAG --p-r-primer GGACTACNNGGGTATCTAAT --p-identity 0.9 --p-min-length 300 --p-max-length 600 --o-reads GG_13-8_99_16S-V3V4_341F-806R.qza --verbose
 
 
+
 ## TRAIN
 ## 2019 v3v4 Primers (341F-785R)
 #time qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads GG_13-8_99_16S-V3V4_341F-785R.qza --i-reference-taxonomy GG_13-8_Ref_99_taxonomy.qza --o-classifier GG_13-8_99_16S_V3V4_341F-785R_classifier.qza
 
 ## AGRF 2015 v3v4 Primers (341F-806R)
 #time qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads GG_13-8_99_16S-V3V4_341F-806R.qza --i-reference-taxonomy GG_13-8_Ref_99_taxonomy.qza --o-classifier GG_13-8_99_16S_V3V4_341F-806R_classifier.qza
-
 
 
 
@@ -158,6 +178,7 @@ module load qiime2/2020.02
 #time qiime tools view GISfoam_taxa_bar_plots.qzv
 
 
+
 ### TAXONOMY (GREENGENES 13.8)
 
 #time qiime feature-classifier classify-sklearn --i-classifier GG_13-8_99_16S_V3V4_341F-785R_classifier.qza --i-reads rep-seqs_merge.qza --o-classification taxonomy_GG.qza
@@ -170,14 +191,11 @@ module load qiime2/2020.02
 
 
 
-
-
 ### FILTERING OUT TAXA (keep all ASVs IDed to a minimum of phyla, and remove mitochondria/chloroplasts)
 
 #qiime taxa filter-table --i-table table_merge.qza --i-taxonomy taxonomy_SILVA.qza --p-include D_1__ --p-exclude mitochondria,chloroplast --o-filtered-table table_merge_filtered.qza
 
 #time qiime taxa barplot --i-table table_merge_filtered.qza --i-taxonomy taxonomy_SILVA.qza --m-metadata-file sample-metadata.tsv --o-visualization sample_taxa_bar_plots_SILVA_filtered.qzv
-
 
 
 
@@ -193,9 +211,7 @@ module load qiime2/2020.02
 
 
 
-
 ### BUILDING PHYLOGENETIC TREE (older method - fasttree)
-
 
 #time qiime alignment mafft --i-sequences rep-seqs_merge.qza --o-alignment aligned-rep-seqs_merge.qza
 
@@ -205,70 +221,70 @@ module load qiime2/2020.02
 
 #time qiime phylogeny midpoint-root --i-tree unrooted-tree.qza --o-rooted-tree rooted-tree.qza
 
-qiime tools export --input-path rooted-tree.qza --output-path exported-tree-unrooted
+#qiime tools export --input-path rooted-tree.qza --output-path exported-tree-unrooted
 
-qiime tools export --input-path unrooted-tree.qza --output-path exported-tree-rooted
-
-### ------Untested from here onwards ------ PICRUSt2 (from Matt may need updates if versions have changed etc)------
-
-##remove singltons - they create too much noise
-
-#qiime feature-table filter-features --i-table single_table.qza --p-min-frequency 2 --o-filtered-table filtered_single_table.qza
-#qiime feature-table summarize --i-table filtered_single_table.qza --o-visualization filtered_single_summary.qza
-
-##remove low depth samples - this data we will use 20000 read cutoff. we will lose controls and 4 additional samples
-##ideal samples lost through low depth filtering should be the same one you lose when you rarefy your OTU table in R
-
-#qiime feature-table filter-samples --i-table filtered_single_table.qza --p-min-frequency 30000 --o-filtered-table new_filtered_single_table.qza
-#qiime feature-table summarize --i-table new_filtered_single_table.qza --o-visualization new_filtered_single_table.qzv
-#qiime tools export new_filtered_single_table.qza --output-dir 05PICRUSt/
-#biom convert -i 05PICRUSt/feature-table.biom -o 05PICRUSt/filtered_feature-table.tsv --to-tsv
+#qiime tools export --input-path unrooted-tree.qza --output-path exported-tree-rooted
 
 
-##note the otutable will have less features (ESV) than your fasta file - we will filter the fasta file to get them to match
-##open new_filtered_feature-table.tsv. highlight the ESV identifiers and paste them into a .txt file
-##save the new .txt as 05PICRUSt/PICRUST_fasta_keep.txt
-
-#module load usearch-bin/11.0.667
-#usearch -fastx_getseqs sequences.fasta -labels PICRUST_fasta_keep.txt -fastaout filtered_sequences.fasta
-
-#module load picrust2/2.2.0_b
-##picrust2_pipeline.py -s 04reads/filtered_sequences.fasta -i 05R_files/feature-table.biom -o picrust2_out_pipeline -p 2 --verbose
-#picrust2_pipeline.py -s filtered_sequences.fasta -i feature-table.biom -o picrust2_out_pipeline -p 2 --stratified --per_sequence_contrib --coverage --verbose
 
 ### ---------PICRUSt2 added from Sarah, reported to be working on HPC, 2021--------------------------------
-###################OPTIONAL FUNCTIONAL DATA - RUN PICRUST2, Jen Wood's script-------------------------------------
-##Update commands if using forward reads only
 
+###################OPTIONAL FUNCTIONAL DATA - RUN PICRUST2, Jen Wood's script-------------------------------------
+
+##Update commands if using forward reads only
 ##Ensure you have completed Step 10 above
 
+
+
 ##remove singletons - they create too much noise
+
 #qiime feature-table filter-features --i-table dada2_output/table.qza --p-min-frequency 2 --o-filtered-table dada2_output/filtered_otu_table.qza
+
 #qiime feature-table summarize --i-table dada2_output/filtered_otu_table.qza --o-visualization dada2_output/filtered_otu_summary.qzv
+
+
 
 ##You need to work out what depth to rarefy to. Take the newly generated filtered_otu_summary.qzv file and upload it to https://view.qiime2.org/ as with other files and look at frequency per sample
 ##remove low depth samples - this data we will use 12000 read cutoff. You may lose controls and some additional samples
 ##ideal samples lost through low depth filtering should be the same ones you lose when you rarefy your OTU table in R
 
 #qiime feature-table filter-samples --i-table dada2_output/filtered_otu_table.qza --p-min-frequency 12000 --o-filtered-table dada2_output/filter_filtered_otu_table.qza
+
 #qiime feature-table summarize --i-table dada2_output/filter_filtered_otu_table.qza --o-visualization dada2_output/filter_filtered_otu_summary.qzv
+
 #qiime tools export --input-path dada2_output/filter_filtered_otu_table.qza --output-path dada2_output
+
 #biom convert -i dada2_output_exported/feature-table.biom -o dada2_output/filtered_feature-table.tsv --to-tsv
 
+
+
 ##note the OTU table will have less features (ESVs) than your fasta file - we will filter the fasta file to match
+
 #mkdir refset
+
 #echo "$(tail -n +2 dada2_output/filtered_feature-table.tsv)" | awk '{print $1}' > refset/PICRUST_fasta_keep.txt
 
+
+
 #module load usearch-bin/11.0.667
+
 #usearch -fastx_getseqs dada2_output_exported/dna-sequences.fasta -labels refset/PICRUST_fasta_keep.txt -fastaout dada2_output_exported/filtered_sequences.fasta
 
+
+
 ##run picrust :O - LOAD MODULE EACH TIME YOU RUN A COMMAND
+
 #module load picrust2/2.2.0_b
+
 #picrust2_pipeline.py -s dada2_output_exported/filtered_sequences.fasta -i dada2_output_exported/feature-table.biom -o picrust2_out_pipeline -p 2 --verbose
+
+
 
 #add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
 #add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
 #add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+
+
 
 #module load picrust2/2.2.0_b #LOAD MODULE EACH TIME YOU RUN A COMMAND
 #picrust2_pipeline.py -s dada2_output_exported/filtered_sequences.fasta -i dada2_output_exported/feature-table.biom -o picrust2_out_pipeline2 -p 2 --stratified --per_sequence_contrib --coverage --verbose #LENGTHY PROCESS
@@ -277,10 +293,14 @@ qiime tools export --input-path unrooted-tree.qza --output-path exported-tree-ro
 #add_descriptions.py -i picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
 #add_descriptions.py -i picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
 
+
+
 #gunzip /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz
 #gunzip /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_contrib.tsv.gz
 #gunzip /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz
 #gunzip /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/KO_metagenome_out/pred_metagenome_contrib.tsv.gz
+
+
 
 ##RENAME FILES so can export to same folder
 #mv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/pred_metagenome_unstrat.tsv /data/group/frankslab/project/SarahKnowler/Malaria/Oct2020/picrust2_out_pipeline2/EC_metagenome_out/EC_pred_metagenome_unstrat.tsv
@@ -296,7 +316,38 @@ qiime tools export --input-path unrooted-tree.qza --output-path exported-tree-ro
 #pathway_pipeline.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -o pathways_out --no_regroup --intermediate minpath_working -m /data/group/frankslab/project/SarahKnowler/Refset/KEGG_pathway_mapfiles/KEGG_modules_to_KO.tsv -o picrust2_out_pipeline/KO_pathways -p 1
 #pathway_pipeline.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -o pathways_out --no_regroup --intermediate minpath_working -m /data/group/frankslab/project/SarahKnowler/Refset/KEGG_pathway_mapfiles/KEGG_pathways_to_KO.tsv -o picrust2_out_pipeline/KO_modules -p 1
 
+### END PICRUST
 
+
+
+
+
+
+### ----PICRUSt2 from Matt, might need updates if versions have changed etc, but keeeping for now to use as a reference just in case
+
+##remove singltons - they create too much noise
+
+#qiime feature-table filter-features --i-table single_table.qza --p-min-frequency 2 --o-filtered-table filtered_single_table.qza
+#qiime feature-table summarize --i-table filtered_single_table.qza --o-visualization filtered_single_summary.qza
+
+##remove low depth samples - this data we will use 20000 read cutoff. we will lose controls and 4 additional samples
+##ideal samples lost through low depth filtering should be the same one you lose when you rarefy your OTU table in R
+
+#qiime feature-table filter-samples --i-table filtered_single_table.qza --p-min-frequency 30000 --o-filtered-table new_filtered_single_table.qza
+#qiime feature-table summarize --i-table new_filtered_single_table.qza --o-visualization new_filtered_single_table.qzv
+#qiime tools export new_filtered_single_table.qza --output-dir 05PICRUSt/
+#biom convert -i 05PICRUSt/feature-table.biom -o 05PICRUSt/filtered_feature-table.tsv --to-tsv
+
+##note the otutable will have less features (ESV) than your fasta file - we will filter the fasta file to get them to match
+##open new_filtered_feature-table.tsv. highlight the ESV identifiers and paste them into a .txt file
+##save the new .txt as 05PICRUSt/PICRUST_fasta_keep.txt
+
+#module load usearch-bin/11.0.667
+#usearch -fastx_getseqs sequences.fasta -labels PICRUST_fasta_keep.txt -fastaout filtered_sequences.fasta
+
+#module load picrust2/2.2.0_b
+##picrust2_pipeline.py -s 04reads/filtered_sequences.fasta -i 05R_files/feature-table.biom -o picrust2_out_pipeline -p 2 --verbose
+#picrust2_pipeline.py -s filtered_sequences.fasta -i feature-table.biom -o picrust2_out_pipeline -p 2 --stratified --per_sequence_contrib --coverage --verbose
 
 
 
