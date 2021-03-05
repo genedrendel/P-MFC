@@ -1329,3 +1329,72 @@ t1 <- t1+ labs(title = NULL, x=expression(Cadmium~dose~(mg~kg^{-1}~soil)), y= "R
 t1 <- t1 + scale_x_discrete(labels= c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
 t1
 
+# PICRUSt2 ----------------------------------------------------------------
+
+#Starting note on conversion and import before starting.
+#Ouputs of PICRUSt2 pipeline with add.description. step should result in your tables for EC's, KO's, and Pathways.
+#Each of these can be manually copied and pasted into pre-existing template .csv's (e.g any that you haave used with OTU's ASV's above)
+#When doing this, main points to note are:
+#Make sure to retain original readmap and tax sheet headers (e.g OTU_ID, and Taxa levels), as these are what phyloseq expects for import.
+#Copy your function labels as OTUs for both sheets.
+#Copy past function descriptions into EACH taxa level on your taxa sheet
+#And finally, your abundances and sample labels for readmap
+#Unless you've manually selected subsets, or done som eautomatic subsetting that differs from your above analysis you should be able to substitute the same metadata/mapping file as above
+
+
+## Import ------------------------------------------------------------------
+
+setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
+
+# Readmap
+EC_table <- as.data.frame(read.csv("readmap_EC.csv", header=TRUE,row.names = "OTU_ID"))
+KO_table <- as.data.frame(read.csv("readmap_KO.csv", header=TRUE,row.names = "OTU_ID"))
+Path_table <- as.data.frame(read.csv("readmap_Path.csv", header=TRUE,row.names = "OTU_ID"))
+
+# "Tax" function table
+EC_mat <- as.matrix(read.csv("tax_EC.csv", row.names=1, header=TRUE))
+KO_mat <- as.matrix(read.csv("tax_KO.csv", row.names=1, header=TRUE))
+Path_mat <- as.matrix(read.csv("tax_Path.csv", row.names=1, header=TRUE))
+
+# Metadata/Mapping/Treatment file
+treat <- as.data.frame(read.csv("mapping_file.csv", row.names=1, header=TRUE))
+
+# Make Phylo object
+library(phyloseq)
+
+#EC Phylo object
+EC_OTU = otu_table(EC_table, taxa_are_rows = TRUE)
+EC_TAX = tax_table(EC_mat)
+TREAT = sample_data(treat)
+EC_PHYLO = phyloseq(EC_OTU,EC_TAX,TREAT)
+
+#KO Phylo object
+KO_OTU = otu_table(KO_table, taxa_are_rows = TRUE)
+KO_TAX = tax_table(KO_mat)
+TREAT = sample_data(treat)
+KO_PHYLO = phyloseq(KO_OTU,KO_TAX,TREAT)
+
+#Path Phylo object
+Path_OTU = otu_table(Path_table, taxa_are_rows = TRUE)
+Path_TAX = tax_table(Path_mat)
+TREAT = sample_data(treat)
+Path_PHYLO = phyloseq(Path_OTU,Path_TAX,TREAT)
+
+
+# Subset ------------------------------------------------------------------
+
+
+
+
+# Ordinations -------------------------------------------------------------
+
+
+
+
+
+# PERMANOVA ---------------------------------------------------------------
+
+
+
+
+#Also note to self: re: remember to add in pairwise permanova
