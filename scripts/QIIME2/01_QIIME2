@@ -299,14 +299,17 @@ module load qiime2/2020.8
 #module load picrust2/2.2.0_b
 
 #Maybe don't run this block because the next one cover it , but with more arugments?...leaving for now, see what the other one does
+### Followup on this:Running this one now because other errorred out (although did still completete some steps, but didnt produce all of the expected outputs), and completed correctly!
 #picrust2_pipeline.py -s extra_exports/filtered_sequences.fasta -i extra_exports/feature-table.biom -o picrust2_out_pipeline -p 2 --verbose
 #add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
 #add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
 #add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
 
+###Ignore the below code block unless you require stratified, per sequence and coverage, AND have either VERY large amount of memory avialable or a relatively small dataset. HPC with 100GB allocated still failed with my dataset.
+
 #This next block appears to be mostly the same as the above commands, just with a couple of extra arguments??? Perhaps better to run the below isntead... you've got stratifued, per sequence contribution, and coverage all added compared to the above, and Matts script has those arguments added too (without being doubled up for the rest)
 #This one is the LENGTHY PROCESS too
-
+#Followup on this: errorred out after 4-5 hours, at least one componenet of the error was memory based, resulted in intermediate files staying around (large storage space), and most files being produced, most notably did get the EC pathway table, BUT some outputs were missing entirely, including the pathways folder... Jen reckons the additional arguments probably to blame due to memory requiremnts of per sequence analaysis, so now trying the above block instead! Udate update, it worked without the
 #picrust2_pipeline.py -s extra_exports/filtered_sequences.fasta -i extra_exports/feature-table.biom -o picrust2_out_pipeline -p 2 --stratified --per_sequence_contrib --coverage --verbose
 #add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
 #add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
@@ -336,8 +339,6 @@ module load qiime2/2020.8
 #pathway_pipeline.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -o pathways_out --no_regroup --intermediate minpath_working -m /data/group/frankslab/project/SarahKnowler/Refset/KEGG_pathway_mapfiles/KEGG_pathways_to_KO.tsv -o picrust2_out_pipeline/KO_modules -p 1
 
 ### END PICRUST
-
-
 
 
 
