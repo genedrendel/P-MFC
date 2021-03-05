@@ -296,24 +296,14 @@ module load qiime2/2020.8
 
 ### Now the actual PICRUSt BITS
 
-#module load picrust2/2.2.0_b
+module load picrust2/2.2.0_b
 
 #Maybe don't run this block because the next one cover it , but with more arugments?...leaving for now, see what the other one does
 ### Followup on this:Running this one now because other errorred out (although did still completete some steps, but didnt produce all of the expected outputs), and completed correctly!
 #picrust2_pipeline.py -s extra_exports/filtered_sequences.fasta -i extra_exports/feature-table.biom -o picrust2_out_pipeline -p 2 --verbose
-#add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
-#add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
-#add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
-
-###Ignore the below code block unless you require stratified, per sequence and coverage, AND have either VERY large amount of memory avialable or a relatively small dataset. HPC with 100GB allocated still failed with my dataset.
-
-#This next block appears to be mostly the same as the above commands, just with a couple of extra arguments??? Perhaps better to run the below isntead... you've got stratifued, per sequence contribution, and coverage all added compared to the above, and Matts script has those arguments added too (without being doubled up for the rest)
-#This one is the LENGTHY PROCESS too
-#Followup on this: errorred out after 4-5 hours, at least one componenet of the error was memory based, resulted in intermediate files staying around (large storage space), and most files being produced, most notably did get the EC pathway table, BUT some outputs were missing entirely, including the pathways folder... Jen reckons the additional arguments probably to blame due to memory requiremnts of per sequence analaysis, so now trying the above block instead! Udate update, it worked without the
-#picrust2_pipeline.py -s extra_exports/filtered_sequences.fasta -i extra_exports/feature-table.biom -o picrust2_out_pipeline -p 2 --stratified --per_sequence_contrib --coverage --verbose
-#add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
-#add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
-#add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
+add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
+add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
 
 
 
@@ -343,31 +333,24 @@ module load qiime2/2020.8
 
 
 
-### ----PICRUSt2 from Matt, might need updates if versions have changed etc, but keeeping for now to use as a reference just in case
 
-##remove singltons - they create too much noise
+#### Remaining code examples for reference, mostly redundant
 
-#qiime feature-table filter-features --i-table single_table.qza --p-min-frequency 2 --o-filtered-table filtered_single_table.qza
-#qiime feature-table summarize --i-table filtered_single_table.qza --o-visualization filtered_single_summary.qza
+######
+###Ignore the below code block unless you require stratified, per sequence and coverage, AND have either VERY large amount of memory avialable or a relatively small dataset. HPC with 100GB allocated still failed with my dataset.
 
-##remove low depth samples - this data we will use 20000 read cutoff. we will lose controls and 4 additional samples
-##ideal samples lost through low depth filtering should be the same one you lose when you rarefy your OTU table in R
+#This next block appears to be mostly the same as the above commands, just with a couple of extra arguments??? Perhaps better to run the below isntead... you've got stratifued, per sequence contribution, and coverage all added compared to the above, and Matts script has those arguments added too (without being doubled up for the rest)
+#This one is the LENGTHY PROCESS too
+#Followup on this: errorred out after 4-5 hours, at least one componenet of the error was memory based, resulted in intermediate files staying around (large storage space), and most files being produced, most notably did get the EC pathway table
+#BUT some outputs were missing entirely, including the pathways folder...
+#Jen reckons the additional arguments probably to blame due to memory requiremnts of per sequence analaysis, so now trying the above block instead! Udate update, it worked without the
 
-#qiime feature-table filter-samples --i-table filtered_single_table.qza --p-min-frequency 30000 --o-filtered-table new_filtered_single_table.qza
-#qiime feature-table summarize --i-table new_filtered_single_table.qza --o-visualization new_filtered_single_table.qzv
-#qiime tools export new_filtered_single_table.qza --output-dir 05PICRUSt/
-#biom convert -i 05PICRUSt/feature-table.biom -o 05PICRUSt/filtered_feature-table.tsv --to-tsv
+#picrust2_pipeline.py -s extra_exports/filtered_sequences.fasta -i extra_exports/feature-table.biom -o picrust2_out_pipeline -p 2 --stratified --per_sequence_contrib --coverage --verbose
+#add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+#add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+#add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
+########
 
-##note the otutable will have less features (ESV) than your fasta file - we will filter the fasta file to get them to match
-##open new_filtered_feature-table.tsv. highlight the ESV identifiers and paste them into a .txt file
-##save the new .txt as 05PICRUSt/PICRUST_fasta_keep.txt
-
-#module load usearch-bin/11.0.667
-#usearch -fastx_getseqs sequences.fasta -labels PICRUST_fasta_keep.txt -fastaout filtered_sequences.fasta
-
-#module load picrust2/2.2.0_b
-##picrust2_pipeline.py -s 04reads/filtered_sequences.fasta -i 05R_files/feature-table.biom -o picrust2_out_pipeline -p 2 --verbose
-#picrust2_pipeline.py -s filtered_sequences.fasta -i feature-table.biom -o picrust2_out_pipeline -p 2 --stratified --per_sequence_contrib --coverage --verbose
 
 
 
