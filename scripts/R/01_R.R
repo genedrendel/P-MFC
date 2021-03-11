@@ -102,7 +102,7 @@ shiny::runGitHub("shiny-phyloseq","joey711")
 
 
 ## Subsetting --------------------------------------------------------------
-##Subsetting:
+
 #First thing first GET RID OF THE CONTROL SAMPLE AND ONLY SUBSET FROM THAT OBJECT SO THAT IT STOPS FUCKING WITH ORDINATION DISTANCES
 #Similarly, will use this to remove probleamtic samples , e.g those with low read depth that entirely skew ordination patterns by being entirely alone
 #To do this, created additional column of treatment file indicating Y (yes) and N (no) for all data minus the control
@@ -144,6 +144,10 @@ OBJ_W0_tss <- subset_samples(OBJ1_exp_tss, Week == "Zero")
 OBJ_W6_tss <- subset_samples(OBJ1_exp_tss, Week == "Six")
 OBJ_W8_tss <- subset_samples(OBJ1_exp_tss, Week == "Eight")
 OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
+
+#Wk14 Connected and Unconnected Subsets
+OBJ1_W14_connected_tss <- subset_samples(OBJ_W14_tss, Connection == "Connected")
+OBJ1_W14_unconnected_tss <- subset_samples(OBJ_W14_tss, Connection == "Unconnected")
 
 #Treatment
 OBJ_Unin_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Uninoculated")
@@ -465,7 +469,7 @@ treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1,
 otu_table_spec <- as.data.frame(read.csv("readmap_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
 #taxonomy for top specialists by abundance across all samples
 taxmat_spec <- as.matrix(read.csv("tax_spec_index.csv", row.names=1, header=TRUE))
-#use this one isntead of the line above now as I have appended higher taxonomy to levels that were missing to make figures clearer
+#use this one instead of the line above now as I have appended higher taxonomy to levels that were missing to make figures clearer
 taxmat_spec <- as.matrix(read.csv("tax_spec_index_append_hi_tax.csv", row.names=1, header=TRUE))
 
 OTU = otu_table(otu_table_spec, taxa_are_rows = TRUE)
@@ -693,46 +697,6 @@ NMDS_W14u
 NMDS_Desulf <- ordinate(OBJ1_exp_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
 NMDS_W0
 
-
-## A Colour Palette Interlude ------------------------------------------------
-
-#Section to play with themes and colours (now integrated below for plots, must move move/delete this later)
-#- quick and dirty point and text size fix too (not sure if this will encounter problems down the line for shifting colvecs and mapp file ordering?)
-p1u + theme_bw() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_manual(values = c("#F0E442", "#0072B2", "#D55E00", "#CC79A7"))
-p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_manual(values = c("#56B4E9", "#E69F00", "#009E73", "#000000"))
-p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_brewer(palette = "Dark2")
-p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_brewer(palette = "Set1")
-p1u + theme_dark() + theme(text = element_text(size = 14)) + geom_point(size = 3)
-
-#### The palette with black that above colours in grey_theme plot were chosen from:
-cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73","#F0E442", "#0072B2", "#D55E00", "#CC79A7")
-
-##Modifications to colour palette to account for showing all treatments in one ordination
-#Dark and light colours of each to indicate connected/unconnected circuit
-#e.g Geobacter connected: Dark Blue, Geobacter unconnected: Light Blue
-#New colour palette for full dataset in one ordination is below:
-
-#Geobacter Connected: Blue:"#177BB5"
-#Geobacter Unconnected: Light Blue:"#56B4E9"
-#Montebello Connected: Orange:"#BF8300"
-#Montebello Unconnected: Light Orange:"#E09900"
-#Pseudomonas Connected: Green:"#008F47"
-#Pseudomonas Unconnected: Light Green:"#00B85C"
-#Uninoculated Connected: Black ="#141414"
-#Uninoculated Unconnected: Grey ="#7A7A7A"
-my_colvec <- c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A")
-
-#### To use for fills, add
-bp + scale_fill_manual(values = cbp2)
-### To use for line and point colors, add
-sp + scale_colour_manual(values=cbp2)
-#Themes
-# https://ggplot2.tidyverse.org/reference/ggtheme.html
-#Colours
-#### https://www.datanovia.com/en/blog/ggplot-colors-best-tricks-you-will-love/ , https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html
-
-
-## Back to ordinations now -----------------------------------------------------
 #Plotting the subsetted ordinations to look at individual time points, treatments, locations
 #Week0
 #Unweighted
@@ -800,6 +764,67 @@ p4w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3
 #Same plot with sample names added if needing to single out problematic sames etc
 p4<-plot_ordination(OBJ_W14_tss, NMDS_W14, color="Connection", shape="Location", label="Sample_Name")
 p4
+
+###
+#Try ordinations of JUST connected, and JUST unconected at W14 to further tease apart interactions between connection and community
+#Weighted
+NMDS_W14C_w <- ordinate(OBJ1_W14_connected_tss , "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS_W14U_w <- ordinate(OBJ1_W14_unconnected_tss , "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+#Unweighted
+NMDS_W14C_u <- ordinate(OBJ1_W14_connected_tss , "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
+NMDS_W14U_u <- ordinate(OBJ1_W14_unconnected_tss , "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
+
+#Plot weighted
+p14C_w<-plot_ordination(OBJ1_W14_connected_tss, NMDS_W14C_w, color="Inoculum", shape="Location", label=NULL)
+p14U_w<-plot_ordination(OBJ1_W14_unconnected_tss, NMDS_W14U_w, color="Inoculum", shape="Location", label=NULL)
+p14C_w
+p14U_w
+
+p14C_w
+p14C_w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+p14U_w
+p14U_w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+
+#Plot unweighted
+p14C_u<-plot_ordination(OBJ1_W14_connected_tss, NMDS_W14C_u, color="Inoculum", shape="Location", label=NULL)
+p14U_u<-plot_ordination(OBJ1_W14_unconnected_tss, NMDS_W14U_u, color="Inoculum", shape="Location", label=NULL)
+p14C_u
+p14U_u
+
+p14C_u
+p14C_u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+p14U_u
+p14U_u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+
+OBJ1_W14_connected_tss 
+OBJ1_W14_unconnected_tss 
+
+#PERMANOVA FOR THESE
+#By location at end
+LocationC <- get_variable(OBJ1_W14_connected_tss , "Location")
+LocationU <- get_variable(OBJ1_W14_unconnected_tss , "Location")
+#By Inoculum at end
+InoculumC <- get_variable(OBJ1_W14_connected_tss, "Inoculum")
+InoculumU <- get_variable(OBJ1_W14_unconnected_tss, "Inoculum")
+#Distance
+W14permC_w <- distance(OBJ1_W14_connected_tss, "wunifrac")
+W14permU_w <- distance(OBJ1_W14_unconnected_tss, "wunifrac")
+W14permC_u <- distance(OBJ1_W14_connected_tss, "unifrac")
+W14permU_u <- distance(OBJ1_W14_unconnected_tss, "unifrac")
+
+#Two ways, location by connection
+W14_Cw_ado = adonis(W14permC_w ~ LocationC * InoculumC, permutations = 9999)
+W14_Cw_ado
+##
+W14_Uw_ado = adonis(W14permU_w ~ LocationU * InoculumU, permutations = 9999)
+W14_Uw_ado
+
+W14_Cu_ado = adonis(W14permC_u ~ LocationC * InoculumC, permutations = 9999)
+W14_Cu_ado
+W14_Uu_ado = adonis(W14permU_u ~ LocationU * InoculumU, permutations = 9999)
+W14_Uu_ado
 
 ##PCoA:
 PCoA1 <- ordinate(OBJ1_ts, "PCoA", distance="unifrac", weighted=TRUE, parallel=TRUE)
@@ -1397,4 +1422,116 @@ Path_PHYLO = phyloseq(Path_OTU,Path_TAX,TREAT)
 
 
 
-#Also note to self: re: remember to add in pairwise permanova
+
+
+# Other WIP / General Useful script section -------------------------------
+
+
+## A Colour Palette Interlude ------------------------------------------------
+## This section used to decide on what colour palettes ill apply to each condition/treaatment, and based on ordination sections primarily
+#Section to play with themes and colours (now integrated below for plots, must move move/delete this later)
+#- quick and dirty point and text size fix too (not sure if this will encounter problems down the line for shifting colvecs and mapp file ordering?)
+p1u + theme_bw() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_manual(values = c("#F0E442", "#0072B2", "#D55E00", "#CC79A7"))
+p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_manual(values = c("#56B4E9", "#E69F00", "#009E73", "#000000"))
+p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_brewer(palette = "Dark2")
+p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3) + scale_color_brewer(palette = "Set1")
+p1u + theme_dark() + theme(text = element_text(size = 14)) + geom_point(size = 3)
+
+#### The palette with black that above colours in grey_theme plot were chosen from:
+cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73","#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+##Modifications to colour palette to account for showing all treatments in one ordination
+#Dark and light colours of each to indicate connected/unconnected circuit
+#e.g Geobacter connected: Dark Blue, Geobacter unconnected: Light Blue
+#New colour palette for full dataset in one ordination is below:
+
+#Geobacter Connected: Blue:"#177BB5"
+#Geobacter Unconnected: Light Blue:"#56B4E9"
+#Montebello Connected: Orange:"#BF8300"
+#Montebello Unconnected: Light Orange:"#E09900"
+#Pseudomonas Connected: Green:"#008F47"
+#Pseudomonas Unconnected: Light Green:"#00B85C"
+#Uninoculated Connected: Black ="#141414"
+#Uninoculated Unconnected: Grey ="#7A7A7A"
+my_colvec <- c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A")
+
+#### To use for fills, add
+bp + scale_fill_manual(values = cbp2)
+### To use for line and point colors, add
+sp + scale_colour_manual(values=cbp2)
+#Themes
+# https://ggplot2.tidyverse.org/reference/ggtheme.html
+#Colours
+#### https://www.datanovia.com/en/blog/ggplot-colors-best-tricks-you-will-love/ , https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html
+
+
+
+## Image export resolution testing  -------------------------------------
+##is based on species heeatmap plot section for specialists, but can replot and test with others
+### WIP TEST for exporting control, DPI, etc,.... trying to find how to get 300 dpi exports to be correctly recognised as such by photoshop etc
+
+library(Cairo)
+# using the package Cairo
+Cairo::Cairo(
+  30, #length
+  30, #width
+  file = paste("Resolution_Test_Export", ".jpeg", sep = ""), #also can use .png
+  type = "jpeg", #png is another option
+  bg = "transparent", #white or transparent depending on your requirements 
+  dpi = 300,
+  units = "cm" #you can change this to pixels using px etc 
+)
+plot(speciesheatplot_ORD) #this is your graph object plotted beforehand, so should already appear in your data pane
+dev.off()
+
+###using tiff function
+tiff("PLOTExample.tif", width = 4200, height = 2200, units = "px", res = 300)
+plot(speciesheatplot_ORD)
+dev.off()
+#Neither if these options seem to genuinely export an image that reads as 300 dpi when opened in other apps though....
+
+###One more test... The bitmap one seems to be the only one that genuinely registers as being 300dpi BUT it kinda looks like crap by compairson....
+pdf(file = "FileName.pdf", width = 12, height = 17, family = "Helvetica") # defaults to 7 x 7 inches
+plot(speciesheatplot_ORD)
+dev.off()
+ 
+bitmap("FileName.tiff", height = 2200, width = 4200, units = 'px', type = "tiff24nc", res = 300)
+plot(speciesheatplot_ORD)
+dev.off()
+ 
+tiff("FileName.tiff", height = 2200, width = 4200, units = 'px', 
+     compression = "lzw", res = 300)
+plot(speciesheatplot_ORD)
+dev.off()
+####
+
+
+#Also note to self: re: remember to add in pairwise permanova....speak to Josh if can't find and work out..
+
+# Logarithmic transformation as in Anderson et al., 2006
+OBJ2 <- phyloseq_standardize_otu_abundance(OBJ1, method = "log")
+#google this to check that it's log X+1 google
+ 
+#PAIRWISE PERMANOVA
+####Example documentation
+install.packages(devtools)
+library(devtools)
+install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+library(pairwiseAdonis)
+data(iris)
+pairwise.adonis(iris[,1:4],iris$Species)
+
+# For strata (blocks), following example of Jari Oksanen in adonis2. 
+dat <- expand.grid(rep=gl(2,1), NO3=factor(c(0,10,30)),field=gl(3,1) )
+Agropyron <- with(dat, as.numeric(field) + as.numeric(NO3)+2) +rnorm(18)/2
+Schizachyrium <- with(dat, as.numeric(field) - as.numeric(NO3)+2) +rnorm(18)/2
+Y <- data.frame(Agropyron, Schizachyrium)
+
+pairwise.adonis2(Y ~ NO3, data = dat, strata = 'field')
+#or more examples see also 
+?pairwise.adonis() 
+?pairwise.adonis2()
+####Example documentation
+
+#put data into vegan object, and put metadata into vegan object, $ID for column of metadata, eg Location
+pairwise.adonis(OBJ1BacVegan, VeganSam$ID, perm = 9999, p.adjust.m = "BH")
