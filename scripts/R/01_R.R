@@ -1025,7 +1025,7 @@ write.csv(as.data.frame(specialist_res_subset),
 sigtabA = results(diagdds, contrast=c("Location","Root","Anode"))
 sigtabB = results(diagdds, contrast=c("Location","Root","Cathode"))
 sigtabC = results(diagdds, contrast=c("Location","Anode","Cathode"))
-sigtabA # this appears as the same default res output (e.g strong responding Geobacter asv has same values, negative change, i.e it is log fold change AWAY from root, TO Anode)
+sigtabA # this appears as the same direction as the default res output (e.g strong responding Geobacter asv has same values, negative change, i.e it is log fold change AWAY from root, TO Anode)
 sigtabB # following the above logic this should display change from Root to Cathode
 sigtabC # and finally, this should display change from Anode to Cathode
 
