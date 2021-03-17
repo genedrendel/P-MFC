@@ -1004,7 +1004,7 @@ sigtab = res[which(res$padj < alpha), ]
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
 
-#Bind taxononmy to results
+#Bind taxonomy to results
 res = cbind(as(res, "data.frame"), as(tax_table(OBJ_W14)[rownames(res), ], "matrix"))
 res
 
@@ -1019,7 +1019,6 @@ specialist_res_subset <- subset((res), rownames((res)) %in% c('0238e0e03ffd3faa6
 write.csv(as.data.frame(specialist_res_subset), 
           file="DESeq2_specialist_subset_TEST.csv")
 ## END SUBSETTING WIP
-
 
 #Different Comparison Direction Sheets
 sigtabA = results(diagdds, contrast=c("Location","Root","Anode"))
