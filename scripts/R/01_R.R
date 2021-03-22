@@ -975,7 +975,7 @@ library("DESeq2")
 #i.e don't use the TSS transformed data
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 
-#Phyloseq to DESEQ
+#Phyloseq to DESEQ for testing location differences (accounting for connection)
 diagdds = phyloseq_to_deseq2(OBJ1_exp, ~ Connection + Location) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
 #e.g for the above ~ Treatment + Location , the order of these matters, first one is what is controlled for and second one after the + is one is tested need to double check which is which
 #run this on everything instead of just the specialists subset, because context of the full dataset is important for this differential abundance 
@@ -1013,6 +1013,8 @@ res <- tax_glom(OBJ_W14,taxrank = "Family")
 res
 write.csv(as.data.frame(res), 
           file="DESeq2_specialist_subset_TEST.csv")
+
+#Do the connected unbconnected comaprison to pull out specialists
 
 #This one will only ever work at ASV level, but may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
 specialist_res_subset <- subset((res), rownames((res)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
@@ -1505,7 +1507,52 @@ dev.off()
 ####
 
 
-#Also note to self: re: remember to add in pairwise permanova....speak to Josh if can't find and work out..
+# New notes and/or functions to fix up and integrate ----------------------
+
+
+# Pairise perma, log transofrm, ancom-bc are main things to integrate as of now....
+
+#Note to self: re: remember to add in pairwise permanova....speak to Josh if can't find and work out..
+
+###################ANCOMBC################### DO NOT DO THIS YET (better for time)
+(!requireNamespace("BiocManager", quietly = TRUE))
++     install.packages("BiocManager")
+BiocManager::install("ANCOMBC")
+ 
+library("ANCOMBC")
+library(microbiome)
+library(xlsx)
+ 
+#####Example ANCOM-BC from Sarah....FAMILY/PICRUST
+#Before ANCOM-BC do TSS and then Anderson log
+#do TSS
+OBJ2 <- phyloseq_standardize_otu_abundance(OBJ1, method = "log")
+
+
+#Where OBJ1_X_PICRUST is your functional Phyloseq object
+OBJ1_PICRUST = aggregate_taxa(OBJ1_X_PICRUST, "Family")
+outPICRUST = ancombc(phyloseq = OBJ1_PICRUST, formula = "Treatment + CollectionPoint", p_adj_method = "BH", zero_cut = 0.90, lib_cut = 1000,group = "Treatment", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0504, global = TRUE)
+resPICRUST = outPICRUST$res
+resPICRUST_global = outPICRUST$res_global
+outPICRUST2 = ancombc(phyloseq = OBJ1_PICRUST, formula = "CollectionPoint + Treatment", p_adj_method = "BH", zero_cut = 0.90, lib_cut = 1000, group = "CollectionPoint", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0504, global = TRUE)
+resPICRUST2 = outPICRUST2$res
+resPICRUST_global2 = outPICRUST2$res_global
+write.xlsx(resPICRUST_global, "ANCOM_BC-PICRUST-BH.xlsx", sheetName = "Treatment",append = TRUE)
+write.xlsx(resPICRUST_global2, "ANCOM_BC-PICRUST-BH.xlsx", sheetName = "CollectionPoint",append = TRUE)
+ 
+#collating the pairwise results:
+tab_coef = resPICRUST$beta
+write.xlsx(tab_coef, "ANCOM_BC-PICRUST-BH.xlsx", sheetName = "coef",append = TRUE)
+tab_se = resPICRUST$se
+write.xlsx(tab_se, "ANCOM_BC-PICRUST-BH.xlsx", sheetName = "residuals",append = TRUE)
+tab_w = resPICRUST$W
+write.xlsx(tab_w, "ANCOM_BC-PICRUST-BH.xlsx", sheetName = "W_stat",append = TRUE)
+tab_p = resPICRUST$p_val
+write.xlsx(tab_p, "ANCOM_BC-PICRUST-BH.xlsx", sheetName = "p",append = TRUE)
+tab_q = resPICRUST$q
+write.xlsx(tab_q, "ANCOM_BC-PICRUST-BH.xlsx", sheetName = "adjusted_p",append = TRUE)
+tab_diff = resPICRUST$diff_abn
+write.xlsx(tab_diff, "ANCOM_BC-PICRUST-BH.xlsx", sheetName = "DA",append = TRUE)
 
 # Logarithmic transformation as in Anderson et al., 2006
 OBJ2 <- phyloseq_standardize_otu_abundance(OBJ1, method = "log")
@@ -1534,3 +1581,12 @@ pairwise.adonis2(Y ~ NO3, data = dat, strata = 'field')
 
 #put data into vegan object, and put metadata into vegan object, $ID for column of metadata, eg Location
 pairwise.adonis(OBJ1BacVegan, VeganSam$ID, perm = 9999, p.adjust.m = "BH")
+
+#FOR ANCOM BC pre-treatment/transform
+#TSS then Log+1
+#Despite its name simply being "log", the Anderson "log" function from Anderson 2006 does seem to be a modified log transofrm
+#it should accounts for zeros, it is not technically just a log+1 either accordingto documentation, but modified based on the number encountered and adjusted to repvent unusable transofmation (presumably)
+
+
+
+
