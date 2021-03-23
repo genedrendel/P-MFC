@@ -497,9 +497,15 @@ plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species") # re
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Species") #these arguments will let you reorganise order and labelling
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species")
 heatmap(otu_table(High_spec_gp))
-#lable legibility
+#label legibility
 ASVheatplot_ORD <- plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
 ASVheatplot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.text.y=element_text(size=11))
+
+#Redo for figure (and a second asv one to compare with deseq manually)
+plot_ORD <- plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
+plot_ORD <- plot_heatmap(High_spec_gp, sample.label="Location", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
+plot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.text.y=element_text(size=11))
+
 
 #Lets try glom to group the asv's together
 #will give a  smaller heatmap but might be an interesting/quick way of seeing if trends hold
@@ -572,11 +578,15 @@ heatmap(otu_table(High_spec_PHY))
 # These are ASVs chose using the specialist index worksheet (as above). This timelooking specifically for ASVs that appear solely in one location, hence "hyper" specialists. 
 # These are not sorted or picked by abundance, but instead by getting the # of samples that each ASV appearred in, and sorting for highest in one location, and lowest in the other two
 # Excel allows the sorting for those 3 columns to best match the ascending/descending cimbination, and then ASVs with a sample count appearannce of 6 or greater were selected (initally was oging to go with # of 8, but the roots had zero at this and only 1 at 7)
+library(phyloseq)
+library(ape)
 
 #asv_id for "hyper" specialists
 otu_table_hyper_spec <- as.data.frame(read.csv("readmap_hyper_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
 #taxonomy for "hyper" specialists
 taxmat_hyper_spec <- as.matrix(read.csv("tax_hyper_spec_index.csv", row.names=1, header=TRUE))
+#metadata applies for both top and hyper specialists
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
 
 OTU = otu_table(otu_table_hyper_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_hyper_spec)
@@ -595,6 +605,104 @@ High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:140]), Hig
 plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
 hyperheatplot <- plot_heatmap(High_spec_gp, sample.order = "Location", sample.label="Location", taxa.order = "Family", taxa.label = "Family")
 hyperheatplot + theme(axis.text.x = element_text(size=8, angle=90, hjust=0.4), axis.text.y=element_text(size=7, angle = 0))
+heatmap(otu_table(High_spec_gp))
+
+#Top ASVs
+High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
+High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:50]), High_spec_gp)
+plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
+heatmap(otu_table(High_spec_gp))
+
+#Lets try glom to group the asv's together
+#will give a  smaller heatmap but might be an interesting/quick way of seeing if trends hold
+#e.g will definitely combine all the individual Geobacter asv's but I'm unsure of the shared taxa between other ones
+
+#Species
+High_spec_SPE <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Species")
+High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom=="Bacteria")
+High_spec_SPE  <- prune_taxa(names(sort(taxa_sums(High_spec_SPE),TRUE)[1:140]), High_spec_SPE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Genus", weighted=TRUE)
+heatmap(otu_table(High_spec_SPE))
+
+#Genus
+High_spec_GEN <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Genus")
+High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom=="Bacteria")
+High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:140]), High_spec_GEN)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+heatmap(otu_table(High_spec_GEN))
+
+#Family
+High_spec_FAM <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Family")
+High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom=="Bacteria")
+High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:140]), High_spec_FAM)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
+heatmap(otu_table(High_spec_FAM))
+
+#Order
+High_spec_ORD <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Order")
+High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom=="Bacteria")
+High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:140]), High_spec_ORD)
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted=TRUE)
+hyperheatplot_ORD <- plot_heatmap(High_spec_ORD, sample.order = "Location", sample.label="Location", taxa.order = "Order", taxa.label = "Order")
+hyperheatplot_ORD + theme(axis.text.x = element_text(size=8, angle=80, hjust=0.4), axis.text.y=element_text(size=8.5, angle = 0))
+heatmap(otu_table(High_spec_gp))
+
+heatmap(otu_table(High_spec_ORD))
+
+#Class
+High_spec_CLA <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Class")
+High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom=="Bacteria")
+High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:30]), High_spec_CLA)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted=TRUE)
+heatmap(otu_table(High_spec_CLA))
+
+#Phyla
+High_spec_PHY <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Phylum")
+High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom=="Bacteria")
+High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), High_spec_PHY)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted=TRUE)
+heatmap(otu_table(High_spec_PHY))
+
+
+## ABRIDGED Hyper meatmap --------------------------------------------------
+#Paper figure version (abridged)
+#Because of sheer number of cathode specific ASVs when looking at unique ASVs by location putting an upper cap of 20 on most abundant cathode asvs
+#rest can appear in supplementary figure if necessary
+
+#Trimmed unique ASV specialist sheet import
+library(phyloseq)
+library(ape)
+library(ggplot2)
+library(RColorBrewer)
+
+#asv_id for "hyper" specialists
+otu_table_hyper_spec <- as.data.frame(read.csv("readmap_hyper_spec_index_cut1.csv", header=TRUE,row.names = "OTU_ID"))
+#taxonomy for "hyper" specialists
+taxmat_hyper_spec <- as.matrix(read.csv("tax_hyper_spec_index cut1.csv", row.names=1, header=TRUE))
+#metadata applies for both top and hyper specialists
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
+
+OTU = otu_table(otu_table_hyper_spec, taxa_are_rows = TRUE)
+TAX = tax_table(taxmat_hyper_spec)
+TREAT = sample_data(treat_spec)
+TREE <- read.tree("rooted_tree.nwk")
+OBJ_HYPER_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
+
+# Note: doesn't seem to like making heatmaps from this particular TSS set....
+# possibly due to the lack of overlap in presence of asvs (e.g entirely zeros for any two locations for each asv)
+# So leaving on raw count....to be decided what to do here, maybe go back to rarefy?
+
+#All ASVs
+# Running on raw ASVs for now because it does not agree with taxa sorting otherwise, presumable cannot sort by taxa using distiance because there are too many zeros for a difference to be calculated
+High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
+High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:140]), High_spec_gp)
+plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
+hyperheatplot <- plot_heatmap(High_spec_gp, sample.order = "Location", sample.label="Location", taxa.order = "Family", taxa.label = "Family")
+hyperheatplot + theme(axis.text.x = element_text(size=8, angle=90, hjust=0.4), axis.text.y=element_text(size=9, angle = 0))
 heatmap(otu_table(High_spec_gp))
 
 #Top ASVs
@@ -977,7 +1085,8 @@ OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 
 #Phyloseq to DESEQ for testing location differences (accounting for connection)
 diagdds = phyloseq_to_deseq2(OBJ1_exp, ~ Connection + Location) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
-#e.g for the above ~ Treatment + Location , the order of these matters, first one is what is controlled for and second one after the + is one is tested need to double check which is which
+#e.g for the above ~ Connection + Location , the order of these matters, first one is what is controlled for and second one after the + is one is tested need to double check which is which
+#Controlling for the presence of absence of connection, what was the effect of location
 #run this on everything instead of just the specialists subset, because context of the full dataset is important for this differential abundance 
 
 diagdds$Location<- relevel(diagdds$Location, ref="Root") # sets the reference point, baseline or control to be compared against
@@ -994,7 +1103,7 @@ res = results(diagdds, cooksCutoff = FALSE)
 res # print out results
 
 #for printing out results, alpha is a filter, dont run this if you want to get everything and sort them out yourself
-alpha = 0.01
+alpha = 0.05
 sigtab = res[which(res$padj < alpha), ]
 
 # WIP FOR SUBSETTING: Subset deseq results BY ASV to bypass need for manual creation of specialist OTU and TAX tables..
@@ -1013,34 +1122,49 @@ res <- tax_glom(OBJ_W14,taxrank = "Family")
 res
 write.csv(as.data.frame(res), 
           file="DESeq2_specialist_subset_TEST.csv")
-
-#Do the connected unbconnected comaprison to pull out specialists
-
-#This one will only ever work at ASV level, but may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
-specialist_res_subset <- subset((res), rownames((res)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-write.csv(as.data.frame(specialist_res_subset), 
-          file="DESeq2_specialist_subset_TEST.csv")
-## END SUBSETTING WIP
+####
 
 #Different Comparison Direction Sheets
-sigtabA = results(diagdds, contrast=c("Location","Root","Anode"))
-sigtabB = results(diagdds, contrast=c("Location","Root","Cathode"))
-sigtabC = results(diagdds, contrast=c("Location","Anode","Cathode"))
-sigtabA # this appears as the same direction as the default res output (e.g strong responding Geobacter asv has same values, negative change, i.e it is log fold change AWAY from root, TO Anode)
-sigtabB # following the above logic this should display change from Root to Cathode
-sigtabC # and finally, this should display change from Anode to Cathode
+sigtabR_A = results(diagdds, contrast=c("Location","Root","Anode")) #Direction of logfold change is shown as change from anode TO root (so for e.g Geobacters are all negative/decreases)
+sigtabA_R = results(diagdds, contrast=c("Location","Anode","Root")) #Increase in Anode FROM Root. Test to see if this does actually switch direction of logfold change. Should make logfold of Geobacteris positive as they are increasing from root to anode
+sigtabR_C = results(diagdds, contrast=c("Location","Root","Cathode")) #Should be to Root from Cathode (Positive # = Increase in Root FROM Cathode)
+sigtabA_C = results(diagdds, contrast=c("Location","Anode","Cathode")) #Should be to Anode from Cathode (Postive # = Increase in Anode FROM Cathode)
+sigtabR_A
+sigtabA_R
+sigtabR_C
+sigtabA_C
 
 #Bind results sheets with OTU Taxa
-sigtab_otuA = cbind(as(sigtabA, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA), ], "matrix"))
-sigtab_otuA
+sigtab_taxR_A = cbind(as(sigtabR_A, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabR_A), ], "matrix"))
+sigtab_taxR_A
 
-sigtab_otuB = cbind(as(sigtabB, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabB), ], "matrix"))
-sigtab_otuB
+sigtab_taxA_R = cbind(as(sigtabA_R, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA_R), ], "matrix"))
+sigtab_taxA_R
 
-sigtab_otuC = cbind(as(sigtabC, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabC), ], "matrix"))
-sigtab_otuC
+sigtab_taxR_C = cbind(as(sigtabR_C, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabR_C), ], "matrix"))
+sigtab_taxR_C
 
-#Export .csv
+sigtab_taxA_C = cbind(as(sigtabA_C, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA_C), ], "matrix"))
+sigtab_taxA_C
+
+#Test - Cut out only specialsits from each sheet (when jsut looking at the top 30 specialists) Otherwise export whole list (and/or with cutoff)
+specialist_res_subsetR_A <- subset((sigtab_taxR_A), rownames((sigtab_taxR_A)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetA_R <- subset((sigtab_taxA_R), rownames((sigtab_taxA_R)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetR_C <- subset((sigtab_taxR_C), rownames((sigtab_taxR_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetA_C <- subset((sigtab_taxA_C), rownames((sigtab_taxA_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+#Export .csv of specialists only (fingers crossed)
+write.csv(as.data.frame(specialist_res_subsetR_A), 
+          file="DESeq2_specialists_R_A.csv")
+write.csv(as.data.frame(specialist_res_subsetA_R), 
+          file="DESeq2_specialists_A_R.csv")
+write.csv(as.data.frame(specialist_res_subsetR_C), 
+          file="DESeq2_specialists_R_C.csv")
+write.csv(as.data.frame(specialist_res_subsetA_C), 
+          file="DESeq2_specialists_A_C.csv")
+#okay this all worked, is good. One point that has become apparent from this is that I need to double check which direction the logfold change is based on the contrasts chosen..I *think* they might actually be the revserve of what previously wrote
+#
+
+#TO DO (fix) Export .csv (now that I've figured otu speicialist subset need to reformat this to correctly point to the full datasheet...TO DO)
 write.csv(as.data.frame(sigtab_otuA), 
           file="DESeq2_resultsA.csv")
 write.csv(as.data.frame(sigtab_otuB), 
@@ -1081,6 +1205,89 @@ sigtab_otu$Phylum = factor(as.character(sigtab_otu$Phylum), levels=names(x))
 #Visulise
 ggplot(sigtab_otu, aes(x=Phylum, y=log2FoldChange, color=Phylum)) + geom_point(size=6) +
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
+
+
+## USELESS SEE ABOVE - DESEQ Subsetting for top specialists (NOT WORKING, MAY BE EASIER TO SUBSET THE FULL SET ABOVE AFTER BINDING TAX etc) ------------------------------------
+#SUBSETTING FOR SPECIALISTS ALONE
+#This one will only ever work at ASV level, but may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
+specialist_res_subset <- subset((res), rownames((res)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialistsR_A = results(specialist_res_subset, contrast=c("Location","Root","Anode"))
+specialistsR_C = results(specialist_res_subset, contrast=c("Location","Root","Cathode"))
+specialistsA_C = results(specialist_res_subset, contrast=c("Location","Anode","Cathode"))
+
+#Bind results sheets with OTU Taxa
+specialistsR_A_tax = cbind(as(specialistsR_A, "data.frame"), as(tax_table(OBJ1_exp)[rownames(specialistsR_A), ], "matrix"))
+specialistsR_A_tax
+
+sigtab_otuB = cbind(as(sigtabB, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabB), ], "matrix"))
+sigtab_otuB
+
+sigtab_otuC = cbind(as(sigtabC, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabC), ], "matrix"))
+sigtab_otuC
+
+#Export .csv
+write.csv(as.data.frame(specialistsR_A_tax), 
+          file="DESeq2_results_R_A_spec.csv")
+write.csv(as.data.frame(sigtab_otuB), 
+          file="DESeq2_resultsB.csv")
+write.csv(as.data.frame(sigtab_otuC), 
+          file="DESeq2_resultsC.csv")
+
+write.csv(as.data.frame(specialist_res_subset), 
+          file="DESeq2_specialist_subset_TEST.csv")
+## END SUBSETTING WIP
+
+
+
+## DESeq for connection alone ----------------------------------------------
+
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+
+diagdds = phyloseq_to_deseq2(OBJ1_exp, ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+#This time control for location differences, looking for connection response.
+
+diagdds$Location<- relevel(diagdds$Connection, ref="Unconnected") # sets the reference point, baseline or control to be compared against
+
+#Subset Week 14
+diagdds <- diagdds[ , diagdds$Week == "Fourteen" ]
+#check that subset was done as expected
+as.data.frame( colData(diagdds) )
+
+#Because of the way the data is nested between groups need to do some finangling to allow the model to distinguish between them correctly
+#Have added a new column that groups samples by the soil column they were in (without location data, so e.g W14UP4 for all three cathode/anode/root sampeles)
+
+#Run model and factors
+diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
+res = results(diagdds, cooksCutoff = FALSE)
+res # print out results
+
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+
+#Bind taxonomy to results
+res = cbind(as(res, "data.frame"), as(tax_table(OBJ_W14)[rownames(res), ], "matrix"))
+res
+
+#Different Comparison Direction Sheets
+sigtabA = results(diagdds, contrast=c("Connection","Connected","Unconnected")) #positive number ehre should be Increase in Connected FROM Unconnected
+sigtabB = results(diagdds, contrast=c("Connection","Unconnected","Connected")) #postive here should be switched, so a postive = Increase in Unconnected FROM Connected
+# So i think A should be the one to use...feels more logical to look at change towards connection (and makes discussion of electroactive enrichemnet easier)
+
+#Bind results sheets with OTU Taxa
+sigtab_otuA = cbind(as(sigtabA, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA), ], "matrix"))
+sigtab_otuA
+
+sigtab_otuB = cbind(as(sigtabB, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabB), ], "matrix"))
+sigtab_otuB
+
+
+
+#Export .csv
+write.csv(as.data.frame(sigtab_otuA), 
+          file="DESeq2_resultsA.csv")
+write.csv(as.data.frame(sigtab_otuB), 
+          file="DESeq2_resultsB.csv")
+
 
 ####Jen's DESEQ2 script to compare, figure out adapting commands
 #PLOT5 - plot of differentially abundant OTUs NB must understand how DESeq model design works FIRST
@@ -1406,16 +1613,103 @@ Path_TAX = tax_table(Path_mat)
 TREAT = sample_data(treat)
 Path_PHYLO = phyloseq(Path_OTU,Path_TAX,TREAT)
 
+#BEFORE PROCEEDING need to transform, first: TSS AND then LOG+1/anderson log on the phyloseq object (this just here to test that the standardise function was doing the exact same thing)
+Path_PHYLO_tss_manual = transform_sample_counts(Path_PHYLO, function(OTU) OTU/sum(OTU) )
+Path_PHYLO_tss_manual
+#ALTERNATIVELY can use metagMisc  package to do both TSS and anderson log
+#https://github.com/vmikk/metagMisc/blob/master/man/phyloseq_standardize_otu_abundance.Rd
+#https://github.com/vmikk/metagMisc
+#https://rdrr.io/github/vmikk/metagMisc/man/phyloseq_standardize_otu_abundance.html
+#anderson log
+devtools::install_github("vmikk/metagMisc")
+library(metagMisc)
+Path_PHYLO_tss <- phyloseq_standardize_otu_abundance(Path_PHYLO, method = "total")
+Path_PHYLO_tss 
+Path_PHYLO_log <- phyloseq_standardize_otu_abundance(Path_PHYLO_tss, method = "log")
+Path_PHYLO_log
 
-# Subset ------------------------------------------------------------------
+#and cut out unwanted samples
+Path_PHYLO_log <- subset_samples(Path_PHYLO_log, Experiment == "Y")
 
+## Subset ------------------------------------------------------------------
 
+#Combined treatments
+PATH_Unin_Conn <- subset_samples(Path_PHYLO_log, Treatment == "Uninoculated Connected")
+PATH_Unin_Unconn <- subset_samples(Path_PHYLO_log, Treatment == "Uninoculated Unconnected")
+PATH_Geo_Conn <- subset_samples(Path_PHYLO_log, Treatment == "Geobacter Connected")
+PATH_Geo_Unconn <- subset_samples(Path_PHYLO_log, Treatment == "Geobacter Unconnected")
+PATH_Mont_Conn <- subset_samples(Path_PHYLO_log, Treatment == "Montebello Connected")
+PATH_Mont_Unconn <- subset_samples(Path_PHYLO_log, Treatment == "Montebello Unconnected")
+PATH_Pseudo_Conn <- subset_samples(Path_PHYLO_log, Treatment == "Pseudomonas Connected")
+PATH_Pseudo_Unconn <- subset_samples(Path_PHYLO_log, Treatment == "Pseudomonas Unconnected")
 
+#Locations
+PATH_anode_tss <- subset_samples(Path_PHYLO_log, Location == "Anode")
+PATH_cathode_tss <- subset_samples(Path_PHYLO_log, Location == "Cathode")
 
-# Ordinations -------------------------------------------------------------
+#Connection
+PATH_connected_tss <- subset_samples(Path_PHYLO_log, Connection == "Connected")
+PATH_unconnected_tss <- subset_samples(Path_PHYLO_log, Connection == "Unconnected")
 
+#Week/Time
+PATH_W0 <- subset_samples(Path_PHYLO_log, Week == "Zero")
+PATH_W6 <- subset_samples(Path_PHYLO_log, Week == "Six")
+PATH_W8 <- subset_samples(Path_PHYLO_log, Week == "Eight")
+PATH_W14 <- subset_samples(Path_PHYLO_log, Week == "Fourteen")
 
+#Wk14 Connected and Unconnected Subsets
+PATH_W14_connected <- subset_samples(PATH_W14, Connection == "Connected")
+PATH_W14_unconnected <- subset_samples(PATH_W14, Connection == "Unconnected")
 
+#Treatment
+PATH_Unin <- subset_samples(Path_PHYLO_log, Inoculum == "Uninoculated")
+PATH_Geo <- subset_samples(Path_PHYLO_log, Inoculum == "Geobacter")
+PATH_Mont <- subset_samples(Path_PHYLO_log, Inoculum == "Montebello")
+PATH_Pseudo <- subset_samples(Path_PHYLO_log, Inoculum == "Pseudomonas")
+
+## Ordinations -------------------------------------------------------------
+
+library("ggplot2")
+library("RColorBrewer")
+
+#subsetted timepoints WEIGHTED
+PATH_NMDS_W14w <- ordinate(PATH_W14, "NMDS", distance="bray", binary=FALSE)
+
+PATH_NMDS_W14w
+
+#Subsetted timepoints UNWEIGHTED
+PATH_NMDS_W14w <- ordinate(PATH_W14, "NMDS", distance="bray", binary=TRUE)
+
+PATH_NMDS_W14u
+
+#Connection alone at W14
+#Unconnected
+PATH_NMDS_W14_un_w <- ordinate(PATH_W14_unconnected, "NMDS", distance="bray", binary=FALSE)
+PATH_NMDS_W14_un_u <- ordinate(PATH_W14_unconnected, "NMDS", distance="bray", binary=TRUE)
+
+PATH_NMDS_W14_un_w
+PATH_NMDS_W14_un_u
+
+#Connected
+PATH_NMDS_W14_con_w <- ordinate(PATH_W14_connected, "NMDS", distance="bray", binary=FALSE)
+PATH_NMDS_W14_con_u <- ordinate(PATH_W14_connected, "NMDS", distance="bray", binary=TRUE)
+
+PATH_NMDS_W14_con_w
+PATH_NMDS_W14_con_u
+
+#Week14
+#Unweighted
+p4u<-plot_ordination(OBJ_W14_tss, NMDS_W14u, color="Connection", shape="Location", label=NULL)
+p4u<-plot_ordination(OBJ_W14_tss, NMDS_W14u, color="Inoculum", shape="Location", label=NULL)
+p4u<-plot_ordination(OBJ_W14_tss, NMDS_W14u, color="Treatment", shape="Location", label=NULL)
+p4u
+p4u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+#weighted
+p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Connection", shape="Location", label=NULL)
+p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Inoculum", shape="Location", label=NULL)
+p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Treatment", shape="Location", label=NULL)
+p4w
+p4w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 
 # PERMANOVA ---------------------------------------------------------------
@@ -1514,7 +1808,7 @@ dev.off()
 
 #Note to self: re: remember to add in pairwise permanova....speak to Josh if can't find and work out..
 
-###################ANCOMBC################### DO NOT DO THIS YET (better for time)
+###################ANCOMBC################### DO NOT DO THIS YET (better for over time analysis)
 (!requireNamespace("BiocManager", quietly = TRUE))
 +     install.packages("BiocManager")
 BiocManager::install("ANCOMBC")
@@ -1525,7 +1819,10 @@ library(xlsx)
  
 #####Example ANCOM-BC from Sarah....FAMILY/PICRUST
 #Before ANCOM-BC do TSS and then Anderson log
+
 #do TSS
+
+#do log transform
 OBJ2 <- phyloseq_standardize_otu_abundance(OBJ1, method = "log")
 
 
