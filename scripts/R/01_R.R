@@ -22,6 +22,15 @@
 ##otherwise R will not read it. also convert 'OTU ID' to 'OTU_ID'
 ##you can also make a excel file and read in as a .csv
 
+#For installing Phyloseq and other associated/similar packages, use Bioconductor / Biocmanager
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.12")
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install()
+
 ## Working Directory -------------------------------------------------------
 #Set your working directory, location for data tables, tree, etc
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
@@ -824,6 +833,10 @@ p1w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3
 p1<-plot_ordination(OBJ_W0_tss, NMDS_W0, color="Inoculum", shape="Location", label="Sample_Name")
 p1
 
+#Use geom for shapes or lines betweeen points...e.g geom_polygon(aes(fill=Location)) will be base don locations..or can leave blank brackets for default
+#geom_path()
+#geom_polygon()
+
 #Week6
 #unweighted
 p2u<-plot_ordination(OBJ_W6_tss, NMDS_W6u, color="Connection", shape="Location", label=NULL)
@@ -1207,44 +1220,28 @@ ggplot(sigtab_otu, aes(x=Phylum, y=log2FoldChange, color=Phylum)) + geom_point(s
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
 
 
-## USELESS SEE ABOVE - DESEQ Subsetting for top specialists (NOT WORKING, MAY BE EASIER TO SUBSET THE FULL SET ABOVE AFTER BINDING TAX etc) ------------------------------------
-#SUBSETTING FOR SPECIALISTS ALONE
-#This one will only ever work at ASV level, but may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
-specialist_res_subset <- subset((res), rownames((res)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-specialistsR_A = results(specialist_res_subset, contrast=c("Location","Root","Anode"))
-specialistsR_C = results(specialist_res_subset, contrast=c("Location","Root","Cathode"))
-specialistsA_C = results(specialist_res_subset, contrast=c("Location","Anode","Cathode"))
-
-#Bind results sheets with OTU Taxa
-specialistsR_A_tax = cbind(as(specialistsR_A, "data.frame"), as(tax_table(OBJ1_exp)[rownames(specialistsR_A), ], "matrix"))
-specialistsR_A_tax
-
-sigtab_otuB = cbind(as(sigtabB, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabB), ], "matrix"))
-sigtab_otuB
-
-sigtab_otuC = cbind(as(sigtabC, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabC), ], "matrix"))
-sigtab_otuC
-
-#Export .csv
-write.csv(as.data.frame(specialistsR_A_tax), 
-          file="DESeq2_results_R_A_spec.csv")
-write.csv(as.data.frame(sigtab_otuB), 
-          file="DESeq2_resultsB.csv")
-write.csv(as.data.frame(sigtab_otuC), 
-          file="DESeq2_resultsC.csv")
-
-write.csv(as.data.frame(specialist_res_subset), 
-          file="DESeq2_specialist_subset_TEST.csv")
-## END SUBSETTING WIP
-
-
-
 ## DESeq for connection alone ----------------------------------------------
-
+library(ggplot2)
+library("DESeq2")
+#Start here if haven't already (use raw vaules, but still subset out bad samples)
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 
+#Agglomerate at desired taxa level (if you want to, otherwise proceed to and will get individual ASV changes)
+OBJ1_exp_Genus <- tax_glom(OBJ1_exp,taxrank = "Genus")
+OBJ1_exp_Family <- tax_glom(OBJ1_exp,taxrank = "Family")
+OBJ1_exp_Order <- tax_glom(OBJ1_exp,taxrank = "Order")
+OBJ1_exp_Class <- tax_glom(OBJ1_exp,taxrank = "Class")
+#And create subset for use later when assigning taxa (NOT for analysis, just to bind taxa to results)
+OBJ_Genus_W14 <- subset_samples(OBJ1_exp_Genus, Week == "Fourteen")
+
+##Import to deseq and order factors to be compared (overall, not agglomerated)
 diagdds = phyloseq_to_deseq2(OBJ1_exp, ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
 #This time control for location differences, looking for connection response.
+
+##Import agglomerated genus
+diagdds = phyloseq_to_deseq2(OBJ1_exp_Genus, ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+#import agglomerated family
+diagdds = phyloseq_to_deseq2(OBJ1_exp_Family , ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
 
 diagdds$Location<- relevel(diagdds$Connection, ref="Unconnected") # sets the reference point, baseline or control to be compared against
 
@@ -1261,32 +1258,36 @@ diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
 res = results(diagdds, cooksCutoff = FALSE)
 res # print out results
 
+#Shouldnt need these anymore for agglomerated, but retain for overall
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
 
 #Bind taxonomy to results
-res = cbind(as(res, "data.frame"), as(tax_table(OBJ_W14)[rownames(res), ], "matrix"))
+res = cbind(as(res, "data.frame"), as(tax_table(OBJ_Genus_W14)[rownames(res), ], "matrix"))
 res
 
+#Export .csv
+write.csv(as.data.frame(res), 
+          file="DESeq2_Genus_14.csv")
+
+#For Agglomerated
 #Different Comparison Direction Sheets
-sigtabA = results(diagdds, contrast=c("Connection","Connected","Unconnected")) #positive number ehre should be Increase in Connected FROM Unconnected
-sigtabB = results(diagdds, contrast=c("Connection","Unconnected","Connected")) #postive here should be switched, so a postive = Increase in Unconnected FROM Connected
+sigtabC_U = results(diagdds, contrast=c("Connection","Connected","Unconnected")) #a positive number here should represent an Increase in Connected FROM Unconnected
+sigtabU_C = results(diagdds, contrast=c("Connection","Unconnected","Connected")) #postive here should be switched, so a postive = Increase in Unconnected FROM Connected
 # So i think A should be the one to use...feels more logical to look at change towards connection (and makes discussion of electroactive enrichemnet easier)
 
 #Bind results sheets with OTU Taxa
-sigtab_otuA = cbind(as(sigtabA, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA), ], "matrix"))
-sigtab_otuA
+sigtab_taxC_U = cbind(as(sigtabC_U, "data.frame"), as(tax_table(OBJ_Genus_W14)[rownames(sigtabC_U), ], "matrix"))
+sigtab_taxC_U
 
-sigtab_otuB = cbind(as(sigtabB, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabB), ], "matrix"))
-sigtab_otuB
-
-
+sigtab_taxU_C = cbind(as(sigtabU_C, "data.frame"), as(tax_table(OBJ_Genus_W14)[rownames(sigtabU_C), ], "matrix"))
+sigtab_taxU_C
 
 #Export .csv
-write.csv(as.data.frame(sigtab_otuA), 
-          file="DESeq2_resultsA.csv")
-write.csv(as.data.frame(sigtab_otuB), 
-          file="DESeq2_resultsB.csv")
+write.csv(as.data.frame(sigtab_taxC_U), 
+          file="DESeq2_resultsC_U.csv")
+write.csv(as.data.frame(sigtab_taxU_C), 
+          file="DESeq2_resultsU_C.csv")
 
 
 ####Jen's DESEQ2 script to compare, figure out adapting commands
@@ -1423,8 +1424,25 @@ colvec <- c(colvec1, colvec2,colvec3,colvec4,colvec5,colvec6) #this is a large c
 
 library(microbiome)
 
-OBJ1_rr <- transform(OBJ1_r, "compositional")#transform to relative abundance -microbiom pkg
-OBJ1_rr <- transform_sample_counts(OBJ1_r, function(x) x / sum(x) )#alternative way transform to relative abundance - phyloseq pkg
+#TEMP
+OBJ1_Gen <- transform(OBJ1_exp_Genus, "compositional")#transform to relative abundance -microbiom pkg
+OBJ1_Gen <- transform_sample_counts(OBJ1_r, function(x) x / sum(x) )#alternative way transform to relative abundance - phyloseq pkg
+OBJ1_Gen 
+OBJ1_Gen <- filter_taxa(OBJ1_Gen, function(x) mean(x) > 0.001, TRUE)
+OBJ1_Fam <- tax_glom(OBJ1_Gen,taxrank = "Family")#concatenate OTUs at a higher phylogenetic level
+OBJ1_Ord <- tax_glom(OBJ1_Gen,taxrank = "Order")#concatenate OTUs at a higher phylogenetic level
+
+p1 <- plot_bar(OBJ1_Ord, "Location", fill="Order")
+p1 <- plot_bar(OBJ1_Ord, "Connection", fill="Order", facet_grid=~Location)
+p1
+
+p1 <- plot_bar(OBJ1_Fam, "Location", fill="Family")
+p1 <- plot_bar(OBJ1_Fam, "Connection", fill="Family", facet_grid=~Location)
+p1
+
+p1 <- plot_bar(OBJ1_Gen, "Location", fill="Genus")
+p1 <- plot_bar(OBJ1_Gen, "Connection", fill="Genus", facet_grid=~Location)
+p1
 
 OBJ1_ord <- tax_glom(OBJ1_rr,taxrank = "Order")#concatenate OTUs at a higher phylogenetic level
 OBJ1_ord #check how make OTUs you have - too amny makes an untidy fig legend
@@ -1667,20 +1685,48 @@ PATH_Geo <- subset_samples(Path_PHYLO_log, Inoculum == "Geobacter")
 PATH_Mont <- subset_samples(Path_PHYLO_log, Inoculum == "Montebello")
 PATH_Pseudo <- subset_samples(Path_PHYLO_log, Inoculum == "Pseudomonas")
 
-## Ordinations -------------------------------------------------------------
+## NMDS + Ordination Plots -------------------------------------------------------------
 
 library("ggplot2")
 library("RColorBrewer")
 
 #subsetted timepoints WEIGHTED
 PATH_NMDS_W14w <- ordinate(PATH_W14, "NMDS", distance="bray", binary=FALSE)
-
 PATH_NMDS_W14w
 
-#Subsetted timepoints UNWEIGHTED
-PATH_NMDS_W14w <- ordinate(PATH_W14, "NMDS", distance="bray", binary=TRUE)
+#Week 0
+PATH_NMDS_W0w <- ordinate(PATH_W0, "NMDS", distance="bray", binary=FALSE)
+PATH_NMDS_W0w
 
+
+#Subsetted timepoints UNWEIGHTED
+PATH_NMDS_W14u <- ordinate(PATH_W14, "NMDS", distance="bray", binary=TRUE)
 PATH_NMDS_W14u
+
+#Week 0
+PATH_NMDS_W0u <- ordinate(PATH_W0, "NMDS", distance="bray", binary=TRUE)
+PATH_NMDS_W0u
+
+#Plot Ordination weighted
+path_W14w_ord<-plot_ordination(PATH_W14, PATH_NMDS_W14w, color="Treatment", shape="Location", label=NULL)
+path_W14w_ord
+path_W14w_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+#Plot Ordination unweighted
+path_W14u_ord<-plot_ordination(PATH_W14, PATH_NMDS_W14u, color="Treatment", shape="Location", label=NULL)
+path_W14u_ord
+path_W14u_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+#Time Zero weighted
+path_W0w_ord<-plot_ordination(PATH_W0, PATH_NMDS_W0w, color="Treatment", shape="Location", label=NULL)
+path_W0w_ord
+path_W0w_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+#Time Zero unweighted
+path_W0u_ord<-plot_ordination(PATH_W0, PATH_NMDS_W0u, color="Treatment", shape="Location", label=NULL)
+path_W0u_ord
+path_W0u_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
 
 #Connection alone at W14
 #Unconnected
@@ -1697,27 +1743,42 @@ PATH_NMDS_W14_con_u <- ordinate(PATH_W14_connected, "NMDS", distance="bray", bin
 PATH_NMDS_W14_con_w
 PATH_NMDS_W14_con_u
 
-#Week14
-#Unweighted
-p4u<-plot_ordination(OBJ_W14_tss, NMDS_W14u, color="Connection", shape="Location", label=NULL)
-p4u<-plot_ordination(OBJ_W14_tss, NMDS_W14u, color="Inoculum", shape="Location", label=NULL)
-p4u<-plot_ordination(OBJ_W14_tss, NMDS_W14u, color="Treatment", shape="Location", label=NULL)
-p4u
-p4u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-#weighted
-p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Connection", shape="Location", label=NULL)
-p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Inoculum", shape="Location", label=NULL)
-p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Treatment", shape="Location", label=NULL)
-p4w
-p4w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+## PERMANOVA ---------------------------------------------------------------
 
+library(vegan)
+#Setup objects for testing significance, effect size, correlation.
+#First pull the variables you want to test into objects:
+#By location at end and start
+Location <- get_variable(PATH_W14, "Location")
+Location0 <- get_variable(PATH_W0, "Location")
 
-# PERMANOVA ---------------------------------------------------------------
+#By connection at end
+Connection <- get_variable(PATH_W14, "Connection")
+Connection0 <- get_variable(PATH_W0, "Connection")
 
+#By Inoculum at end
+Inoculum <- get_variable(PATH_W14, "Inoculum")
+Inoculum0 <- get_variable(PATH_W0, "Inoculum")
 
+#W14
+PATH_W14perm_w <- distance(PATH_W14, "bray" , binary=FALSE)
+PATH_W14perm_u <- distance(PATH_W14, "bray" , binary=TRUE)
 
+PATH_W14_ado_w = adonis(PATH_W14perm_w ~ Location * Connection * Inoculum, permutations = 9999)
+PATH_W14_ado_w
 
+PATH_W14_ado_u = adonis(PATH_W14perm_u ~ Location * Connection * Inoculum, permutations = 9999)
+PATH_W14_ado_u
 
+#W0
+PATH_W0perm_w <- distance(PATH_W0, "bray" , binary=FALSE)
+PATH_W0perm_u <- distance(PATH_W0, "bray" , binary=TRUE)
+
+PATH_W0_ado_w = adonis(PATH_W0perm_w ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
+PATH_W0_ado_w
+
+PATH_W0_ado_u = adonis(PATH_W0perm_u ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
+PATH_W0_ado_u
 
 # Other WIP / General Useful script section -------------------------------
 
@@ -1884,6 +1945,39 @@ pairwise.adonis(OBJ1BacVegan, VeganSam$ID, perm = 9999, p.adjust.m = "BH")
 #Despite its name simply being "log", the Anderson "log" function from Anderson 2006 does seem to be a modified log transofrm
 #it should accounts for zeros, it is not technically just a log+1 either accordingto documentation, but modified based on the number encountered and adjusted to repvent unusable transofmation (presumably)
 
+
+# Broken or Deprecated script ---------------------------------------------
+#Double check nothing useful within tnaythinghere before deleting
+
+#DESEQ Subsetting for top specialists (NOT WORKING, MAY BE EASIER TO SUBSET THE FULL SET ABOVE AFTER BINDING TAX etc)
+#SUBSETTING FOR SPECIALISTS ALONE
+#This one will only ever work at ASV level, but may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
+specialist_res_subset <- subset((res), rownames((res)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialistsR_A = results(specialist_res_subset, contrast=c("Location","Root","Anode"))
+specialistsR_C = results(specialist_res_subset, contrast=c("Location","Root","Cathode"))
+specialistsA_C = results(specialist_res_subset, contrast=c("Location","Anode","Cathode"))
+
+#Bind results sheets with OTU Taxa
+specialistsR_A_tax = cbind(as(specialistsR_A, "data.frame"), as(tax_table(OBJ1_exp)[rownames(specialistsR_A), ], "matrix"))
+specialistsR_A_tax
+
+sigtab_otuB = cbind(as(sigtabB, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabB), ], "matrix"))
+sigtab_otuB
+
+sigtab_otuC = cbind(as(sigtabC, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabC), ], "matrix"))
+sigtab_otuC
+
+#Export .csv
+write.csv(as.data.frame(specialistsR_A_tax), 
+          file="DESeq2_results_R_A_spec.csv")
+write.csv(as.data.frame(sigtab_otuB), 
+          file="DESeq2_resultsB.csv")
+write.csv(as.data.frame(sigtab_otuC), 
+          file="DESeq2_resultsC.csv")
+
+write.csv(as.data.frame(specialist_res_subset), 
+          file="DESeq2_specialist_subset_TEST.csv")
+## END SUBSETTING WIP
 
 
 
