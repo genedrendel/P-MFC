@@ -113,10 +113,9 @@ shiny::runGitHub("shiny-phyloseq","joey711")
 ## Subsetting --------------------------------------------------------------
 
 #First thing first GET RID OF THE CONTROL SAMPLE AND ONLY SUBSET FROM THAT OBJECT SO THAT IT STOPS FUCKING WITH ORDINATION DISTANCES
-#Similarly, will use this to remove probleamtic samples , e.g those with low read depth that entirely skew ordination patterns by being entirely alone
+#Similarly, will use this to remove problematic samples , e.g those with low read depth that entirely skew ordination patterns by being entirely alone
 #To do this, created additional column of treatment file indicating Y (yes) and N (no) for all data minus the control
 #Lets call this OBJ1_exp as an indication of it being the proper "experimental" dataset
-
 
 ## Experimental Sample Subset (and TSS it) ----------------------------------------------
 #Main Experimental Data Subset - run this one EVERY TIME
@@ -277,6 +276,65 @@ a
 a <- plot_richness(OBJ1_ts_multiplied, x = "Location")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
 a
 
+
+## Microbiome - Core Taxa and Plots from Jaq, TO BE ADAPTED -------------------------------------------------------------
+### - Experiment 2 - Core_members - take 2 ####
+
+#26/2/2021
+
+##So...the workflow suggested for analysis of the core microbiome is to transform it into compositional
+#For the above experiment I did my own manual relative abundance 
+
+#In light of that for the purposes of this experiment I am going to take un-TSS data and transform it
+#and go through the process and see what happens, what the bar charts look like
+
+#make sure:
+library(microbiome)
+library(knitr) #if using the kable i.e. table function
+
+## first - transform to compositional abundance (relative abundance - yes)
+
+OBJ1_compab <- microbiome::transform(OBJ1, "compositional")
+
+#calculates prevalences for all tax groups - gives you an idea of whats there
+head(prevalence(OBJ1_compab, detection = 1/100, sort = TRUE))
+
+#This makes a phyloseq obj with only those taxa > 0.1% relative abundance and in >50% of samples
+OBJ1_core <- core(OBJ1_compab, detection = 0.1/100, prevalence = 50/100)
+
+#The result for this data is 201 taxa in 16 samples
+#I am going to bar chart this and see what that looks like - might need to shrink no. of OTUs 
+#if too many in the figure
+
+### - NEED TO CUT THIS DOWN BY A BIT FOR VISUALS AT GENUS - see filter_taxa
+
+## making the bar charts 
+OBJ1_ord <- tax_glom(OBJ1_core,taxrank = "Genus")
+OBJ1_ord
+
+## Filter taxa to make visuals better
+#by adjusting the number in here adds or takes away the number of taxa. Is the cut off. 
+OBJ1_ord2 <- filter_taxa(OBJ1_ord, function(x) mean(x) > 0.002, TRUE) 
+OBJ1_ord2 
+
+
+#don't forget to have created colvec_big and lim (sample names) if you haven't already
+
+##PLOT - all samples
+p <- plot_bar(OBJ1_ord2, "Pairs_rep", fill="Genus")
+p <- p + scale_fill_manual(values=colvec_big)
+p <- p + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- p + scale_x_discrete(name = NULL, limits= lim)  
+p <- p + labs(y = "Relative abundance")
+p <- p + guides(fill=guide_legend(title="Taxa")) # only need at genus due to lots of fam. pull across
+p
+
+#The figures came out well - the genus maybe needs trimming slightly as has lots of OTUs
+
+#be interesting to compare this to what the output from experiment 1
+### welp lol - checked both the outcome of my manual relative abundance in excel and this
+## they are basically the same. The phyloseq OBJs look the same and the outcome on 
+# barcharts look the same at the same detection and prevalence. 
 
 ## Normality Tests ---------------------------------------------------------
 
@@ -786,6 +844,11 @@ heatmap(otu_table(High_spec_PHY))
 ##some ordinations first
 library("ggplot2")
 library("RColorBrewer")
+
+
+#NOTE: Added to mapping file additional columns with more groupings based on: 
+#Group all samples per soil columns: Soil_Column
+#Group based on whether soil based subtrate (root/anode) vs Water for cathode samples: Substrate
 
 ##NMDS:
 NMDS1 <- ordinate(OBJ1_exp_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
