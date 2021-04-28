@@ -157,6 +157,11 @@ OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
 OBJ1_W14_connected_tss <- subset_samples(OBJ_W14_tss, Connection == "Connected")
 OBJ1_W14_unconnected_tss <- subset_samples(OBJ_W14_tss, Connection == "Unconnected")
 
+#W14 locations (for including Root in comparisons)
+OBJ1_14anode_tss <- subset_samples(OBJ_W14_tss, Location == "Anode")
+OBJ1_14cathode_tss <- subset_samples(OBJ_W14_tss, Location == "Cathode")
+OBJ1_14roots_tss <- subset_samples(OBJ_W14_tss, Location == "Root")
+
 #Treatment
 OBJ_Unin_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Uninoculated")
 OBJ_Geo_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Geobacter")
@@ -180,6 +185,13 @@ OBJ_W0 <- subset_samples(OBJ1_exp, Week == "Zero")
 OBJ_W6 <- subset_samples(OBJ1_exp, Week == "Six")
 OBJ_W8 <- subset_samples(OBJ1_exp, Week == "Eight")
 OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+
+#W14 locations (for including Root in comparisons)
+OBJ1_14anode <- subset_samples(OBJ_W14, Location == "Anode")
+OBJ1_14cathode <- subset_samples(OBJ_W14, Location == "Cathode")
+OBJ1_14roots <- subset_samples(OBJ_W14, Location == "Root")
+
+
 
 sample_data(OBJ1_anode)
 
@@ -278,9 +290,6 @@ a
 
 
 ## Microbiome - Core Taxa and Plots from Jaq, TO BE ADAPTED -------------------------------------------------------------
-### - Experiment 2 - Core_members - take 2 ####
-
-#26/2/2021
 
 ##So...the workflow suggested for analysis of the core microbiome is to transform it into compositional
 #For the above experiment I did my own manual relative abundance 
@@ -288,23 +297,27 @@ a
 #In light of that for the purposes of this experiment I am going to take un-TSS data and transform it
 #and go through the process and see what happens, what the bar charts look like
 
-#make sure:
+library("RColorBrewer")
+library(ggsci)
+library(viridis)
 library(microbiome)
 library(knitr) #if using the kable i.e. table function
 
 ## first - transform to compositional abundance (relative abundance - yes)
 
-OBJ1_compab <- microbiome::transform(OBJ1, "compositional")
+OBJ1_mbiocomp <- microbiome::transform(OBJ_W14, "compositional")
 
 #calculates prevalences for all tax groups - gives you an idea of whats there
-head(prevalence(OBJ1_compab, detection = 1/100, sort = TRUE))
+head(prevalence(OBJ1_mbiocomp, detection = 0.1/100, sort = TRUE))
 
-#This makes a phyloseq obj with only those taxa > 0.1% relative abundance and in >50% of samples
-OBJ1_core <- core(OBJ1_compab, detection = 0.1/100, prevalence = 50/100)
+#This makes a phyloseq obj with only those taxa > 0.2% relative abundance and in >50% of samples
+OBJ1_core <- core(OBJ1_mbiocomp, detection = 0.2/100, prevalence = 50/100)
+OBJ1_core
 
-#The result for this data is 201 taxa in 16 samples
-#I am going to bar chart this and see what that looks like - might need to shrink no. of OTUs 
-#if too many in the figure
+#SKIP THIS IS FILTERING
+#Just to TEST Raw core without filtering with the below steps
+OBJ1_ord2 <- tax_glom(OBJ1_core,taxrank = "Genus")
+OBJ1_ord2
 
 ### - NEED TO CUT THIS DOWN BY A BIT FOR VISUALS AT GENUS - see filter_taxa
 
@@ -314,20 +327,42 @@ OBJ1_ord
 
 ## Filter taxa to make visuals better
 #by adjusting the number in here adds or takes away the number of taxa. Is the cut off. 
-OBJ1_ord2 <- filter_taxa(OBJ1_ord, function(x) mean(x) > 0.002, TRUE) 
+OBJ1_ord2 <- filter_taxa(OBJ1_ord, function(x) mean(x) > 0.002, TRUE)
 OBJ1_ord2 
 
+library(RColorBrewer)
+n <- 60
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+pie(rep(1,n), col=sample(col_vector, n))
 
-#don't forget to have created colvec_big and lim (sample names) if you haven't already
+#without black borders....
+p <- plot_bar(OBJ1_ord2, "Location", fill="Genus")
+p <- p + scale_fill_manual(values=col_vector)
+p <- p + geom_bar(stat = "identity", position = "stack")
+p
 
 ##PLOT - all samples
-p <- plot_bar(OBJ1_ord2, "Pairs_rep", fill="Genus")
-p <- p + scale_fill_manual(values=colvec_big)
+p <- plot_bar(OBJ1_ord2, "Location", fill="Genus")
+p <- p + scale_fill_manual(values=col_vector)
 p <- p + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
-p <- p + scale_x_discrete(name = NULL, limits= lim)  
 p <- p + labs(y = "Relative abundance")
-p <- p + guides(fill=guide_legend(title="Taxa")) # only need at genus due to lots of fam. pull across
+p <- p + geom_bar(stat = "identity", position = "stack")
+p <- p + guides(fill=guide_legend(title="Genus")) # only need at genus due to lots of fam. pull across
 p
+
+p <- p + scale_x_discrete(name = NULL, limits= )  
+
+#Original colour vector format of above for reference
+p <- p + scale_fill_manual(values=col_vector)
+#testing colour palettes because don't know what palette colvec_big is/was
+p <- p + scale_fill_brewer("dark2")
+p2 + scale_fill_igv()
+p <- p + scale_fill_viridis_d(direction = -1)
+
+
+
+
 
 #The figures came out well - the genus maybe needs trimming slightly as has lots of OTUs
 
@@ -335,6 +370,53 @@ p
 ### welp lol - checked both the outcome of my manual relative abundance in excel and this
 ## they are basically the same. The phyloseq OBJs look the same and the outcome on 
 # barcharts look the same at the same detection and prevalence. 
+
+#Start at making venn diagram for core members at w14
+
+#NOTE THAT THIS IS INDENEPENDENT OF ABOVE PERVANLENCE SETTINGS, 
+#e.g build from the original subset, NOT the already filtered ones
+
+#install.packages("eulerr") # If not installed
+devtools::install_github('microsud/microbiomeutilities')
+
+library("RColorBrewer")
+library(eulerr)
+library(microbiome)
+library(microbiomeutilities)
+
+location_list <- unique(as.character(meta(OBJ1_mbiocomp)$Location))
+print(location_list)
+
+#Loop for identifying core taxa for each location
+list_core <- c() # an empty object to store information
+
+#To Print Taxa names (instead of asv ID)
+# format names
+OBJ_mbio_taxa <- format_to_besthit(OBJ1_mbiocomp)
+# check names
+taxa_names(OBJ_mbio_taxa)[1:5]
+
+for (n in location_list){ # for each variable n in location
+    #print(paste0("Identifying Core Taxa for ", n))
+    
+    Loc.sub <- subset_samples(OBJ_mbio_taxa, location_list == n) # Choose sample from location by n
+    
+    core_m <- core_members(Loc.sub, # loc.sub is phyloseq selected with only samples from g 
+                           detection = 0.01, # 0.01 in atleast 50% samples 
+                           prevalence = 0.50)
+    print(paste0("No. of core taxa in ", n, " : ", length(core_m))) # print core taxa identified in each location.
+    list_core[[n]] <- core_m # add to a list core taxa for each group.
+    #print(list_core)
+}
+#JustID
+print(list_core)
+
+#Make Venn
+# Specify colors and plot venn
+# supplying colors in the order they appear in list_core
+mycols <- c(nonCRC="#eb5717", CRC="#352ea8", H="#0fa676") 
+plot(venn(list_core),
+     fills = mycols)
 
 ## Normality Tests ---------------------------------------------------------
 
