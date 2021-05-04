@@ -45,6 +45,10 @@ module load qiime2/2020.8
 
 #qiime tools import --type 'SampleData[PairedEndSequencesWithQuality]' --input-path manifest.tsv --output-path demux-paired-end.qza --source-format PairedEndFastqManifestPhred33
 
+## ALTERNATIVE IMPORT (DOES NOT REQUIRE MANIFEST FILE)
+mkdir reads_qza
+    
+qiime tools import --type SampleData[PairedEndSequencesWithQuality] --input-path Orsi_Bacteria/ --output-path reads_qza/reads.qza --input-format CasavaOneEightSingleLanePerSampleDirFmt
 
 
 ## VISUALISE FOR QUALITY CONTROL COMPARISONS
