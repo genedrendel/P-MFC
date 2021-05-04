@@ -170,7 +170,7 @@ OBJ_Pseudo_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Pseudomonas")
 
 ## Non-transformed subsets ------------------------------------
 #Subsets for NON transformed dataset
-#Retained for if used/needed for non-beta
+#Retained for other tests that use their own transformations , treatments etc
 
 #Locations
 OBJ1_anode <- subset_samples(OBJ1_exp, Location == "Anode")
@@ -297,7 +297,7 @@ a
 #In light of that for the purposes of this experiment I am going to take un-TSS data and transform it
 #and go through the process and see what happens, what the bar charts look like
 
-library("RColorBrewer")
+library(RColorBrewer)
 library(ggsci)
 library(viridis)
 library(microbiome)
@@ -308,10 +308,10 @@ library(knitr) #if using the kable i.e. table function
 OBJ1_mbiocomp <- microbiome::transform(OBJ_W14, "compositional")
 
 #calculates prevalences for all tax groups - gives you an idea of whats there
-head(prevalence(OBJ1_mbiocomp, detection = 0.1/100, sort = TRUE))
+head(prevalence(OBJ1_mbiocomp, detection = 0.2/100, sort = TRUE))
 
 #This makes a phyloseq obj with only those taxa > 0.2% relative abundance and in >50% of samples
-OBJ1_core <- core(OBJ1_mbiocomp, detection = 0.2/100, prevalence = 50/100)
+OBJ1_core <- core(OBJ1_mbiocomp, detection = 0.1/100, prevalence = 50/100)
 OBJ1_core
 
 #SKIP THIS IS FILTERING
@@ -351,16 +351,14 @@ p <- p + geom_bar(stat = "identity", position = "stack")
 p <- p + guides(fill=guide_legend(title="Genus")) # only need at genus due to lots of fam. pull across
 p
 
-p <- p + scale_x_discrete(name = NULL, limits= )  
-
-#Original colour vector format of above for reference
+#testing colour palettes because don't know what palette colvec will be big enough and allow distinguishing
 p <- p + scale_fill_manual(values=col_vector)
-#testing colour palettes because don't know what palette colvec_big is/was
 p <- p + scale_fill_brewer("dark2")
 p2 + scale_fill_igv()
 p <- p + scale_fill_viridis_d(direction = -1)
 
-
+p <- plot_frequencies(sample_data(OBJ1_ord2), "Anode", "Cathode")
+print(p)
 
 
 
@@ -402,7 +400,7 @@ for (n in location_list){ # for each variable n in location
     Loc.sub <- subset_samples(OBJ_mbio_taxa, location_list == n) # Choose sample from location by n
     
     core_m <- core_members(Loc.sub, # loc.sub is phyloseq selected with only samples from g 
-                           detection = 0.01, # 0.01 in atleast 50% samples 
+                           detection = 0.002, # 0.002 in atleast 50% samples 
                            prevalence = 0.50)
     print(paste0("No. of core taxa in ", n, " : ", length(core_m))) # print core taxa identified in each location.
     list_core[[n]] <- core_m # add to a list core taxa for each group.
@@ -414,7 +412,7 @@ print(list_core)
 #Make Venn
 # Specify colors and plot venn
 # supplying colors in the order they appear in list_core
-mycols <- c(nonCRC="#eb5717", CRC="#352ea8", H="#0fa676") 
+mycols <- c(Anode="#eb5717", Cathode="#352ea8", Root="#0fa676") 
 plot(venn(list_core),
      fills = mycols)
 
