@@ -296,14 +296,14 @@ module load qiime2/2020.8
 
 ### Now the actual PICRUSt BITS
 
-module load picrust2/2.2.0_b
+#module load picrust2/2.2.0_b
 
 #Maybe don't run this block because the next one cover it , but with more arugments?...leaving for now, see what the other one does
 ### Followup on this:Running this one now because other errorred out (although did still completete some steps, but didnt produce all of the expected outputs), and completed correctly!
 #picrust2_pipeline.py -s extra_exports/filtered_sequences.fasta -i extra_exports/feature-table.biom -o picrust2_out_pipeline -p 2 --verbose
-add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
-add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
-add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+#add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
+#add_descriptions.py -i picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC -o picrust2_out_pipeline/EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv
+#add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
 
 
 
@@ -350,9 +350,6 @@ add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_u
 #add_descriptions.py -i picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat.tsv.gz -m KO -o picrust2_out_pipeline/KO_metagenome_out/pred_metagenome_unstrat_descrip.tsv
 #add_descriptions.py -i picrust2_out_pipeline/pathways_out/path_abun_unstrat.tsv.gz -m METACYC -o picrust2_out_pipeline/pathways_out/path_abun_unstrat_descrip.tsv
 ########
-
-
-
 
 ### END SCRIPT AND PRINT TIME
 
