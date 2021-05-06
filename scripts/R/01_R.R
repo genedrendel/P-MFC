@@ -191,10 +191,7 @@ OBJ1_14anode <- subset_samples(OBJ_W14, Location == "Anode")
 OBJ1_14cathode <- subset_samples(OBJ_W14, Location == "Cathode")
 OBJ1_14roots <- subset_samples(OBJ_W14, Location == "Root")
 
-
-
 sample_data(OBJ1_anode)
-
 
 ## Agglomerate taxa -------------------------------------------------
 #e.g subset for taxa too (ATTENTION RE:still need to change for tss vs norm if goin to do this for ordinations vs boxplots etc)
