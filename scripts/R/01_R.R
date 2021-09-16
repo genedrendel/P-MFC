@@ -286,7 +286,7 @@ a <- plot_richness(OBJ1_ts_multiplied, x = "Location")# measures=c("Simpson","Ch
 a
 
 
-## Microbiome - Core Taxa and Plots from Jaq, TO BE ADAPTED -------------------------------------------------------------
+## Microbiome - Core Taxa and Plots ADAPTED from Jaq , and added Core ASV  Venn plot -------------------------------------------------------------
 
 ##So...the workflow suggested for analysis of the core microbiome is to transform it into compositional
 #For the above experiment I did my own manual relative abundance 
@@ -308,7 +308,7 @@ OBJ1_mbiocomp <- microbiome::transform(OBJ_W14, "compositional")
 head(prevalence(OBJ1_mbiocomp, detection = 0.2/100, sort = TRUE))
 
 #This makes a phyloseq obj with only those taxa > 0.2% relative abundance and in >50% of samples
-OBJ1_core <- core(OBJ1_mbiocomp, detection = 0.1/100, prevalence = 50/100)
+OBJ1_core <- core(OBJ1_mbiocomp, detection = 0.2/100, prevalence = 50/100)
 OBJ1_core
 
 #SKIP THIS IS FILTERING
@@ -552,6 +552,8 @@ library("phyloseq"); packageVersion("phyloseq")
 library("ggplot2"); packageVersion("ggplot2")
 theme_set(theme_bw())
 
+#Have your phyloseq object already made, TSS'd
+
 #Overall
 gpt_all <- subset_taxa(OBJ1_exp_tss, Kingdom=="Bacteria")
 gpt_all <- prune_taxa(names(sort(taxa_sums(gpt_all),TRUE)[1:30]), gpt_all)
@@ -595,7 +597,7 @@ heatmap(otu_table(OBJ_all_tss_FAM))
 
 
 ## Heatmap for specialisation index -------------------------------------
-#Seperating out most variable asvs across trial for paper figure
+#Separating out most variable asvs across trial for paper figure
 #Import heatmap subset .csv's (in this case: top30 ASVs sorted by abundance across locations and selected when above 0.8 specialisation index as caluclated)
 
 #Prep libraries and metadata regardless of which subset is being run
@@ -639,6 +641,7 @@ High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:30]), High
 plot_heatmap(High_spec_gp, sample.label="Location") # this will do the default phyloseq ordination based sorting with ASV ID labels
 plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species") # replace ASV labels with species
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Species") #these arguments will let you reorganise order and labelling
+plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species")
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species")
 heatmap(otu_table(High_spec_gp))
 #label legibility
@@ -973,6 +976,14 @@ p1w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3
 p1<-plot_ordination(OBJ_W0_tss, NMDS_W0, color="Inoculum", shape="Location", label="Sample_Name")
 p1
 
+#Test dark theme options for ASM Poster
+p1u<-plot_ordination(OBJ_W0_tss, NMDS_W0u, color="Treatment", shape="Location", label=NULL)
+p1u
+p1u + theme_dark() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+p1u + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + theme(panel.grid.major = element_blank()) + theme(panel.grid.minor = element_blank()) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+
 #Use geom for shapes or lines betweeen points...e.g geom_polygon(aes(fill=Location)) will be base don locations..or can leave blank brackets for default
 #geom_path()
 #geom_polygon()
@@ -1061,6 +1072,69 @@ p14U_u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size 
 
 OBJ1_W14_connected_tss 
 OBJ1_W14_unconnected_tss 
+
+
+# Cleaned up plot element controls (for poster format) ----------------------------------------
+
+#TESTING FOR CUSTOM THEME - DARK
+p1w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "gray", size = 12),
+  axis.text.y = element_text(colour = "gray", size = 12),
+  axis.ticks = element_line(colour = "gray"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "gray", fill = NA),
+  plot.background=element_rect(fill = "black"),
+  panel.background = element_rect(fill = 'black'),
+  # Change legend (only drawback with black is that it doesn't seem to be an easy thing to make the black legend match the while verions...)
+  legend.background = element_rect(fill = "black", color = NA),
+  legend.key = element_rect(color = "gray", fill = "black"),
+  legend.title = element_text(color = "white"),
+  legend.text = element_text(color = "white")
+  )
+
+#Using the above dark custom dark theme format:
+#Week 0 - weighted (run the relevant W0 section above first)
+p1w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "gray", size = 12),
+  axis.text.y = element_text(colour = "gray", size = 12),
+  axis.ticks = element_line(colour = "gray"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "gray", fill = NA),
+  plot.background=element_rect(fill = "black"),
+  panel.background = element_rect(fill = 'black'),
+  # Change legend (only drawback with black is that it doesn't seem to be an easy thing to make the black legend match the while verions...)
+  legend.background = element_rect(fill = "black", color = NA),
+  legend.key = element_rect(color = "gray", fill = "black"),
+  legend.title = element_text(color = "white"),
+  legend.text = element_text(color = "white")
+  )
+#Week 14 - weighted (run the relevant W14 section above first)
+p4w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "gray", size = 12),
+  axis.text.y = element_text(colour = "gray", size = 12),
+  axis.ticks = element_line(colour = "gray"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "gray", fill = NA),
+  plot.background=element_rect(fill = "black"),
+  panel.background = element_rect(fill = 'black'),
+  # Change legend (only drawback with black is that it doesn't seem to be an easy thing to make the black legend match the while verions...)
+  legend.background = element_rect(fill = "black", color = NA),
+  legend.key = element_rect(color = "gray", fill = "black"),
+  legend.title = element_text(color = "white"),
+  legend.text = element_text(color = "white")
+  )
 
 #PERMANOVA FOR THESE
 #By location at end
