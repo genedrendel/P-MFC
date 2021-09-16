@@ -22,14 +22,11 @@
 ##otherwise R will not read it. also convert 'OTU ID' to 'OTU_ID'
 ##you can also make a excel file and read in as a .csv
 
-#For installing Phyloseq and other associated/similar packages, use Bioconductor / Biocmanager
+#For installing Phyloseq and associated packages, use Bioconductor / Biocmanager
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(version = "3.12")
 
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install()
+BiocManager::install("phyloseq")
 
 ## Working Directory -------------------------------------------------------
 #Set your working directory, location for data tables, tree, etc
@@ -1993,6 +1990,52 @@ PATH_W0_ado_w
 
 PATH_W0_ado_u = adonis(PATH_W0perm_u ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
 PATH_W0_ado_u
+
+
+# CLAM Clamtest for Specialist and Generalist categorisation - WIP --------
+#https://rdrr.io/rforge/vegan/man/clamtest.html
+#https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/clamtest
+#commands
+#documentation and example data:
+
+library(vegan)
+
+clamtest(comm, groups, coverage.limit = 10, specialization = 2/3,  npoints = 20, alpha = 0.05/20)
+"summary"(object, ...)
+"plot"(x, xlab, ylab, main,  pch = 21:24, col.points = 1:4,  col.lines = 2:4, lty = 1:3, position = "bottomright", ...)
+#example
+
+# Example using two mite groups. The mite data are available in vegan
+data(mite)
+# Two mite species associations (Legendre 2005, Fig. 4)
+group.1 <- c(1,2,4:8,10:15,17,19:22,24,26:30)
+group.2 <- c(3,9,16,18,23,25,31:35)
+# Separate Hellinger transformations of the two groups of species
+mite.hel.1 <- decostand(mite[,group.1], "hel")
+mite.hel.2 <- decostand(mite[,group.2], "hel")
+rownames(mite.hel.1) = paste("S",1:nrow(mite),sep="")
+rownames(mite.hel.2) = paste("S",1:nrow(mite),sep="")
+out <- CCorA(mite.hel.1, mite.hel.2)
+out
+biplot(out, "ob") # Two plots of objects
+biplot(out, "v", cex=c(0.7,0.6)) # Two plots of variables
+biplot(out, "ov", cex=c(0.7,0.6)) # Four plots (2 for objects, 2 for variables)
+biplot(out, "b", cex=c(0.7,0.6)) # Two biplots
+biplot(out, xlabs = NA, plot.axes = c(3,5)) # Plot axes 3, 5. No object names
+biplot(out, plot.type="biplots", xlabs = NULL) # Replace object names by numbers
+# Example using random numbers. No significant relationship is expected
+mat1 <- matrix(rnorm(60),20,3)
+mat2 <- matrix(rnorm(100),20,5)
+out2 = CCorA(mat1, mat2, permutations=99)
+out2
+biplot(out2, "b")
+
+data(mite)
+data(mite.env)
+sol <- with(mite.env, clamtest(mite, Shrub=="None", alpha=0.005))
+summary(sol)
+head(sol)
+plot(sol)
 
 # Other WIP / General Useful script section -------------------------------
 
