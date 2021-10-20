@@ -122,6 +122,47 @@ OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
 OBJ1_exp_tss
 
+
+# Sheet Exports (test) -----------------------------------------------------------
+
+##Small interlude to test exporting the TSS's OTU by itself, to check the transform and agglomerating wksheets
+#export TSS sheet
+# Extract abundance matrix from the phyloseq object
+OTU1 = as(otu_table(OBJ1_exp_tss), "matrix")
+# transpose if necessary
+#only if transposing:# if(taxa_are_rows(OBJ1_exp_tss)){OTU1 <- t(OTU1)}
+# Coerce to data.frame
+OTUdf = as.data.frame(OTU1)
+write.csv(OTUdf,"TSS_objexp_transform.csv", row.names = TRUE)
+
+##Same as above but for agglomerated taxa
+#family
+OBJ1_tss_FAM <- tax_glom(OBJ1_exp_tss,taxrank = "Family")
+OTU2 = as(otu_table(OBJ1_tss_FAM), "matrix")
+# transpose if necessary
+#only if transposing:# if(taxa_are_rows(physeq1)){OTU2 <- t(OTU2)}
+# Coerce to data.frame
+OTUdf2 = as.data.frame(OTU2)
+write.csv(OTUdf,"TSS_Family_transform.csv", row.names = TRUE)
+#write corresopnding tax table
+TAX2 = as(tax_table(OBJ1_tss_FAM), "matrix")
+TAXdf2 = as.data.frame(TAX2)
+write.csv(TAXdf2,"TSS_Family_tax.csv", row.names = TRUE)
+
+#genus
+OBJ1_tss_GEN <- tax_glom(OBJ1_exp_tss,taxrank = "Genus")
+OTU3 = as(otu_table(OBJ1_tss_GEN), "matrix")
+# transpose if necessary
+#if(taxa_are_rows(physeq1)){OTU3 <- t(OTU3)}
+# Coerce to data.frame
+OTUdf3 = as.data.frame(OTU3)
+write.csv(OTUdf3,"TSS_Genus_transform.csv", row.names = TRUE)
+#write corresopnding tax table
+TAX3 = as(tax_table(OBJ1_tss_GEN), "matrix")
+TAXdf3 = as.data.frame(TAX3)
+write.csv(TAXdf3,"TSS_Genus_tax.csv", row.names = TRUE)
+
+
 #Subsets on TSS data
 
 ## Treatment Subsets -------------------------------------------------------
@@ -149,6 +190,10 @@ OBJ_W0_tss <- subset_samples(OBJ1_exp_tss, Week == "Zero")
 OBJ_W6_tss <- subset_samples(OBJ1_exp_tss, Week == "Six")
 OBJ_W8_tss <- subset_samples(OBJ1_exp_tss, Week == "Eight")
 OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
+
+
+#New Treatment subset
+OBJ_W14_TRIM <- subset_samples(OBJ_W14_tss, Treatment_Trim == "Retain")
 
 #Wk14 Connected and Unconnected Subsets
 OBJ1_W14_connected_tss <- subset_samples(OBJ_W14_tss, Connection == "Connected")
@@ -910,13 +955,8 @@ plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order 
 heatmap(otu_table(High_spec_PHY))
 
 # Beta diversity ----------------------------------------------------------
-
-
-
 ##BETA DIVERSITY_____________________________________________________________________________
 ##ORDINATIONS DENDROGRAMS ANOSIM PERMANOVA
-
-
 ## Ordinations -------------------------------------------------------------
 ##some ordinations first
 library("ggplot2")
@@ -940,6 +980,10 @@ NMDS_W8w <- ordinate(OBJ_W8_tss, "NMDS", distance="unifrac", weighted=TRUE, para
 NMDS_W8w
 NMDS_W14w <- ordinate(OBJ_W14_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
 NMDS_W14w
+
+NMDS_W14wTRIM <- ordinate(OBJ_W14_TRIM, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS_W14wTRIM
+
 #subsetted timepoints UNWEIGHTED
 NMDS_W0u <- ordinate(OBJ_W0_tss, "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
 NMDS_W0u
@@ -949,6 +993,9 @@ NMDS_W8u <- ordinate(OBJ_W8_tss, "NMDS", distance="unifrac", weighted=FALSE, par
 NMDS_W8u
 NMDS_W14u <- ordinate(OBJ_W14_tss, "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
 NMDS_W14u
+
+NMDS_W14uTRIM <- ordinate(OBJ_W14_TRIM, "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
+NMDS_W14uTRIM
 
 #Subsetted as only geobacter relatived taxa just out of curiosoty....
 NMDS_Desulf <- ordinate(OBJ1_exp_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
@@ -1029,6 +1076,20 @@ p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Inoculum", shape="Location",
 p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Treatment", shape="Location", label=NULL)
 p4w
 p4w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+#W14 with TRIMMED data
+p4uTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color="Connection", shape="Location", label=NULL)
+p4uTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color="Inoculum", shape="Location", label=NULL)
+p4uTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color="Treatment", shape="Location", label=NULL)
+p4uTRIM
+p4uTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+p4wTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color="Connection", shape="Location", label=NULL)
+p4wTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color="Inoculum", shape="Location", label=NULL)
+p4wTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color="Treatment", shape="Location", label=NULL)
+p4wTRIM
+p4wTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
 
 #Same plot with sample names added if needing to single out problematic sames etc
 p4<-plot_ordination(OBJ_W14_tss, NMDS_W14, color="Connection", shape="Location", label="Sample_Name")
@@ -1220,6 +1281,15 @@ ConnectionW0 <- get_variable(OBJ_W0_tss, "Connection")
 #By Inoculum at end
 InoculumW0 <- get_variable(OBJ_W0_tss, "Inoculum")
 
+#Using TRIMMED W14 Data
+#By location at end
+Location <- get_variable(OBJ_W14_TRIM, "Location")
+#By connection at end
+Connection <- get_variable(OBJ_W14_TRIM, "Connection")
+#By Inoculum at end
+Inoculum <- get_variable(OBJ_W14_TRIM, "Inoculum")
+
+
 ##ANOSIMS(good for one-way beta diversity analysis)
 ##https://sites.google.com/site/mb3gustame/hypothesis-tests/anosim
 ##Paper explining ANOSIM:
@@ -1234,11 +1304,33 @@ W14_Loc_ano_w
 W14_Loc_ano_u <- anosim(distance(OBJ_W14_tss, "unifrac"), Location)
 W14_Loc_ano_u
 
-W14_Conn_ano <- anosim(distance(OBJ_W14_tss, "wunifrac"), Connection)
+W14_Conn_ano <- anosim(distance(OBJ_W14_tss, "unifrac"), Connection)
 W14_Conn_ano
 
-W14_Inoc_ano <- anosim(distance(OBJ_W14_tss, "wunifrac"), Inoculum)
+W14_Inoc_ano <- anosim(distance(OBJ_W14_tss, "unifrac"), Inoculum)
 W14_Inoc_ano
+
+#Using TRIMMED data
+#Weighted
+W14_Loc_ano_w <- anosim(distance(OBJ_W14_TRIM, "wunifrac"), Location)
+W14_Loc_ano_w
+
+W14_Conn_ano_w <- anosim(distance(OBJ_W14_TRIM, "wunifrac"), Connection)
+W14_Conn_ano_w
+
+W14_Inoc_ano_w <- anosim(distance(OBJ_W14_TRIM, "wunifrac"), Inoculum)
+W14_Inoc_ano_w
+
+#Unweighted
+W14_Loc_ano_u <- anosim(distance(OBJ_W14_TRIM, "unifrac"), Location)
+W14_Loc_ano_u
+
+W14_Conn_ano_u <- anosim(distance(OBJ_W14_TRIM, "unifrac"), Connection)
+W14_Conn_ano_u
+
+W14_Inoc_ano_u <- anosim(distance(OBJ_W14_TRIM, "unifrac"), Inoculum)
+W14_Inoc_ano_u
+
 
 ##PERMANOVA (function adonis())is similar to anosim but can handle more complex designs
 ##https://sites.google.com/site/mb3gustame/hypothesis-tests/manova/npmanova
@@ -1276,6 +1368,43 @@ W0_Group_ado_w
 
 W0_Group_ado_u = adonis(OBJ1_W0perm_u ~ LocationW0 * ConnectionW0 * InoculumW0, permutations = 9999)
 W0_Group_ado_u
+
+#Taxa Levels Weighted
+#Order
+W14_Group_ado_w_O = adonis(OBJ1_W14perm_wu_O ~ Location * Connection * Inoculum, permutations = 9999)
+W14_Group_ado_w_O
+#Family
+W14_Group_ado_w_F = adonis(OBJ1_W14perm_wu_F ~ Location * Connection * Inoculum, permutations = 9999)
+W14_Group_ado_w_F
+#Genus
+W14_Group_ado_w_G = adonis(OBJ1_W14perm_wu_G ~ Location * Connection * Inoculum, permutations = 9999)
+W14_Group_ado_w_G
+
+
+
+
+# TRIM PERMANOVA ----------------------------------------------------------
+#### Rerun of PERMANOVA for TRIMMMED DATA
+##make distance matricies (these are weighted and unweighted unifrac. can also use 'bray')
+OBJ1_W14perm_wu <- distance(OBJ_W14_TRIM, "wunifrac")
+OBJ1_W14perm_u <- distance(OBJ_W14_TRIM, "unifrac")
+
+#Two ways, location by connection
+W14_Group_adoW = adonis(OBJ1_W14perm_wu ~ Location * Connection, permutations = 9999)
+W14_Group_adoW
+
+W14_Group_adoU = adonis(OBJ1_W14perm_u ~ Location * Connection, permutations = 9999)
+W14_Group_adoU
+
+#Three way comparison, should be able to just add in inoculum (order of factors shouldn't matter)
+#Also added in permutations
+#adonis Analysis of Variance, Perumatatioal
+#NOTE must make factor for inoculum as above for location etc (three way version), *now fixed*
+W14_3Group_ado_w = adonis(OBJ1_W14perm_wu ~ Location * Connection * Inoculum, permutations = 9999)
+W14_3Group_ado_w
+
+W14_3Group_ado_u = adonis(OBJ1_W14perm_u ~ Location * Connection * Inoculum, permutations = 9999)
+W14_3Group_ado_u
 
 #Taxa Levels Weighted
 #Order
