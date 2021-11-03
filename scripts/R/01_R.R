@@ -193,6 +193,11 @@ OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
 
 
 #New Treatment subset
+#Overall
+OBJ_Overall_TRIM <- subset_samples(OBJ1_exp_tss, Treatment_Trim == "Retain")
+#Just Week Zero
+OBJ_W0_TRIM <- subset_samples(OBJ1_exp_tss, Treatment_Trim == "Retain")
+#Just Week 14
 OBJ_W14_TRIM <- subset_samples(OBJ_W14_tss, Treatment_Trim == "Retain")
 
 #Wk14 Connected and Unconnected Subsets
@@ -769,6 +774,7 @@ heatmap(otu_table(High_spec_PHY))
 otu_table_spec <- as.data.frame(read.csv("readmap_newcut_spec.csv", header=TRUE,row.names = "OTU_ID"))
 #taxonomy for top specialists by abundance across all samples
 taxmat_spec <- as.matrix(read.csv("tax_newcut_spec.csv", row.names=1, header=TRUE))
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
 
 OTU = otu_table(otu_table_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_spec)
@@ -1078,6 +1084,16 @@ taxmat_hyper_spec <- as.matrix(read.csv("tax_newcut_uniques.csv", row.names=1, h
 #metadata applies for both top and hyper specialists
 treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
 
+#ALTERNATIVELY: Run this one with the slimmed down cathode list ()
+#asv_id for "hyper" specialists
+otu_table_hyper_spec <- as.data.frame(read.csv("readmap_newcut_uniques_trim.csv", header=TRUE,row.names = "OTU_ID"))
+#taxonomy for "hyper" specialists
+taxmat_hyper_spec <- as.matrix(read.csv("tax_newcut_uniques_trim.csv", row.names=1, header=TRUE))
+#metadata applies for both top and hyper specialists
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
+
+
+
 OTU = otu_table(otu_table_hyper_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_hyper_spec)
 TREAT = sample_data(treat_spec)
@@ -1091,8 +1107,8 @@ OBJ_HYPER_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 #All ASVs
 # Running on raw ASVs for now because it does not agree with taxa sorting otherwise, presumable cannot sort by taxa using distiance because there are too many zeros for a difference to be calculated
 High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
-High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:140]), High_spec_gp)
-plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
+High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:200]), High_spec_gp)
+plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus")
 hyperheatplot <- plot_heatmap(High_spec_gp, sample.order = "Location", sample.label="Location", taxa.order = "Family", taxa.label = "Family")
 hyperheatplot + theme(axis.text.x = element_text(size=8, angle=90, hjust=0.4), axis.text.y=element_text(size=7, angle = 0))
 heatmap(otu_table(High_spec_gp))
@@ -1281,6 +1297,9 @@ p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Inoculum", shape="Location",
 p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Treatment", shape="Location", label=NULL)
 p4w
 p4w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+
+##W14 with TRIMMED data --------------------------------------------------
 
 #W14 with TRIMMED data
 p4uTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color="Connection", shape="Location", label=NULL)
@@ -1639,7 +1658,12 @@ library("DESeq2")
 
 #Reminder if not already done: remove unwanted samples (the sampling control set, not relevant for logchange etc)
 #i.e don't use the TSS transformed data
+#Option 1
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+#Option 2
+#Alternative subset for TRIM/TREATMENT CUT DATASSET
+OBJ1_exp <- subset_samples(OBJ1, Treatment_Trim == "Retain")
+
 
 #Phyloseq to DESEQ for testing location differences (accounting for connection)
 diagdds = phyloseq_to_deseq2(OBJ1_exp, ~ Connection + Location) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
@@ -1647,7 +1671,12 @@ diagdds = phyloseq_to_deseq2(OBJ1_exp, ~ Connection + Location) #Re: order of fa
 #Controlling for the presence of absence of connection, what was the effect of location
 #run this on everything instead of just the specialists subset, because context of the full dataset is important for this differential abundance 
 
+#Use Option 1, or 2, not both because they override,, just testing which comparisonsmight make a difference, this sets the baseline/control
 diagdds$Location<- relevel(diagdds$Location, ref="Root") # sets the reference point, baseline or control to be compared against
+
+#option two...to test, because it seems some combinations are not tested as valid compairions when useing "name" to compare
+diagdds$Location<- relevel(diagdds$Location, ref="Anode") # sets the reference point, baseline or control to be compared against
+
 #look at the p adjusted value from the output NOT the regular p 
 
 #Subset Week 14
@@ -1660,8 +1689,66 @@ diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
 res = results(diagdds, cooksCutoff = FALSE)
 res # print out results
 
+#Different Comparison Direction Sheets
+sigtabR_A = results(diagdds, contrast=c("Location","Root","Anode")) #Direction of logfold change is shown as change from anode TO root (so for e.g Geobacters are all negative/decreases)
+sigtabA_R = results(diagdds, contrast=c("Location","Anode","Root")) #Increase in Anode FROM Root. Test to see if this does actually switch direction of logfold change. Should make logfold of Geobacteris positive as they are increasing from root to anode
+sigtabR_C = results(diagdds, contrast=c("Location","Root","Cathode")) #Should be to Root from Cathode (Positive # = Increase in Root FROM Cathode)
+sigtabA_C = results(diagdds, contrast=c("Location","Anode","Cathode")) #Should be to Anode from Cathode (Postive # = Increase in Anode FROM Cathode)
+sigtabR_A
+sigtabA_R
+sigtabR_C
+sigtabA_C
+
+#Bind results sheets with OTU Taxa
+sigtab_taxR_A = cbind(as(sigtabR_A, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabR_A), ], "matrix"))
+sigtab_taxR_A
+#for printing out results, below X significance  can skip this if you want to get everything and sort them out yourself
+sigtab_taxR_A <- subset(sigtab_taxR_A, sigtab_taxR_A$padj < 0.2)
+write.csv(as.data.frame(sigtab_taxR_A), 
+          file="DESeq2_Roots_relativeto_Anode.csv")
+
+sigtab_taxA_R = cbind(as(sigtabA_R, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA_R), ], "matrix"))
+sigtab_taxA_R
+#for printing out results, below X significance  can skip this if you want to get everything and sort them out yourself
+sigtab_taxA_R <- subset(sigtab_taxA_R, sigtab_taxA_R$padj < 0.2)
+write.csv(as.data.frame(sigtab_taxA_R), 
+          file="DESeq2_Anode_relativeto_Roots.csv")
+
+sigtab_taxR_C = cbind(as(sigtabR_C, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabR_C), ], "matrix"))
+sigtab_taxR_C
+#for printing out results, below X significance  can skip this if you want to get everything and sort them out yourself
+sigtab_taxR_C <- subset(sigtab_taxR_C, sigtab_taxR_C$padj < 0.2)
+write.csv(as.data.frame(sigtab_taxR_C), 
+          file="DESeq2_Roots_relativeto_Cathode.csv")
+
+sigtab_taxA_C = cbind(as(sigtabA_C, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA_C), ], "matrix"))
+sigtab_taxA_C
+#for printing out results, below X significance  can skip this if you want to get everything and sort them out yourself
+sigtab_taxA_C <- subset(sigtab_taxA_C, sigtab_taxA_C$padj < 0.2)
+write.csv(as.data.frame(sigtab_taxA_C), 
+          file="DESeq2_Anode_relativeto_Cathode.csv")
+
+#Test - Cut out only specialsits (currently only ASV specialists from the FULL dataset) from each sheet (when jsut looking at the top 30 specialists) Otherwise export whole list (and/or with cutoff)
+specialist_res_subsetR_A <- subset((sigtab_taxR_A), rownames((sigtab_taxR_A)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetA_R <- subset((sigtab_taxA_R), rownames((sigtab_taxA_R)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetR_C <- subset((sigtab_taxR_C), rownames((sigtab_taxR_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetA_C <- subset((sigtab_taxA_C), rownames((sigtab_taxA_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+#Export .csv of specialists only (fingers crossed)
+write.csv(as.data.frame(specialist_res_subsetR_A), 
+          file="DESeq2_specialists_R_A.csv")
+write.csv(as.data.frame(specialist_res_subsetA_R), 
+          file="DESeq2_specialists_A_R.csv")
+write.csv(as.data.frame(specialist_res_subsetR_C), 
+          file="DESeq2_specialists_R_C.csv")
+write.csv(as.data.frame(specialist_res_subsetA_C), 
+          file="DESeq2_specialists_A_C.csv")
+#okay this all worked, is good. One point that has become apparent from this is that I need to double check which direction the logfold change is based on the contrasts chosen..I *think* they might actually be the revserve of what previously wrote
+#
+
+####Leftover DESEQ testing and removed commands
+
 #for printing out results, alpha is a filter, dont run this if you want to get everything and sort them out yourself
-alpha = 0.05
+alpha = 0.06
 sigtab = res[which(res$padj < alpha), ]
 
 # WIP FOR SUBSETTING: Subset deseq results BY ASV to bypass need for manual creation of specialist OTU and TAX tables..
@@ -1680,47 +1767,21 @@ res <- tax_glom(OBJ_W14,taxrank = "Family")
 res
 write.csv(as.data.frame(res), 
           file="DESeq2_specialist_subset_TEST.csv")
-####
 
-#Different Comparison Direction Sheets
-sigtabR_A = results(diagdds, contrast=c("Location","Root","Anode")) #Direction of logfold change is shown as change from anode TO root (so for e.g Geobacters are all negative/decreases)
-sigtabA_R = results(diagdds, contrast=c("Location","Anode","Root")) #Increase in Anode FROM Root. Test to see if this does actually switch direction of logfold change. Should make logfold of Geobacteris positive as they are increasing from root to anode
-sigtabR_C = results(diagdds, contrast=c("Location","Root","Cathode")) #Should be to Root from Cathode (Positive # = Increase in Root FROM Cathode)
-sigtabA_C = results(diagdds, contrast=c("Location","Anode","Cathode")) #Should be to Anode from Cathode (Postive # = Increase in Anode FROM Cathode)
-sigtabR_A
-sigtabA_R
-sigtabR_C
-sigtabA_C
+#WIP TEST equivalence vs the contrast command, name
+#their example was these two commands being essentially equivalent except for some stuff about how contrast sets LFC to zero...not sure what this means in practice, hence why I want to test what differs
+res <- results(dds, name="condition_treated_vs_untreated")
+res <- results(dds, contrast=c("condition","treated","untreated"))
+#This should print out valid comparison names
+resultsNames(diagdds)
 
-#Bind results sheets with OTU Taxa
-sigtab_taxR_A = cbind(as(sigtabR_A, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabR_A), ], "matrix"))
-sigtab_taxR_A
+sigtabR_A <- results(diagdds, name="Location_Anode_vs_Root")
+sigtabR_C <- results(diagdds, name="Location_Cathode_vs_Root")
 
-sigtab_taxA_R = cbind(as(sigtabA_R, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA_R), ], "matrix"))
-sigtab_taxA_R
+#These ones work only when using Anode as the baseline
+sigtabA_R <- results(diagdds, name="Location_Root_vs_Anode")
+sigtabA_C <- results(diagdds, name="Location_Cathode_vs_Anode")
 
-sigtab_taxR_C = cbind(as(sigtabR_C, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabR_C), ], "matrix"))
-sigtab_taxR_C
-
-sigtab_taxA_C = cbind(as(sigtabA_C, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA_C), ], "matrix"))
-sigtab_taxA_C
-
-#Test - Cut out only specialsits from each sheet (when jsut looking at the top 30 specialists) Otherwise export whole list (and/or with cutoff)
-specialist_res_subsetR_A <- subset((sigtab_taxR_A), rownames((sigtab_taxR_A)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-specialist_res_subsetA_R <- subset((sigtab_taxA_R), rownames((sigtab_taxA_R)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-specialist_res_subsetR_C <- subset((sigtab_taxR_C), rownames((sigtab_taxR_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-specialist_res_subsetA_C <- subset((sigtab_taxA_C), rownames((sigtab_taxA_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-#Export .csv of specialists only (fingers crossed)
-write.csv(as.data.frame(specialist_res_subsetR_A), 
-          file="DESeq2_specialists_R_A.csv")
-write.csv(as.data.frame(specialist_res_subsetA_R), 
-          file="DESeq2_specialists_A_R.csv")
-write.csv(as.data.frame(specialist_res_subsetR_C), 
-          file="DESeq2_specialists_R_C.csv")
-write.csv(as.data.frame(specialist_res_subsetA_C), 
-          file="DESeq2_specialists_A_C.csv")
-#okay this all worked, is good. One point that has become apparent from this is that I need to double check which direction the logfold change is based on the contrasts chosen..I *think* they might actually be the revserve of what previously wrote
-#
 
 #TO DO (fix) Export .csv (now that I've figured otu speicialist subset need to reformat this to correctly point to the full datasheet...TO DO)
 write.csv(as.data.frame(sigtab_otuA), 
