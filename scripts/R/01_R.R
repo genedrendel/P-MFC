@@ -192,9 +192,13 @@ OBJ_W8_tss <- subset_samples(OBJ1_exp_tss, Week == "Eight")
 OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
 
 
-#New Treatment subset
+#New Treatment TSS'd subset
 #Overall
 OBJ_Overall_TRIM <- subset_samples(OBJ1_exp_tss, Treatment_Trim == "Retain")
+
+#Half trim that retains Pseudomonas
+OBJ_Overall_TRIM <- subset_samples(OBJ1_exp_tss, Treatment_Half_Trim == "Retain")
+
 #Just Week Zero
 OBJ_W0_TRIM <- subset_samples(OBJ1_exp_tss, Treatment_Trim == "Retain")
 #Just Week 14
@@ -1663,6 +1667,9 @@ OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 #Option 2
 #Alternative subset for TRIM/TREATMENT CUT DATASSET
 OBJ1_exp <- subset_samples(OBJ1, Treatment_Trim == "Retain")
+#Option 3
+#Alternative dataset with half cut (retaining Pseudo, but still cutting Montebello)
+OBJ1_exp <- subset_samples(OBJ1, Treatment_Half_Trim == "Retain")
 
 
 #Phyloseq to DESEQ for testing location differences (accounting for connection)
