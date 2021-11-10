@@ -1195,6 +1195,12 @@ library("RColorBrewer")
 ##NMDS:
 NMDS1 <- ordinate(OBJ1_exp_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
 NMDS1 #use to check that stress is  < 0.2
+p1overall<-plot_ordination(OBJ1_exp_tss, NMDS1, color="Treatment", shape="Location", label=NULL)
+p1overall<-plot_ordination(OBJ1_exp_tss, NMDS1, color="Week", shape="Location", label=NULL)
+p1overall
+p1overall + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+
 
 #Subsetted timepoints WEIGHTED
 NMDS_W0w <- ordinate(OBJ_W0_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
