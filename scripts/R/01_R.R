@@ -35,10 +35,10 @@ setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phy
 ## Import ------------------------------------------------------------------
 #Import .csv as OTU table
 #Replaced import with the below: Not sure if any functional difference once imported like this? But the other one didn't work, assuming mostly just a txt vs csv thing
-otu_table <- as.data.frame(read.csv("raw_readmap.csv", header=TRUE,row.names = "OTU_ID"))
+otu_table <- as.data.frame(read.csv("raw_readmap.csv", header = TRUE,row.names = "OTU_ID"))
 
 ##look at the total reads per sample and decide on a rarefaction depth
-rare<-colSums(otu_table)
+rare <- colSums(otu_table)
 rare
 plot(rare)
 ##rarefy to depth 4000(we'll be doing this later, we'll lose one sample)
@@ -54,7 +54,7 @@ TREE <- read.tree("rooted_tree.nwk")
 ##make this file in excel from HPC outputs
 ##headings in the .csv file should be: 'OTU_ID' "Domain' 'Phylum' 'Class' 'Order' 'Family' 'Genus' 'Species'
 
-taxmat <- as.matrix(read.csv("tax_table.csv", row.names=1, header=TRUE))
+taxmat <- as.matrix(read.csv("tax_table.csv", row.names = 1, header = TRUE))
 
 ##row names for taxmat and otu table MUST be the same
 rownames(taxmat)
@@ -65,7 +65,7 @@ rownames(otu_table)
 ##IMPORTANT : you must have more than one column in your treatment file
 ##(remember the first column will be pulled out to be used as labels so more than 2 coloums is needed)
 
-treat <- as.data.frame(read.csv("mapping_file.csv", row.names=1, header=TRUE))
+treat <- as.data.frame(read.csv("mapping_file.csv", row.names = 1, header = TRUE))
 
 ##OK time to make our phyloseq object
 #to install the phyloseq package you will ned to follow instructions on
@@ -81,7 +81,6 @@ OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
 
 sample_data(OBJ1)
 
-
 ## Remove unwanted taxa ----------------------------------------------------
 ##you may wan to remove mitochondria and chloroplasts. you can use this script
 
@@ -92,7 +91,6 @@ OBJ1 <- OBJ1 %>%
     Family  != "mitochondria" &
     Class   != "Chloroplast"
   )
-
 
 ##the following walkthrough detail many phyloseq preprocessing options
 ##https://joey711.github.io/phyloseq/preprocess.html
@@ -105,7 +103,6 @@ tax_table(OBJ1) #look at taxonomy table
 #Install and run Shiny Phyloseq for interactive exploration of data (however can only import as .biom, .rdata or netwick trees)
 install.packages("shiny")
 shiny::runGitHub("shiny-phyloseq","joey711")
-
 
 ## Subsetting --------------------------------------------------------------
 
@@ -121,7 +118,6 @@ OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 #Overall TSS - then run the individual subsets, BUT ensure these are off of the TSS set, not the regular set in the subsetting section
 OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
 OBJ1_exp_tss
-
 
 # Sheet Exports (test) -----------------------------------------------------------
 
@@ -162,7 +158,6 @@ TAX3 = as(tax_table(OBJ1_tss_GEN), "matrix")
 TAXdf3 = as.data.frame(TAX3)
 write.csv(TAXdf3,"TSS_Genus_tax.csv", row.names = TRUE)
 
-
 #Subsets on TSS data
 
 ## Treatment Subsets -------------------------------------------------------
@@ -190,7 +185,6 @@ OBJ_W0_tss <- subset_samples(OBJ1_exp_tss, Week == "Zero")
 OBJ_W6_tss <- subset_samples(OBJ1_exp_tss, Week == "Six")
 OBJ_W8_tss <- subset_samples(OBJ1_exp_tss, Week == "Eight")
 OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
-
 
 #New Treatment TSS'd subset
 #Overall
@@ -247,9 +241,9 @@ sample_data(OBJ1_anode)
 ## Agglomerate taxa -------------------------------------------------
 #e.g subset for taxa too (ATTENTION RE:still need to change for tss vs norm if goin to do this for ordinations vs boxplots etc)
 #Experimental
-OBJ1_Desulf = subset_taxa(OBJ1_exp_tss, Order=="Desulfuromonadales")
-OBJ1_Geobacteraceae = subset_taxa(OBJ1_exp_tss, Family=="Geobacteraceae")
-OBJ1_Geobacter = subset_taxa(OBJ1_exp_tss, Genus=="Geobacter")
+OBJ1_Desulf = subset_taxa(OBJ1_exp_tss, Order == "Desulfuromonadales")
+OBJ1_Geobacteraceae = subset_taxa(OBJ1_exp_tss, Family == "Geobacteraceae")
+OBJ1_Geobacter = subset_taxa(OBJ1_exp_tss, Genus == "Geobacter")
 
 #Agglomerating at certain taxonomic levels
 #Will be basing off of TSS'd Data objects, currently mainly interested in end point stats, so W14
@@ -260,15 +254,28 @@ OBJ_W14_tss_GEN <- tax_glom(OBJ_W14_tss,taxrank = "Genus")
 ## Subset specific ASVs/OTUs -----------------------------------------------
 
 ## WIP
-#This one will only ever work at ASV level of course, but can then go back and agglomerate the subset if you with, and may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
-#If you read the help for subset_taxa in phyloseq it states it is just a convenience wrapper for the base R subset function that allows for easy passing of a variable in the sample_data to subset the phyloseq object by. It also provides details of how it uses the base subset function.
-#To subset your phyloseq object by a list of OTU ids (and there may be a better way of doing this) you can subset your otu_table using the base R subset function if the row names match your list of OTU ids, then merge the resulting OTU table back with the other components on your phyloseq object, e.g:
+#This one will only ever work at ASV level of course, but can then go back and agglomerate the subset if you with, 
+#and may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
+#If you read the help for subset_taxa in phyloseq it states it is just a convenience wrapper for the base R subset function
+#that allows for easy passing of a variable in the sample_data to subset the phyloseq object by. It also provides details of how it uses the base subset function.
+#To subset your phyloseq object by a list of OTU ids (and there may be a better way of doing this)
+#you can subset your otu_table using the base R subset function if the row names match your list of OTU ids, 
+#then merge the resulting OTU table back with the other components on your phyloseq object, e.g:
 #assuming you have a phyloseq object named 'physeq'
-OBJ1_ASVsubset <- subset(otu_table(OBJ1), rownames(otu_table(OBJ1)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+OBJ1_ASVsubset <- subset(otu_table(OBJ1), rownames(otu_table(OBJ1)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2',
+                                                                           '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e',
+                                                                           '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08',
+                                                                           '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774',
+                                                                           '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008',
+                                                                           '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6',
+                                                                           '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397',
+                                                                           '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8',
+                                                                           'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c',
+                                                                           'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
 new_OBJ1_ASVsubset <- merge_phyloseq(OBJ1_ASVsubset, tax_table(OBJ1), sample_data(OBJ1), ...)
 #print out as csv to test export? Was easy enough with deseq results, but w/ phylo objects may need some extra steps to test between taxa and otu etc..
 write.csv(as.data.frame(specialist_res_subset), 
-          file="IndivdualASV_subset_TEST.csv")
+          file = "IndivdualASV_subset_TEST.csv")
 #This results in a new phyloseq object that is subset to the list of OTU ids you provided.
 ## WIP
 
@@ -295,7 +302,7 @@ tax_table(OBJ1_ts) #look at taxonomy table
 OBJ1_s <- subset_samples(OBJ1_pmta2, PortStar != "PORT") #assuming for e.g Portstar = Sanmple_Name and "PORT" = "W6UG3A", or Location and "Root"
 
 #Normality tests don't seem to like the TSS data, have to convert to integers?
-OBJ1_ts_rounded = transform_sample_counts(OBJ1_ts, function(OTU) round(OTU,digits=0) )
+OBJ1_ts_rounded = transform_sample_counts(OBJ1_ts, function(OTU) round(OTU,digits = 0) )
 OBJ1_ts_rounded
 
 #Re: TSS proportions and integers
@@ -335,7 +342,6 @@ a
 #TSS Multiplied
 a <- plot_richness(OBJ1_ts_multiplied, x = "Location")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
 a
-
 
 ## Microbiome - Core Taxa and Plots ADAPTED from Jaq , and added Core ASV  Venn plot -------------------------------------------------------------
 
@@ -382,33 +388,31 @@ library(RColorBrewer)
 n <- 60
 qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
 col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-pie(rep(1,n), col=sample(col_vector, n))
+pie(rep(1,n), col = sample(col_vector, n))
 
 #without black borders....
-p <- plot_bar(OBJ1_ord2, "Location", fill="Genus")
-p <- p + scale_fill_manual(values=col_vector)
+p <- plot_bar(OBJ1_ord2, "Location", fill = "Genus")
+p <- p + scale_fill_manual(values = col_vector)
 p <- p + geom_bar(stat = "identity", position = "stack")
 p
 
 ##PLOT - all samples
-p <- plot_bar(OBJ1_ord2, "Location", fill="Genus")
-p <- p + scale_fill_manual(values=col_vector)
-p <- p + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p <- plot_bar(OBJ1_ord2, "Location", fill = "Genus")
+p <- p + scale_fill_manual(values = col_vector)
+p <- p + theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p <- p + labs(y = "Relative abundance")
 p <- p + geom_bar(stat = "identity", position = "stack")
-p <- p + guides(fill=guide_legend(title="Genus")) # only need at genus due to lots of fam. pull across
+p <- p + guides(fill = guide_legend(title = "Genus")) # only need at genus due to lots of fam. pull across
 p
 
 #testing colour palettes because don't know what palette colvec will be big enough and allow distinguishing
-p <- p + scale_fill_manual(values=col_vector)
+p <- p + scale_fill_manual(values = col_vector)
 p <- p + scale_fill_brewer("dark2")
 p2 + scale_fill_igv()
 p <- p + scale_fill_viridis_d(direction = -1)
 
 p <- plot_frequencies(sample_data(OBJ1_ord2), "Anode", "Cathode")
 print(p)
-
-
 
 #The figures came out well - the genus maybe needs trimming slightly as has lots of OTUs
 
@@ -425,7 +429,7 @@ print(p)
 #install.packages("eulerr") # If not installed
 devtools::install_github('microsud/microbiomeutilities')
 
-library("RColorBrewer")
+library(RColorBrewer)
 library(eulerr)
 library(microbiome)
 library(microbiomeutilities)
@@ -442,7 +446,7 @@ OBJ_mbio_taxa <- format_to_besthit(OBJ1_mbiocomp)
 # check names
 taxa_names(OBJ_mbio_taxa)[1:5]
 
-for (n in location_list){ # for each variable n in location
+for (n in location_list) { # for each variable n in location
     #print(paste0("Identifying Core Taxa for ", n))
     
     Loc.sub <- subset_samples(OBJ_mbio_taxa, location_list == n) # Choose sample from location by n
@@ -460,12 +464,11 @@ print(list_core)
 #Make Venn
 # Specify colors and plot venn
 # supplying colors in the order they appear in list_core
-mycols <- c(Anode="#eb5717", Cathode="#352ea8", Root="#0fa676") 
+mycols <- c(Anode = "#eb5717", Cathode = "#352ea8", Root = "#0fa676") 
 plot(venn(list_core),
      fills = mycols)
 
 ## Normality Tests ---------------------------------------------------------
-
 
 ##we need to know if data meets normailtiy and homogeneity of varience assumptions
 ##so we can decide how to test for statistical differences
@@ -487,7 +490,6 @@ shapiro.test(Div$Chao1)
 ##if data is from normal distribution use anova
 ##result: p > 0.05 for Shannon and Chao1, but not Simpson
 
-
 help(bartlett.test)
 bartlett.test(Simpson~Location, Div)
 ##test for homegeneity of varience
@@ -496,20 +498,17 @@ bartlett.test(Simpson~Location, Div)
 ##if varience is same use anova
 ## result: p > 0.05 for Chao1, Shannon and Simpson
 
-
 ##example ANOVA with post hoc test #parametric
-ANOVA1<-aov(Div$Shannon ~ Div$Location * Div$Connection)
+ANOVA1 <- aov(Div$Shannon ~ Div$Location * Div$Connection)
 summary(ANOVA1)
 
-ANOVA1<-aov(Div$Shannon ~ Div$Location)
+ANOVA1 <- aov(Div$Shannon ~ Div$Location)
 summary(ANOVA1)
 
-TUKEY<- TukeyHSD(ANOVA1,'Div$Location', conf.level=0.95)
+TUKEY <- TukeyHSD(ANOVA1,'Div$Location', conf.level = 0.95)
 TUKEY
 
-
 ## WIP - Boxplot labels ----------------------------------------------------
-
 
 ##WORK IN PROGRESS - AUTOMATING A WAY TO PUT THE LETTERS ON THE BOXPLOTS
 # library
@@ -521,21 +520,21 @@ generate_label_df <- function(TUKEY, variable){
      Tukey.labels <- data.frame(multcompLetters(Tukey.levels)['Letters'])
 
      #I need to put the labels in the same order as in the boxplot :
-     Tukey.labels$treatment=rownames(Tukey.labels)
-     Tukey.labels=Tukey.labels[order(Tukey.labels$treatment) , ]
+     Tukey.labels$treatment = rownames(Tukey.labels)
+     Tukey.labels = Tukey.labels[order(Tukey.labels$treatment) , ]
      return(Tukey.labels)
      }
 
 LABELS <- generate_label_df(TUKEY, "Div$Location")
 LABELS
 
-my_colors<-c("green4","red3","darkorange1","green4","red3","darkorange1") #make sure you colours appear in the order that corresponds to your factor levels
+my_colors <- c("green4","red3","darkorange1","green4","red3","darkorange1") #make sure you colours appear in the order that corresponds to your factor levels
 
 # Draw the basic boxplot
-a <- boxplot(Div$Shannon ~ Div$Location , ylim=c(min(Div$Shannon), 1.1*max(Div$Shannon)) , col=my_colors[as.numeric(LABELS[,1])] , ylab="Shannon Diversity" , main="")
+a <- boxplot(Div$Shannon ~ Div$Location , ylim = c(min(Div$Shannon), 1.1*max(Div$Shannon)) , col = my_colors[as.numeric(LABELS[,1])] , ylab = "Shannon Diversity" , main = "")
 # I want to write the letter over each box. Over is how high I want to write it.
 over <- 0.1*max( a$stats[nrow(a$stats),] )
-text( c(1:nlevels(Div$Group)) , a$stats[nrow(a$stats),]+over , LABELS[,1]  , col=my_colors[as.numeric(LABELS[,1])] )
+text( c(1:nlevels(Div$Group)) , a$stats[nrow(a$stats),] + over , LABELS[,1]  , col = my_colors[as.numeric(LABELS[,1])] )
 
 ##End WORK IN PROGRESS
 
@@ -543,9 +542,8 @@ text( c(1:nlevels(Div$Group)) , a$stats[nrow(a$stats),]+over , LABELS[,1]  , col
 kruskal.test(Shannon ~ Location, Div)
 
 library(FSA)
-PT = dunnTest(Shannon ~ Location, data=Div, method="bh")
+PT = dunnTest(Shannon ~ Location, data = Div, method = "bh")
 PT
-
 
 ## Boxplots ----------------------------------------------------------------
 
@@ -564,36 +562,32 @@ line <- "goldenrod2" #boxplot line colour
 #-ed out line is to be filled in based on stats
 
 s1 <- ggplot(Div, aes(Group,Shannon)) +  geom_boxplot()
-s1 <- s1  + theme_bw()+  theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
+s1 <- s1  + theme_bw() +  theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 s1 <- s1 + stat_summary(geom = 'text', label = c("a","ab","a","b","b","ab"), fun.y = max, vjust = -1)
-s1 <- s1 + scale_x_discrete(name = "Title", limits= lim, labels = lim)
-s1 <- s1 + scale_y_continuous(name = "Shannon diversty",  breaks = seq(5, 6.5, 0.5), limits=c(5, 6.5))
+s1 <- s1 + scale_x_discrete(name = "Title", limits = lim, labels = lim)
+s1 <- s1 + scale_y_continuous(name = "Shannon diversty",  breaks = seq(5, 6.5, 0.5), limits = c(5, 6.5))
 s1 <- s1 + geom_boxplot(fill = fill, colour = line, alpha = 0.5)
 s1
 
-
 c1 <- ggplot(Div, aes(Group,Chao1)) +  geom_boxplot()
-c1 <- c1 + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
+c1 <- c1 + theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 #c1 <- c1 + stat_summary(geom = 'text', label = c("a","a","a","b","b","b"), fun.y = max, vjust = -1)
-c1 <- c1 + scale_x_discrete(name = "Title", limits= lim, labels = lab)
-c1 <- c1 + scale_y_continuous(name = "Chao1",  breaks = seq(0, 2000, 500), limits=c(0, 2000))
+c1 <- c1 + scale_x_discrete(name = "Title", limits = lim, labels = lab)
+c1 <- c1 + scale_y_continuous(name = "Chao1",  breaks = seq(0, 2000, 500), limits = c(0, 2000))
 c1 <- c1 + geom_boxplot(fill = fill, colour = line, alpha = 0.5)
 c1
 
-
 p1 <- ggplot(Div, aes(Group, simpson)) +  geom_boxplot()
-p1 <- p1 + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
+p1 <- p1 + theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 0.5))
 #p1 <- p1 + stat_summary(geom = 'text', label = c("a","ab","a","b","b","ab"), fun.y = max, vjust = -1)
-p1 <- p1 + scale_x_discrete(name = "Title", limits= lim, labels = lab)
-p1 <- p1 + scale_y_continuous(name = "Simpson",  breaks = seq(0,0.5,0.1), limits=c(0,0.5))
+p1 <- p1 + scale_x_discrete(name = "Title", limits = lim, labels = lab)
+p1 <- p1 + scale_y_continuous(name = "Simpson",  breaks = seq(0,0.5,0.1), limits = c(0,0.5))
 p1 <- p1 + geom_boxplot(fill = fill, colour = line, alpha = 0.5)
 p1
 
-
 #make a panel image
 library(Rmisc)
-multiplot(s1,c1,p1, cols=3)
-
+multiplot(s1,c1,p1, cols = 3)
 
 # Heatmaps ----------------------------------------------------------------
 ##PHYLOSEQ HEATMAPS (WIP)_____________________________________________
@@ -606,44 +600,44 @@ theme_set(theme_bw())
 #Have your phyloseq object already made, TSS'd
 
 #Overall
-gpt_all <- subset_taxa(OBJ1_exp_tss, Kingdom=="Bacteria")
+gpt_all <- subset_taxa(OBJ1_exp_tss, Kingdom == "Bacteria")
 gpt_all <- prune_taxa(names(sort(taxa_sums(gpt_all),TRUE)[1:30]), gpt_all)
-plot_heatmap(gpt_all, sample.label="Location")
-plot_heatmap(gpt_all, "NMDS", "unifrac", "Connection", "Family", sample.label="Location", weighted=FALSE)
-plot_heatmap(gpt_all, "NMDS", "unifrac", "Connection", "Family", sample.label="Location", weighted=TRUE)
+plot_heatmap(gpt_all, sample.label = "Location")
+plot_heatmap(gpt_all, "NMDS", "unifrac", "Connection", "Family", sample.label = "Location", weighted = FALSE)
+plot_heatmap(gpt_all, "NMDS", "unifrac", "Connection", "Family", sample.label = "Location", weighted = TRUE)
 heatmap(otu_table(gpt))
 
-gpt_prot <- subset_taxa(OBJ1_exp_tss, Phylum=="Proteobacteria")
+gpt_prot <- subset_taxa(OBJ1_exp_tss, Phylum == "Proteobacteria")
 gpt_prot <- prune_taxa(names(sort(taxa_sums(gpt_prot),TRUE)[1:30]), gpt_prot)
 plot_heatmap(gpt_prot)
-plot_heatmap(gpt_prot, "NMDS", "unifrac", "Connection", "Family", weighted=FALSE)
-plot_heatmap(gpt_prot, "NMDS", "unifrac", "Connection", "Family", weighted=TRUE)
+plot_heatmap(gpt_prot, "NMDS", "unifrac", "Connection", "Family", weighted = FALSE)
+plot_heatmap(gpt_prot, "NMDS", "unifrac", "Connection", "Family", weighted = TRUE)
 plot_heatmap(gpt_prot)
 
 #Subsetting...test to try to get labels legible and see time series
-gpt_sub_an <- subset_taxa(OBJ1_anode_tss, Kingdom=="Bacteria")
+gpt_sub_an <- subset_taxa(OBJ1_anode_tss, Kingdom == "Bacteria")
 gpt_sub_an <- prune_taxa(names(sort(taxa_sums(gpt_sub_an),TRUE)[1:30]), gpt_sub_an)
-plot_heatmap(gpt_sub_an, sample.label="Connection")
+plot_heatmap(gpt_sub_an, sample.label = "Connection")
 plot_heatmap(gpt_sub_an, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Genus")
 heatmap(otu_table(gpt_sub_an))
 
 #Subsetting w14...test 
-gpt_sub14 <- subset_taxa(OBJ_W14_tss, Kingdom=="Bacteria")
+gpt_sub14 <- subset_taxa(OBJ_W14_tss, Kingdom == "Bacteria")
 gpt_sub14 <- prune_taxa(names(sort(taxa_sums(gpt_sub14),TRUE)[1:30]), gpt_sub14)
-plot_heatmap(gpt_sub14, method = "MDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(gpt_sub14, method = "MDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.label = "Family", weighted = TRUE)
 heatmap(otu_table(gpt_sub14))
 
 #Try everything by time for those asvs
-gpt_alltime <- subset_taxa(OBJ1_exp_tss, Kingdom=="Bacteria")
+gpt_alltime <- subset_taxa(OBJ1_exp_tss, Kingdom == "Bacteria")
 gpt_alltime <- prune_taxa(names(sort(taxa_sums(gpt_alltime),TRUE)[1:30]), gpt_alltime)
-plot_heatmap(gpt_alltime, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(gpt_alltime, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
 heatmap(otu_table(gpt_alltime))
 
 #Now agglomerate to diff taxa levels instead of asv
 OBJ_all_tss_FAM <- tax_glom(OBJ1_exp_tss,taxrank = "Family")
-OBJ_all_tss_FAM <- subset_taxa(OBJ_all_tss_FAM, Kingdom=="Bacteria")
+OBJ_all_tss_FAM <- subset_taxa(OBJ_all_tss_FAM, Kingdom == "Bacteria")
 OBJ_all_tss_FAM <- prune_taxa(names(sort(taxa_sums(OBJ_all_tss_FAM),TRUE)[1:30]), OBJ_all_tss_FAM)
-plot_heatmap(OBJ_all_tss_FAM, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(OBJ_all_tss_FAM, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
 heatmap(otu_table(OBJ_all_tss_FAM))
 
 
@@ -658,16 +652,16 @@ library(ggplot2)
 theme_set(theme_bw())
 
 #metadata applies for both top and hyper specialists
-treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names = 1, header = TRUE))
 
 ## Top specialists ---------------------------------------------------------
 
 #asv_id for top specialists by abundance across all samples
-otu_table_spec <- as.data.frame(read.csv("readmap_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
+otu_table_spec <- as.data.frame(read.csv("readmap_spec_index.csv", header = TRUE,row.names = "OTU_ID"))
 #taxonomy for top specialists by abundance across all samples
-taxmat_spec <- as.matrix(read.csv("tax_spec_index.csv", row.names=1, header=TRUE))
+taxmat_spec <- as.matrix(read.csv("tax_spec_index.csv", row.names = 1, header = TRUE))
 #use this one instead of the line above now as I have appended higher taxonomy to levels that were missing to make figures clearer
-taxmat_spec <- as.matrix(read.csv("tax_spec_index_append_hi_tax.csv", row.names=1, header=TRUE))
+taxmat_spec <- as.matrix(read.csv("tax_spec_index_append_hi_tax.csv", row.names = 1, header = TRUE))
 
 OTU = otu_table(otu_table_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_spec)
@@ -687,23 +681,22 @@ OBJ1_spec_ts = transform_sample_counts(OBJ_SPEC, function(OTU) OTU/sum(OTU) )
 OBJ1_spec_ts
 
 #Top 30 ASVs above 0.8 specialisation index and high abundance
-High_spec_gp <- subset_taxa(OBJ1_spec_ts, Kingdom=="Bacteria")
+High_spec_gp <- subset_taxa(OBJ1_spec_ts, Kingdom == "Bacteria")
 High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:30]), High_spec_gp)
-plot_heatmap(High_spec_gp, sample.label="Location") # this will do the default phyloseq ordination based sorting with ASV ID labels
-plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species") # replace ASV labels with species
+plot_heatmap(High_spec_gp, sample.label = "Location") # this will do the default phyloseq ordination based sorting with ASV ID labels
+plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Species") # replace ASV labels with species
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Species") #these arguments will let you reorganise order and labelling
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species")
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species")
 heatmap(otu_table(High_spec_gp))
 #label legibility
-ASVheatplot_ORD <- plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
-ASVheatplot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.text.y=element_text(size=11))
+ASVheatplot_ORD <- plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
+ASVheatplot_ORD + theme(axis.text.x = element_text(size = 9, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 11))
 
 #Redo for figure (and a second asv one to compare with deseq manually)
-plot_ORD <- plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
-plot_ORD <- plot_heatmap(High_spec_gp, sample.label="Location", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
-plot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.text.y=element_text(size=11))
-
+plot_ORD <- plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Species", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
+plot_ORD <- plot_heatmap(High_spec_gp, sample.label = "Location", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
+plot_ORD + theme(axis.text.x = element_text(size = 9, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 11))
 
 #Lets try glom to group the asv's together
 #will give a  smaller heatmap but might be an interesting/quick way of seeing if trends hold
@@ -711,74 +704,74 @@ plot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.t
 
 #Species
 High_spec_SPE <- tax_glom(OBJ1_spec_ts,taxrank = "Species")
-High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom=="Bacteria")
+High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom == "Bacteria")
 High_spec_SPE  <- prune_taxa(names(sort(taxa_sums(High_spec_SPE),TRUE)[1:30]), High_spec_SPE)
-plot_heatmap(High_spec_SPE, sample.label="Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
+plot_heatmap(High_spec_SPE, sample.label = "Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
 heatmap(otu_table(High_spec_SPE))
 #lets take out the individual species map ordered by the ordination for more legible font
-speciesheatplot_ORD <- plot_heatmap(High_spec_SPE, sample.label="Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
-speciesheatplot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.text.y=element_text(size=11))
+speciesheatplot_ORD <- plot_heatmap(High_spec_SPE, sample.label = "Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
+speciesheatplot_ORD + theme(axis.text.x = element_text(size = 9, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 11))
 
 #Genus
 High_spec_GEN <- tax_glom(OBJ1_spec_ts,taxrank = "Genus")
-High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom=="Bacteria")
+High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom == "Bacteria")
 High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:30]), High_spec_GEN)
-plot_heatmap(High_spec_GEN, sample.label="Location", taxa.label = "Genus") # this will do the default phyloseq ordination based sorting
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_GEN, sample.label = "Location", taxa.label = "Genus") # this will do the default phyloseq ordination based sorting
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
 heatmap(otu_table(High_spec_GEN))
 
 #Family
 High_spec_FAM <- tax_glom(OBJ1_spec_ts,taxrank = "Family")
-High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom=="Bacteria")
+High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom == "Bacteria")
 High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:30]), High_spec_FAM)
-plot_heatmap(High_spec_FAM, sample.label="Location", taxa.label = "Family")
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE, cex=2.5)
+plot_heatmap(High_spec_FAM, sample.label = "Location", taxa.label = "Family")
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted = TRUE, cex = 2.5)
 heatmap(otu_table(High_spec_FAM))
 #test for labelling font size
-heatplot <- plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
-heatplot + theme(axis.text.x = element_text(size=10, angle=90, hjust=0.4), axis.text.y=element_text(size=11))
+heatplot <- plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
+heatplot + theme(axis.text.x = element_text(size = 10, angle = 90, hjust = 0.4), axis.text.y = element_text(size = 11))
 
 #Order
 High_spec_ORD <- tax_glom(OBJ1_spec_ts,taxrank = "Order")
-High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom=="Bacteria")
+High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom == "Bacteria")
 High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:30]), High_spec_ORD)
-plot_heatmap(High_spec_ORD, sample.label="Location", taxa.label = "Order")
-plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted=TRUE)
+plot_heatmap(High_spec_ORD, sample.label = "Location", taxa.label = "Order")
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted = TRUE)
 heatmap(otu_table(High_spec_ORD))
 
 #Class
 High_spec_CLA <- tax_glom(OBJ1_spec_ts,taxrank = "Class")
-High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom=="Bacteria")
+High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom == "Bacteria")
 High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:30]), High_spec_CLA)
-plot_heatmap(High_spec_CLA, sample.label="Location", taxa.label = "Class")
-plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted=TRUE)
+plot_heatmap(High_spec_CLA, sample.label = "Location", taxa.label = "Class")
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted =  TRUE)
 heatmap(otu_table(High_spec_CLA))
 
 #Phyla
 High_spec_PHY <- tax_glom(OBJ1_spec_ts,taxrank = "Phylum")
-High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom=="Bacteria")
+High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom == "Bacteria")
 High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), High_spec_PHY)
-plot_heatmap(High_spec_PHY, sample.label="Location", taxa.label = "Phylum")
-plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted=TRUE)
+plot_heatmap(High_spec_PHY, sample.label = "Location", taxa.label = "Phylum")
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
 
 ## Top specialists (pt2 - treatment CUT) ---------------------------------------------------------
 
 #asv_id for top specialists by abundance across all samples
-otu_table_spec <- as.data.frame(read.csv("readmap_newcut_spec.csv", header=TRUE,row.names = "OTU_ID"))
+otu_table_spec <- as.data.frame(read.csv("readmap_newcut_spec.csv", header = TRUE,row.names = "OTU_ID"))
 #taxonomy for top specialists by abundance across all samples
-taxmat_spec <- as.matrix(read.csv("tax_newcut_spec.csv", row.names=1, header=TRUE))
-treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
+taxmat_spec <- as.matrix(read.csv("tax_newcut_spec.csv", row.names = 1, header = TRUE))
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names = 1, header = TRUE))
 
 OTU = otu_table(otu_table_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_spec)
@@ -798,23 +791,22 @@ OBJ1_spec_ts = transform_sample_counts(OBJ_SPEC, function(OTU) OTU/sum(OTU) )
 OBJ1_spec_ts
 
 #Top 30 ASVs above 0.8 specialisation index and high abundance
-High_spec_gp <- subset_taxa(OBJ1_spec_ts, Kingdom=="Bacteria")
+High_spec_gp <- subset_taxa(OBJ1_spec_ts, Kingdom == "Bacteria")
 High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:50]), High_spec_gp)
-plot_heatmap(High_spec_gp, sample.label="Location") # this will do the default phyloseq ordination based sorting with ASV ID labels
-plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species") # replace ASV labels with species
+plot_heatmap(High_spec_gp, sample.label = "Location") # this will do the default phyloseq ordination based sorting with ASV ID labels
+plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Species") # replace ASV labels with species
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Species") #these arguments will let you reorganise order and labelling
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species")
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species")
 heatmap(otu_table(High_spec_gp))
 #label legibility
-ASVheatplot_ORD <- plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
-ASVheatplot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.text.y=element_text(size=11))
+ASVheatplot_ORD <- plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
+ASVheatplot_ORD + theme(axis.text.x = element_text(size = 9, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 11))
 
 #Redo for figure (and a second asv one to compare with deseq manually)
-plot_ORD <- plot_heatmap(High_spec_gp, sample.label="Location", taxa.label = "Species", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
-plot_ORD <- plot_heatmap(High_spec_gp, sample.label="Location", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
-plot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.text.y=element_text(size=11))
-
+plot_ORD <- plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Species", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
+plot_ORD <- plot_heatmap(High_spec_gp, sample.label = "Location", sample.order = "Location", taxa.order = "Species") # replace ASV labels with species
+plot_ORD + theme(axis.text.x = element_text(size = 9, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 11))
 
 #Lets try glom to group the asv's together
 #will give a  smaller heatmap but might be an interesting/quick way of seeing if trends hold
@@ -822,80 +814,81 @@ plot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.t
 
 #Species
 High_spec_SPE <- tax_glom(OBJ1_spec_ts,taxrank = "Species")
-High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom=="Bacteria")
+High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom == "Bacteria")
 High_spec_SPE  <- prune_taxa(names(sort(taxa_sums(High_spec_SPE),TRUE)[1:50]), High_spec_SPE)
-plot_heatmap(High_spec_SPE, sample.label="Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
+plot_heatmap(High_spec_SPE, sample.label = "Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
 heatmap(otu_table(High_spec_SPE))
 #lets take out the individual species map ordered by the ordination for more legible font
-speciesheatplot_ORD <- plot_heatmap(High_spec_SPE, sample.label="Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
-speciesheatplot_ORD + theme(axis.text.x = element_text(size=9, angle=80, hjust=0.4), axis.text.y=element_text(size=11))
+speciesheatplot_ORD <- plot_heatmap(High_spec_SPE, sample.label = "Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
+speciesheatplot_ORD + theme(axis.text.x = element_text(size = 9, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 11))
 
 #Genus
 High_spec_GEN <- tax_glom(OBJ1_spec_ts,taxrank = "Genus")
-High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom=="Bacteria")
+High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom == "Bacteria")
 High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:50]), High_spec_GEN)
-plot_heatmap(High_spec_GEN, sample.label="Location", taxa.label = "Genus") # this will do the default phyloseq ordination based sorting
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_GEN, sample.label = "Location", taxa.label = "Genus") # this will do the default phyloseq ordination based sorting
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
 heatmap(otu_table(High_spec_GEN))
 
 #Family
 High_spec_FAM <- tax_glom(OBJ1_spec_ts,taxrank = "Family")
-High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom=="Bacteria")
+High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom == "Bacteria")
 High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:50]), High_spec_FAM)
-plot_heatmap(High_spec_FAM, sample.label="Location", taxa.label = "Family")
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE, cex=2.5)
+plot_heatmap(High_spec_FAM, sample.label = "Location", taxa.label = "Family")
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted = TRUE, cex = 2.5)
 heatmap(otu_table(High_spec_FAM))
 #test for labelling font size
-heatplot <- plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
-heatplot + theme(axis.text.x = element_text(size=10, angle=90, hjust=0.4), axis.text.y=element_text(size=11))
+heatplot <- plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
+heatplot + theme(axis.text.x = element_text(size = 10, angle = 90, hjust = 0.4), axis.text.y = element_text(size = 11))
 
 #Order
 High_spec_ORD <- tax_glom(OBJ1_spec_ts,taxrank = "Order")
-High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom=="Bacteria")
+High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom == "Bacteria")
 High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:50]), High_spec_ORD)
-plot_heatmap(High_spec_ORD, sample.label="Location", taxa.label = "Order")
-plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted=TRUE)
+plot_heatmap(High_spec_ORD, sample.label = "Location", taxa.label = "Order")
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted = TRUE)
 heatmap(otu_table(High_spec_ORD))
 
 #Class
 High_spec_CLA <- tax_glom(OBJ1_spec_ts,taxrank = "Class")
-High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom=="Bacteria")
+High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom == "Bacteria")
 High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:50]), High_spec_CLA)
-plot_heatmap(High_spec_CLA, sample.label="Location", taxa.label = "Class")
-plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted=TRUE)
+plot_heatmap(High_spec_CLA, sample.label = "Location", taxa.label = "Class")
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted = TRUE)
 heatmap(otu_table(High_spec_CLA))
 
 #Phyla
 High_spec_PHY <- tax_glom(OBJ1_spec_ts,taxrank = "Phylum")
-High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom=="Bacteria")
+High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom == "Bacteria")
 High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:50]), High_spec_PHY)
-plot_heatmap(High_spec_PHY, sample.label="Location", taxa.label = "Phylum")
-plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted=TRUE)
-plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted=TRUE)
+plot_heatmap(High_spec_PHY, sample.label = "Location", taxa.label = "Phylum")
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
 
 # "Hyper" specialists -----------------------------------------------------
 # These are ASVs chose using the specialist index worksheet (as above). This timelooking specifically for ASVs that appear solely in one location, hence "hyper" specialists. 
 # These are not sorted or picked by abundance, but instead by getting the # of samples that each ASV appearred in, and sorting for highest in one location, and lowest in the other two
-# Excel allows the sorting for those 3 columns to best match the ascending/descending cimbination, and then ASVs with a sample count appearannce of 6 or greater were selected (initally was oging to go with # of 8, but the roots had zero at this and only 1 at 7)
+# Excel allows the sorting for those 3 columns to best match the ascending/descending cimbination, and then ASVs with a sample count appearannce of 6 or greater were selected
+#(initally was oging to go with # of 8, but the roots had zero at this and only 1 at 7)
 library(phyloseq)
 library(ape)
 
 #asv_id for "hyper" specialists
-otu_table_hyper_spec <- as.data.frame(read.csv("readmap_hyper_spec_index.csv", header=TRUE,row.names = "OTU_ID"))
+otu_table_hyper_spec <- as.data.frame(read.csv("readmap_hyper_spec_index.csv", header = TRUE,row.names = "OTU_ID"))
 #taxonomy for "hyper" specialists
-taxmat_hyper_spec <- as.matrix(read.csv("tax_hyper_spec_index.csv", row.names=1, header=TRUE))
+taxmat_hyper_spec <- as.matrix(read.csv("tax_hyper_spec_index.csv", row.names = 1, header = TRUE))
 #metadata applies for both top and hyper specialists
-treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names = 1, header = TRUE))
 
 OTU = otu_table(otu_table_hyper_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_hyper_spec)
@@ -909,15 +902,15 @@ OBJ_HYPER_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 
 #All ASVs
 # Running on raw ASVs for now because it does not agree with taxa sorting otherwise, presumable cannot sort by taxa using distiance because there are too many zeros for a difference to be calculated
-High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
+High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom == "Bacteria")
 High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:140]), High_spec_gp)
 plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
-hyperheatplot <- plot_heatmap(High_spec_gp, sample.order = "Location", sample.label="Location", taxa.order = "Family", taxa.label = "Family")
-hyperheatplot + theme(axis.text.x = element_text(size=8, angle=90, hjust=0.4), axis.text.y=element_text(size=7, angle = 0))
+hyperheatplot <- plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
+hyperheatplot + theme(axis.text.x = element_text(size = 8, angle = 90, hjust = 0.4), axis.text.y = element_text(size = 7, angle = 0))
 heatmap(otu_table(High_spec_gp))
 
 #Top ASVs
-High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
+High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom == "Bacteria")
 High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:50]), High_spec_gp)
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
 heatmap(otu_table(High_spec_gp))
@@ -928,54 +921,53 @@ heatmap(otu_table(High_spec_gp))
 
 #Species
 High_spec_SPE <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Species")
-High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom=="Bacteria")
+High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom == "Bacteria")
 High_spec_SPE  <- prune_taxa(names(sort(taxa_sums(High_spec_SPE),TRUE)[1:140]), High_spec_SPE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Genus", weighted = TRUE)
 heatmap(otu_table(High_spec_SPE))
 
 #Genus
 High_spec_GEN <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Genus")
-High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom=="Bacteria")
+High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom == "Bacteria")
 High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:140]), High_spec_GEN)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
 heatmap(otu_table(High_spec_GEN))
 
 #Family
 High_spec_FAM <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Family")
-High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom=="Bacteria")
+High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom == "Bacteria")
 High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:140]), High_spec_FAM)
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
 heatmap(otu_table(High_spec_FAM))
 
 #Order
 High_spec_ORD <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Order")
-High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom=="Bacteria")
+High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom == "Bacteria")
 High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:140]), High_spec_ORD)
-plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted=TRUE)
-hyperheatplot_ORD <- plot_heatmap(High_spec_ORD, sample.order = "Location", sample.label="Location", taxa.order = "Order", taxa.label = "Order")
-hyperheatplot_ORD + theme(axis.text.x = element_text(size=8, angle=80, hjust=0.4), axis.text.y=element_text(size=8.5, angle = 0))
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted = TRUE)
+hyperheatplot_ORD <- plot_heatmap(High_spec_ORD, sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order")
+hyperheatplot_ORD + theme(axis.text.x = element_text(size = 8, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 8.5, angle = 0))
 heatmap(otu_table(High_spec_gp))
 
 heatmap(otu_table(High_spec_ORD))
 
 #Class
 High_spec_CLA <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Class")
-High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom=="Bacteria")
+High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom == "Bacteria")
 High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:30]), High_spec_CLA)
-plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted=TRUE)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted = TRUE)
 heatmap(otu_table(High_spec_CLA))
 
 #Phyla
 High_spec_PHY <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Phylum")
-High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom=="Bacteria")
+High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom == "Bacteria")
 High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), High_spec_PHY)
-plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted=TRUE)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
-
 
 ## ABRIDGED Hyper meatmap --------------------------------------------------
 #Paper figure version (abridged)
@@ -989,11 +981,11 @@ library(ggplot2)
 library(RColorBrewer)
 
 #asv_id for "hyper" specialists
-otu_table_hyper_spec <- as.data.frame(read.csv("readmap_hyper_spec_index_cut1.csv", header=TRUE,row.names = "OTU_ID"))
+otu_table_hyper_spec <- as.data.frame(read.csv("readmap_hyper_spec_index_cut1.csv", header = TRUE,row.names = "OTU_ID"))
 #taxonomy for "hyper" specialists
-taxmat_hyper_spec <- as.matrix(read.csv("tax_hyper_spec_index cut1.csv", row.names=1, header=TRUE))
+taxmat_hyper_spec <- as.matrix(read.csv("tax_hyper_spec_index cut1.csv", row.names = 1, header = TRUE))
 #metadata applies for both top and hyper specialists
-treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names = 1, header = TRUE))
 
 OTU = otu_table(otu_table_hyper_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_hyper_spec)
@@ -1007,15 +999,15 @@ OBJ_HYPER_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 
 #All ASVs
 # Running on raw ASVs for now because it does not agree with taxa sorting otherwise, presumable cannot sort by taxa using distiance because there are too many zeros for a difference to be calculated
-High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
+High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom == "Bacteria")
 High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:140]), High_spec_gp)
 plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
-hyperheatplot <- plot_heatmap(High_spec_gp, sample.order = "Location", sample.label="Location", taxa.order = "Family", taxa.label = "Family")
-hyperheatplot + theme(axis.text.x = element_text(size=8, angle=90, hjust=0.4), axis.text.y=element_text(size=9, angle = 0))
+hyperheatplot <- plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
+hyperheatplot + theme(axis.text.x = element_text(size = 8, angle = 90, hjust = 0.4), axis.text.y = element_text(size = 9, angle = 0))
 heatmap(otu_table(High_spec_gp))
 
 #Top ASVs
-High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
+High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom == "Bacteria")
 High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:50]), High_spec_gp)
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
 heatmap(otu_table(High_spec_gp))
@@ -1026,77 +1018,76 @@ heatmap(otu_table(High_spec_gp))
 
 #Species
 High_spec_SPE <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Species")
-High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom=="Bacteria")
+High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom == "Bacteria")
 High_spec_SPE  <- prune_taxa(names(sort(taxa_sums(High_spec_SPE),TRUE)[1:140]), High_spec_SPE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Genus", weighted = TRUE)
 heatmap(otu_table(High_spec_SPE))
 
 #Genus
 High_spec_GEN <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Genus")
-High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom=="Bacteria")
+High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom == "Bacteria")
 High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:140]), High_spec_GEN)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
 heatmap(otu_table(High_spec_GEN))
 
 #Family
 High_spec_FAM <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Family")
-High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom=="Bacteria")
+High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom == "Bacteria")
 High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:140]), High_spec_FAM)
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
 heatmap(otu_table(High_spec_FAM))
 
 #Order
 High_spec_ORD <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Order")
-High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom=="Bacteria")
+High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom == "Bacteria")
 High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:140]), High_spec_ORD)
-plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted=TRUE)
-hyperheatplot_ORD <- plot_heatmap(High_spec_ORD, sample.order = "Location", sample.label="Location", taxa.order = "Order", taxa.label = "Order")
-hyperheatplot_ORD + theme(axis.text.x = element_text(size=8, angle=80, hjust=0.4), axis.text.y=element_text(size=8.5, angle = 0))
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted = TRUE)
+hyperheatplot_ORD <- plot_heatmap(High_spec_ORD, sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order")
+hyperheatplot_ORD + theme(axis.text.x = element_text(size = 8, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 8.5, angle = 0))
 heatmap(otu_table(High_spec_gp))
 
 heatmap(otu_table(High_spec_ORD))
 
 #Class
 High_spec_CLA <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Class")
-High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom=="Bacteria")
+High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom == "Bacteria")
 High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:30]), High_spec_CLA)
-plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted=TRUE)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted = TRUE)
 heatmap(otu_table(High_spec_CLA))
 
 #Phyla
 High_spec_PHY <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Phylum")
-High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom=="Bacteria")
+High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom == "Bacteria")
 High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), High_spec_PHY)
-plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted=TRUE)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
 
 ## Unique specialists (pt2 - treatment cut data) -----------------------------------------------------
 # These are ASVs chose using the specialist index worksheet (as above). This timelooking specifically for ASVs that appear solely in one location, hence "hyper" specialists. 
 # These are not sorted or picked by abundance, but instead by getting the # of samples that each ASV appearred in, and sorting for highest in one location, and lowest in the other two
-# Excel allows the sorting for those 3 columns to best match the ascending/descending cimbination, and then ASVs with a sample count appearannce of 6 or greater were selected (initally was oging to go with # of 8, but the roots had zero at this and only 1 at 7)
+# Excel allows the sorting for those 3 columns to best match the ascending/descending cimbination, and then ASVs with a sample count appearannce of 6 or greater were selected
+#(initally was oging to go with # of 8, but the roots had zero at this and only 1 at 7)
 library(phyloseq)
 library(ape)
 
 #asv_id for "hyper" specialists
-otu_table_hyper_spec <- as.data.frame(read.csv("readmap_newcut_uniques.csv", header=TRUE,row.names = "OTU_ID"))
+otu_table_hyper_spec <- as.data.frame(read.csv("readmap_newcut_uniques.csv", header = TRUE,row.names = "OTU_ID"))
 #taxonomy for "hyper" specialists
-taxmat_hyper_spec <- as.matrix(read.csv("tax_newcut_uniques.csv", row.names=1, header=TRUE))
+taxmat_hyper_spec <- as.matrix(read.csv("tax_newcut_uniques.csv", row.names = 1, header = TRUE))
 #metadata applies for both top and hyper specialists
-treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names = 1, header = TRUE))
 
 #ALTERNATIVELY: Run this one with the slimmed down cathode list ()
 #asv_id for "hyper" specialists
-otu_table_hyper_spec <- as.data.frame(read.csv("readmap_newcut_uniques_trim.csv", header=TRUE,row.names = "OTU_ID"))
+otu_table_hyper_spec <- as.data.frame(read.csv("readmap_newcut_uniques_trim.csv", header = TRUE,row.names = "OTU_ID"))
 #taxonomy for "hyper" specialists
-taxmat_hyper_spec <- as.matrix(read.csv("tax_newcut_uniques_trim.csv", row.names=1, header=TRUE))
+taxmat_hyper_spec <- as.matrix(read.csv("tax_newcut_uniques_trim.csv", row.names = 1, header = TRUE))
 #metadata applies for both top and hyper specialists
-treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names=1, header=TRUE))
-
-
+treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names = 1, header = TRUE))
 
 OTU = otu_table(otu_table_hyper_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_hyper_spec)
@@ -1110,15 +1101,15 @@ OBJ_HYPER_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 
 #All ASVs
 # Running on raw ASVs for now because it does not agree with taxa sorting otherwise, presumable cannot sort by taxa using distiance because there are too many zeros for a difference to be calculated
-High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
+High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom == "Bacteria")
 High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:200]), High_spec_gp)
 plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus")
-hyperheatplot <- plot_heatmap(High_spec_gp, sample.order = "Location", sample.label="Location", taxa.order = "Family", taxa.label = "Family")
-hyperheatplot + theme(axis.text.x = element_text(size=8, angle=90, hjust=0.4), axis.text.y=element_text(size=7, angle = 0))
+hyperheatplot <- plot_heatmap(High_spec_gp, sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
+hyperheatplot + theme(axis.text.x = element_text(size = 8, angle = 90, hjust = 0.4), axis.text.y = element_text(size = 7, angle = 0))
 heatmap(otu_table(High_spec_gp))
 
 #Top ASVs
-High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom=="Bacteria")
+High_spec_gp <- subset_taxa(OBJ_HYPER_SPEC, Kingdom == "Bacteria")
 High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:50]), High_spec_gp)
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
 heatmap(otu_table(High_spec_gp))
@@ -1129,55 +1120,53 @@ heatmap(otu_table(High_spec_gp))
 
 #Species
 High_spec_SPE <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Species")
-High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom=="Bacteria")
+High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom == "Bacteria")
 High_spec_SPE  <- prune_taxa(names(sort(taxa_sums(High_spec_SPE),TRUE)[1:140]), High_spec_SPE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted=TRUE)
-plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
+plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Genus", weighted = TRUE)
 heatmap(otu_table(High_spec_SPE))
 
 #Genus
 High_spec_GEN <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Genus")
-High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom=="Bacteria")
+High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom == "Bacteria")
 High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:140]), High_spec_GEN)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
-plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted=TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
+plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
 heatmap(otu_table(High_spec_GEN))
 
 #Family
 High_spec_FAM <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Family")
-High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom=="Bacteria")
+High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom == "Bacteria")
 High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:140]), High_spec_FAM)
-plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted=TRUE)
+plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
 heatmap(otu_table(High_spec_FAM))
 
 #Order
 High_spec_ORD <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Order")
-High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom=="Bacteria")
+High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom == "Bacteria")
 High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:140]), High_spec_ORD)
-plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted=TRUE)
-hyperheatplot_ORD <- plot_heatmap(High_spec_ORD, sample.order = "Location", sample.label="Location", taxa.order = "Order", taxa.label = "Order")
-hyperheatplot_ORD + theme(axis.text.x = element_text(size=8, angle=80, hjust=0.4), axis.text.y=element_text(size=8.5, angle = 0))
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted = TRUE)
+hyperheatplot_ORD <- plot_heatmap(High_spec_ORD, sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order")
+hyperheatplot_ORD + theme(axis.text.x = element_text(size = 8, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 8.5, angle = 0))
 heatmap(otu_table(High_spec_gp))
 
 heatmap(otu_table(High_spec_ORD))
 
 #Class
 High_spec_CLA <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Class")
-High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom=="Bacteria")
+High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom == "Bacteria")
 High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:30]), High_spec_CLA)
-plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted=TRUE)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted = TRUE)
 heatmap(otu_table(High_spec_CLA))
 
 #Phyla
 High_spec_PHY <- tax_glom(OBJ_HYPER_SPEC,taxrank = "Phylum")
-High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom=="Bacteria")
+High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom == "Bacteria")
 High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), High_spec_PHY)
-plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted=TRUE)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
-
-
 
 # Beta diversity ----------------------------------------------------------
 ##BETA DIVERSITY_____________________________________________________________________________
@@ -1187,77 +1176,74 @@ heatmap(otu_table(High_spec_PHY))
 library("ggplot2")
 library("RColorBrewer")
 
-
 #NOTE: Added to mapping file additional columns with more groupings based on: 
 #Group all samples per soil columns: Soil_Column
 #Group based on whether soil based subtrate (root/anode) vs Water for cathode samples: Substrate
 
 ##NMDS:
-NMDS1 <- ordinate(OBJ1_exp_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS1 <- ordinate(OBJ1_exp_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS1 #use to check that stress is  < 0.2
-p1overall<-plot_ordination(OBJ1_exp_tss, NMDS1, color="Treatment", shape="Location", label=NULL)
-p1overall<-plot_ordination(OBJ1_exp_tss, NMDS1, color="Week", shape="Location", label=NULL)
+p1overall <- plot_ordination(OBJ1_exp_tss, NMDS1, color = "Treatment", shape = "Location", label = NULL)
+p1overall <- plot_ordination(OBJ1_exp_tss, NMDS1, color = "Week", shape = "Location", label = NULL)
 p1overall
 p1overall + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-
-
 #Subsetted timepoints WEIGHTED
-NMDS_W0w <- ordinate(OBJ_W0_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS_W0w <- ordinate(OBJ_W0_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS_W0w
-NMDS_W6w <- ordinate(OBJ_W6_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS_W6w <- ordinate(OBJ_W6_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS_W6w
-NMDS_W8w <- ordinate(OBJ_W8_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS_W8w <- ordinate(OBJ_W8_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS_W8w
-NMDS_W14w <- ordinate(OBJ_W14_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS_W14w <- ordinate(OBJ_W14_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS_W14w
 
-NMDS_W14wTRIM <- ordinate(OBJ_W14_TRIM, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS_W14wTRIM <- ordinate(OBJ_W14_TRIM, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS_W14wTRIM
 
 #subsetted timepoints UNWEIGHTED
-NMDS_W0u <- ordinate(OBJ_W0_tss, "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
+NMDS_W0u <- ordinate(OBJ_W0_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W0u
-NMDS_W6u <- ordinate(OBJ_W6_tss, "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
+NMDS_W6u <- ordinate(OBJ_W6_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W6u
-NMDS_W8u <- ordinate(OBJ_W8_tss, "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
+NMDS_W8u <- ordinate(OBJ_W8_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W8u
-NMDS_W14u <- ordinate(OBJ_W14_tss, "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
+NMDS_W14u <- ordinate(OBJ_W14_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W14u
 
-NMDS_W14uTRIM <- ordinate(OBJ_W14_TRIM, "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
+NMDS_W14uTRIM <- ordinate(OBJ_W14_TRIM, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W14uTRIM
 
 #Subsetted as only geobacter relatived taxa just out of curiosoty....
-NMDS_Desulf <- ordinate(OBJ1_exp_tss, "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS_Desulf <- ordinate(OBJ1_exp_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS_W0
 
 #Plotting the subsetted ordinations to look at individual time points, treatments, locations
 #Week0
 #Unweighted
-p1u<-plot_ordination(OBJ_W0_tss, NMDS_W0u, color="Connection", shape="Location", label=NULL)
-p1u<-plot_ordination(OBJ_W0_tss, NMDS_W0u, color="Inoculum", shape="Location", label=NULL)
-p1u<-plot_ordination(OBJ_W0_tss, NMDS_W0u, color="Treatment", shape="Location", label=NULL)
+p1u <- plot_ordination(OBJ_W0_tss, NMDS_W0u, color = "Connection", shape = "Location", label = NULL)
+p1u <- plot_ordination(OBJ_W0_tss, NMDS_W0u, color = "Inoculum", shape = "Location", label = NULL)
+p1u <- plot_ordination(OBJ_W0_tss, NMDS_W0u, color = "Treatment", shape = "Location", label = NULL)
 p1u
 p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 #Weighted
-p1w<-plot_ordination(OBJ_W0_tss, NMDS_W0w, color="Connection", shape="Location", label=NULL)
-p1w<-plot_ordination(OBJ_W0_tss, NMDS_W0w, color="Inoculum", shape="Location", label=NULL)
-p1w<-plot_ordination(OBJ_W0_tss, NMDS_W0w, color="Treatment", shape="Location", label=NULL)
+p1w <- plot_ordination(OBJ_W0_tss, NMDS_W0w, color = "Connection", shape = "Location", label = NULL)
+p1w <- plot_ordination(OBJ_W0_tss, NMDS_W0w, color = "Inoculum", shape = "Location", label = NULL)
+p1w <- plot_ordination(OBJ_W0_tss, NMDS_W0w, color = "Treatment", shape = "Location", label = NULL)
 p1w
 p1w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Same plot with sample names added if needing to single out problematic sames etc
-p1<-plot_ordination(OBJ_W0_tss, NMDS_W0, color="Inoculum", shape="Location", label="Sample_Name")
+p1 <- plot_ordination(OBJ_W0_tss, NMDS_W0, color = "Inoculum", shape = "Location", label = "Sample_Name")
 p1
 
 #Test dark theme options for ASM Poster
-p1u<-plot_ordination(OBJ_W0_tss, NMDS_W0u, color="Treatment", shape="Location", label=NULL)
+p1u <- plot_ordination(OBJ_W0_tss, NMDS_W0u, color = "Treatment", shape = "Location", label = NULL)
 p1u
 p1u + theme_dark() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-p1u + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + theme(panel.grid.major = element_blank()) + theme(panel.grid.minor = element_blank()) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
+p1u + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + theme(panel.grid.major = element_blank()) + theme(panel.grid.minor = element_blank()) +
+  scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Use geom for shapes or lines betweeen points...e.g geom_polygon(aes(fill=Location)) will be base don locations..or can leave blank brackets for default
 #geom_path()
@@ -1265,82 +1251,80 @@ p1u + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + theme(pan
 
 #Week6
 #unweighted
-p2u<-plot_ordination(OBJ_W6_tss, NMDS_W6u, color="Connection", shape="Location", label=NULL)
-p2u<-plot_ordination(OBJ_W6_tss, NMDS_W6u, color="Inoculum", shape="Location", label=NULL)
-p2u<-plot_ordination(OBJ_W6_tss, NMDS_W6u, color="Treatment", shape="Location", label=NULL)
+p2u <- plot_ordination(OBJ_W6_tss, NMDS_W6u, color = "Connection", shape = "Location", label = NULL)
+p2u <- plot_ordination(OBJ_W6_tss, NMDS_W6u, color = "Inoculum", shape = "Location", label = NULL)
+p2u <- plot_ordination(OBJ_W6_tss, NMDS_W6u, color = "Treatment", shape = "Location", label = NULL)
 p2u
 p2u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 #Weighted
-p2w<-plot_ordination(OBJ_W6_tss, NMDS_W6w, color="Connection", shape="Location", label=NULL)
-p2w<-plot_ordination(OBJ_W6_tss, NMDS_W6w, color="Inoculum", shape="Location", label=NULL)
-p2w<-plot_ordination(OBJ_W6_tss, NMDS_W6w, color="Treatment", shape="Location", label=NULL)
+p2w <- plot_ordination(OBJ_W6_tss, NMDS_W6w, color = "Connection", shape = "Location", label = NULL)
+p2w <- plot_ordination(OBJ_W6_tss, NMDS_W6w, color = "Inoculum", shape = "Location", label = NULL)
+p2w <- plot_ordination(OBJ_W6_tss, NMDS_W6w, color = "Treatment", shape = "Location", label = NULL)
 p2w
 p2w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-p2<-plot_ordination(OBJ_W6_tss, NMDS_W6, color="Inoculum", shape="Location", label="Sample_Name")
+p2 <- plot_ordination(OBJ_W6_tss, NMDS_W6, color = "Inoculum", shape = "Location", label = "Sample_Name")
 p2
 
 #Week8
 #Unweighted
-p3u<-plot_ordination(OBJ_W8_tss, NMDS_W8u, color="Connection", shape="Location", label=NULL)
-p3u<-plot_ordination(OBJ_W8_tss, NMDS_W8u, color="Inoculum", shape="Location", label=NULL)
-p3u<-plot_ordination(OBJ_W8_tss, NMDS_W8u, color="Treatment", shape="Location", label=NULL)
+p3u <- plot_ordination(OBJ_W8_tss, NMDS_W8u, color = "Connection", shape = "Location", label = NULL)
+p3u <- plot_ordination(OBJ_W8_tss, NMDS_W8u, color = "Inoculum", shape = "Location", label = NULL)
+p3u <- plot_ordination(OBJ_W8_tss, NMDS_W8u, color = "Treatment", shape = "Location", label = NULL)
 p3u
 p3u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 #Weighted
-p3w<-plot_ordination(OBJ_W8_tss, NMDS_W8w, color="Connection", shape="Location", label=NULL)
-p3w<-plot_ordination(OBJ_W8_tss, NMDS_W8w, color="Inoculum", shape="Location", label=NULL)
-p3w<-plot_ordination(OBJ_W8_tss, NMDS_W8w, color="Treatment", shape="Location", label=NULL)
+p3w <- plot_ordination(OBJ_W8_tss, NMDS_W8w, color = "Connection", shape = "Location", label = NULL)
+p3w <- plot_ordination(OBJ_W8_tss, NMDS_W8w, color = "Inoculum", shape = "Location", label = NULL)
+p3w <- plot_ordination(OBJ_W8_tss, NMDS_W8w, color = "Treatment", shape = "Location", label = NULL)
 p3w
 p3w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Week14
 #Unweighted
-p4u<-plot_ordination(OBJ_W14_tss, NMDS_W14u, color="Connection", shape="Location", label=NULL)
-p4u<-plot_ordination(OBJ_W14_tss, NMDS_W14u, color="Inoculum", shape="Location", label=NULL)
-p4u<-plot_ordination(OBJ_W14_tss, NMDS_W14u, color="Treatment", shape="Location", label=NULL)
+p4u <- plot_ordination(OBJ_W14_tss, NMDS_W14u, color = "Connection", shape = "Location", label = NULL)
+p4u <- plot_ordination(OBJ_W14_tss, NMDS_W14u, color = "Inoculum", shape = "Location", label = NULL)
+p4u <- plot_ordination(OBJ_W14_tss, NMDS_W14u, color = "Treatment", shape = "Location", label = NULL)
 p4u
 p4u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 #weighted
-p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Connection", shape="Location", label=NULL)
-p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Inoculum", shape="Location", label=NULL)
-p4w<-plot_ordination(OBJ_W14_tss, NMDS_W14w, color="Treatment", shape="Location", label=NULL)
+p4w <- plot_ordination(OBJ_W14_tss, NMDS_W14w, color = "Connection", shape = "Location", label = NULL)
+p4w <- plot_ordination(OBJ_W14_tss, NMDS_W14w, color = "Inoculum", shape = "Location", label = NULL)
+p4w <- plot_ordination(OBJ_W14_tss, NMDS_W14w, color = "Treatment", shape = "Location", label = NULL)
 p4w
 p4w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
 
 ##W14 with TRIMMED data --------------------------------------------------
 
 #W14 with TRIMMED data
-p4uTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color="Connection", shape="Location", label=NULL)
-p4uTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color="Inoculum", shape="Location", label=NULL)
-p4uTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color="Treatment", shape="Location", label=NULL)
+p4uTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color = "Connection", shape = "Location", label = NULL)
+p4uTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p4uTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color = "Treatment", shape = "Location", label = NULL)
 p4uTRIM
 p4uTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-p4wTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color="Connection", shape="Location", label=NULL)
-p4wTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color="Inoculum", shape="Location", label=NULL)
-p4wTRIM<-plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color="Treatment", shape="Location", label=NULL)
+p4wTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color = "Connection", shape = "Location", label = NULL)
+p4wTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p4wTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color = "Treatment", shape = "Location", label = NULL)
 p4wTRIM
 p4wTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-
 #Same plot with sample names added if needing to single out problematic sames etc
-p4<-plot_ordination(OBJ_W14_tss, NMDS_W14, color="Connection", shape="Location", label="Sample_Name")
+p4 <- plot_ordination(OBJ_W14_tss, NMDS_W14, color = "Connection", shape = "Location", label = "Sample_Name")
 p4
 
 ###
 #Try ordinations of JUST connected, and JUST unconected at W14 to further tease apart interactions between connection and community
 #Weighted
-NMDS_W14C_w <- ordinate(OBJ1_W14_connected_tss , "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
-NMDS_W14U_w <- ordinate(OBJ1_W14_unconnected_tss , "NMDS", distance="unifrac", weighted=TRUE, parallel=TRUE)
+NMDS_W14C_w <- ordinate(OBJ1_W14_connected_tss , "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W14U_w <- ordinate(OBJ1_W14_unconnected_tss , "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 #Unweighted
-NMDS_W14C_u <- ordinate(OBJ1_W14_connected_tss , "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
-NMDS_W14U_u <- ordinate(OBJ1_W14_unconnected_tss , "NMDS", distance="unifrac", weighted=FALSE, parallel=TRUE)
+NMDS_W14C_u <- ordinate(OBJ1_W14_connected_tss , "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W14U_u <- ordinate(OBJ1_W14_unconnected_tss , "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 
 #Plot weighted
-p14C_w<-plot_ordination(OBJ1_W14_connected_tss, NMDS_W14C_w, color="Inoculum", shape="Location", label=NULL)
-p14U_w<-plot_ordination(OBJ1_W14_unconnected_tss, NMDS_W14U_w, color="Inoculum", shape="Location", label=NULL)
+p14C_w <- plot_ordination(OBJ1_W14_connected_tss, NMDS_W14C_w, color = "Inoculum", shape = "Location", label = NULL)
+p14U_w <- plot_ordination(OBJ1_W14_unconnected_tss, NMDS_W14U_w, color = "Inoculum", shape = "Location", label = NULL)
 p14C_w
 p14U_w
 
@@ -1349,10 +1333,9 @@ p14C_w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size 
 p14U_w
 p14U_w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-
 #Plot unweighted
-p14C_u<-plot_ordination(OBJ1_W14_connected_tss, NMDS_W14C_u, color="Inoculum", shape="Location", label=NULL)
-p14U_u<-plot_ordination(OBJ1_W14_unconnected_tss, NMDS_W14U_u, color="Inoculum", shape="Location", label=NULL)
+p14C_u <- plot_ordination(OBJ1_W14_connected_tss, NMDS_W14C_u, color = "Inoculum", shape = "Location", label = NULL)
+p14U_u <- plot_ordination(OBJ1_W14_unconnected_tss, NMDS_W14U_u, color = "Inoculum", shape = "Location", label = NULL)
 p14C_u
 p14U_u
 
@@ -1361,10 +1344,8 @@ p14C_u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size 
 p14U_u
 p14U_u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-
 OBJ1_W14_connected_tss 
 OBJ1_W14_unconnected_tss 
-
 
 # Cleaned up plot element controls (for poster format) ----------------------------------------
 
@@ -1379,7 +1360,7 @@ p1w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9"
   axis.ticks = element_line(colour = "gray"),
   #axis.line = element_line(colour = "gray"),
   panel.border = element_rect(colour = "gray", fill = NA),
-  plot.background=element_rect(fill = "black"),
+  plot.background = element_rect(fill = "black"),
   panel.background = element_rect(fill = 'black'),
   # Change legend (only drawback with black is that it doesn't seem to be an easy thing to make the black legend match the while verions...)
   legend.background = element_rect(fill = "black", color = NA),
@@ -1400,7 +1381,7 @@ p1w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9"
   axis.ticks = element_line(colour = "gray"),
   #axis.line = element_line(colour = "gray"),
   panel.border = element_rect(colour = "gray", fill = NA),
-  plot.background=element_rect(fill = "black"),
+  plot.background = element_rect(fill = "black"),
   panel.background = element_rect(fill = 'black'),
   # Change legend (only drawback with black is that it doesn't seem to be an easy thing to make the black legend match the while verions...)
   legend.background = element_rect(fill = "black", color = NA),
@@ -1419,7 +1400,7 @@ p4w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9"
   axis.ticks = element_line(colour = "gray"),
   #axis.line = element_line(colour = "gray"),
   panel.border = element_rect(colour = "gray", fill = NA),
-  plot.background=element_rect(fill = "black"),
+  plot.background = element_rect(fill = "black"),
   panel.background = element_rect(fill = 'black'),
   # Change legend (only drawback with black is that it doesn't seem to be an easy thing to make the black legend match the while verions...)
   legend.background = element_rect(fill = "black", color = NA),
@@ -1454,44 +1435,44 @@ W14_Uu_ado = adonis(W14permU_u ~ LocationU * InoculumU, permutations = 9999)
 W14_Uu_ado
 
 ##PCoA:
-PCoA1 <- ordinate(OBJ1_ts, "PCoA", distance="unifrac", weighted=TRUE, parallel=TRUE)
+PCoA1 <- ordinate(OBJ1_ts, "PCoA", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 PCoA1$values #use to check eigen values if you wish
 
-p1<-plot_ordination(OBJ1_ts, NMDS1, color="Treatment", shape="Location", label=NULL)
+p1 <- plot_ordination(OBJ1_ts, NMDS1, color = "Treatment", shape = "Location", label = NULL)
 p1
 
-p2<-plot_ordination(OBJ1_ts, NMDS1, color="Week", shape="Location", label=NULL)
+p2 <- plot_ordination(OBJ1_ts, NMDS1, color = "Week", shape = "Location", label = NULL)
 p2
 
 #work out the order of plot labels wiht in the facor we are using (i.e 'Group'):
 levels(p1$data$Week)
 
-colvec<-c("green4","red3","darkorange1","green4","red3","darkorange1") #make sure you colours appear in the order that corresponds to your factor levels
+colvec <- c("green4","red3","darkorange1","green4","red3","darkorange1") #make sure you colours appear in the order that corresponds to your factor levels
 black <- rep("black",6) #colour vector for shape outlines
 
 ##now start again:
 help(ordinate)
 
-NMDS1 <- ordinate(OBJ1_ts, "PCoA", distance="unifrac", weighted=TRUE, parallel=TRUE)
-p1<-plot_ordination(OBJ1_ts, NMDS1 , color="Week", shape="Location", label=NULL) + theme_bw()
+NMDS1 <- ordinate(OBJ1_ts, "PCoA", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+p1 <- plot_ordination(OBJ1_ts, NMDS1 , color = "Week", shape = "Location", label = NULL) + theme_bw()
 print(p1)
-p1 <- p1 +  geom_point(aes(colour=factor(Group), fill = factor(Group), shape= factor(Location)), size = 3.5)+ ggtitle(NULL)+ theme(legend.position="none")
+p1 <- p1 +  geom_point(aes(colour = factor(Group), fill = factor(Group), shape = factor(Location)), size = 3.5) + ggtitle(NULL) + theme(legend.position = "none")
 p1 <- p1 + scale_shape_manual(values = c(21,24))
 p1 <- p1 + scale_colour_manual(values = black)
-p1 <- p1+ scale_fill_manual(values = colvec, breaks = c("Bulk_0", "Bulk_20", "Bulk_100","Rhizo_0", "Rhizo_20", "Rhizo_100"))
+p1 <- p1 + scale_fill_manual(values = colvec, breaks = c("Bulk_0", "Bulk_20", "Bulk_100","Rhizo_0", "Rhizo_20", "Rhizo_100"))
 p1
 
-NMDS2 <- ordinate(OBJ1_r, "PCoA", distance="unifrac", weighted=FALSE, parallel=TRUE)
-p2 <- plot_ordination(OBJ1_r, NMDS2 , color="Group", shape="Location", label=NULL) + theme_bw()
-p2 <- p2 +  geom_point(aes(colour=factor(Group), fill = factor(Group), shape= factor(Location)), size = 3.5)+ ggtitle(NULL)+ theme(legend.position="none")
-p2<- p2+ scale_shape_manual(values = c(21,24))
-p2<- p2 + scale_colour_manual(values = black)
-p2<- p2 + scale_fill_manual(values = colvec, breaks = c("Bulk_0", "Bulk_20", "Bulk_100","Rhizo_0", "Rhizo_20", "Rhizo_100"))
+NMDS2 <- ordinate(OBJ1_r, "PCoA", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+p2 <- plot_ordination(OBJ1_r, NMDS2 , color = "Group", shape = "Location", label = NULL) + theme_bw()
+p2 <- p2 +  geom_point(aes(colour = factor(Group), fill = factor(Group), shape = factor(Location)), size = 3.5) + ggtitle(NULL) + theme(legend.position = "none")
+p2 <- p2 + scale_shape_manual(values = c(21,24))
+p2 <- p2 + scale_colour_manual(values = black)
+p2 <- p2 + scale_fill_manual(values = colvec, breaks = c("Bulk_0", "Bulk_20", "Bulk_100","Rhizo_0", "Rhizo_20", "Rhizo_100"))
 p2
 
 #make a panel image
 library(Rmisc)
-multiplot(p1,p2, cols=2)
+multiplot(p1,p2, cols = 2)
 
 ## ANOSIM AND PERMANOVA ----------------------------
 
@@ -1522,7 +1503,6 @@ Location <- get_variable(OBJ_W14_TRIM, "Location")
 Connection <- get_variable(OBJ_W14_TRIM, "Connection")
 #By Inoculum at end
 Inoculum <- get_variable(OBJ_W14_TRIM, "Inoculum")
-
 
 ##ANOSIMS(good for one-way beta diversity analysis)
 ##https://sites.google.com/site/mb3gustame/hypothesis-tests/anosim
@@ -1564,7 +1544,6 @@ W14_Conn_ano_u
 
 W14_Inoc_ano_u <- anosim(distance(OBJ_W14_TRIM, "unifrac"), Inoculum)
 W14_Inoc_ano_u
-
 
 ##PERMANOVA (function adonis())is similar to anosim but can handle more complex designs
 ##https://sites.google.com/site/mb3gustame/hypothesis-tests/manova/npmanova
@@ -1613,9 +1592,6 @@ W14_Group_ado_w_F
 #Genus
 W14_Group_ado_w_G = adonis(OBJ1_W14perm_wu_G ~ Location * Connection * Inoculum, permutations = 9999)
 W14_Group_ado_w_G
-
-
-
 
 # TRIM PERMANOVA ----------------------------------------------------------
 #### Rerun of PERMANOVA for TRIMMMED DATA
@@ -1685,10 +1661,10 @@ diagdds = phyloseq_to_deseq2(OBJ1_exp, ~ Connection + Location) #Re: order of fa
 #run this on everything instead of just the specialists subset, because context of the full dataset is important for this differential abundance 
 
 #Use Option 1, or 2, not both because they override,, just testing which comparisonsmight make a difference, this sets the baseline/control
-diagdds$Location<- relevel(diagdds$Location, ref="Root") # sets the reference point, baseline or control to be compared against
+diagdds$Location <- relevel(diagdds$Location, ref = "Root") # sets the reference point, baseline or control to be compared against
 
 #option two...to test, because it seems some combinations are not tested as valid compairions when useing "name" to compare
-diagdds$Location<- relevel(diagdds$Location, ref="Anode") # sets the reference point, baseline or control to be compared against
+diagdds$Location <- relevel(diagdds$Location, ref = "Anode") # sets the reference point, baseline or control to be compared against
 
 #look at the p adjusted value from the output NOT the regular p 
 
@@ -1698,15 +1674,16 @@ diagdds <- diagdds[ , diagdds$Week == "Fourteen" ]
 as.data.frame( colData(diagdds) )
 
 #Run model and factors
-diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
+diagdds = DESeq(diagdds, test = "Wald", fitType = "parametric")
 res = results(diagdds, cooksCutoff = FALSE)
 res # print out results
 
 #Different Comparison Direction Sheets
-sigtabR_A = results(diagdds, contrast=c("Location","Root","Anode")) #Direction of logfold change is shown as change from anode TO root (so for e.g Geobacters are all negative/decreases)
-sigtabA_R = results(diagdds, contrast=c("Location","Anode","Root")) #Increase in Anode FROM Root. Test to see if this does actually switch direction of logfold change. Should make logfold of Geobacteris positive as they are increasing from root to anode
-sigtabR_C = results(diagdds, contrast=c("Location","Root","Cathode")) #Should be to Root from Cathode (Positive # = Increase in Root FROM Cathode)
-sigtabA_C = results(diagdds, contrast=c("Location","Anode","Cathode")) #Should be to Anode from Cathode (Postive # = Increase in Anode FROM Cathode)
+sigtabR_A = results(diagdds, contrast = c("Location","Root","Anode")) #Direction of logfold change is shown as change from anode TO root (so for e.g Geobacters are all negative/decreases)
+sigtabA_R = results(diagdds, contrast = c("Location","Anode","Root")) #Increase in Anode FROM Root. Test to see if this does actually switch direction of logfold change.
+#Should make logfold of Geobacteris positive as they are increasing from root to anode
+sigtabR_C = results(diagdds, contrast = c("Location","Root","Cathode")) #Should be to Root from Cathode (Positive # = Increase in Root FROM Cathode)
+sigtabA_C = results(diagdds, contrast = c("Location","Anode","Cathode")) #Should be to Anode from Cathode (Postive # = Increase in Anode FROM Cathode)
 sigtabR_A
 sigtabA_R
 sigtabR_C
@@ -1718,44 +1695,81 @@ sigtab_taxR_A
 #for printing out results, below X significance  can skip this if you want to get everything and sort them out yourself
 sigtab_taxR_A <- subset(sigtab_taxR_A, sigtab_taxR_A$padj < 0.2)
 write.csv(as.data.frame(sigtab_taxR_A), 
-          file="DESeq2_Roots_relativeto_Anode.csv")
+          file = "DESeq2_Roots_relativeto_Anode.csv")
 
 sigtab_taxA_R = cbind(as(sigtabA_R, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA_R), ], "matrix"))
 sigtab_taxA_R
 #for printing out results, below X significance  can skip this if you want to get everything and sort them out yourself
 sigtab_taxA_R <- subset(sigtab_taxA_R, sigtab_taxA_R$padj < 0.2)
 write.csv(as.data.frame(sigtab_taxA_R), 
-          file="DESeq2_Anode_relativeto_Roots.csv")
+          file = "DESeq2_Anode_relativeto_Roots.csv")
 
 sigtab_taxR_C = cbind(as(sigtabR_C, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabR_C), ], "matrix"))
 sigtab_taxR_C
 #for printing out results, below X significance  can skip this if you want to get everything and sort them out yourself
 sigtab_taxR_C <- subset(sigtab_taxR_C, sigtab_taxR_C$padj < 0.2)
 write.csv(as.data.frame(sigtab_taxR_C), 
-          file="DESeq2_Roots_relativeto_Cathode.csv")
+          file = "DESeq2_Roots_relativeto_Cathode.csv")
 
 sigtab_taxA_C = cbind(as(sigtabA_C, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtabA_C), ], "matrix"))
 sigtab_taxA_C
 #for printing out results, below X significance  can skip this if you want to get everything and sort them out yourself
 sigtab_taxA_C <- subset(sigtab_taxA_C, sigtab_taxA_C$padj < 0.2)
 write.csv(as.data.frame(sigtab_taxA_C), 
-          file="DESeq2_Anode_relativeto_Cathode.csv")
+          file = "DESeq2_Anode_relativeto_Cathode.csv")
 
 #Test - Cut out only specialsits (currently only ASV specialists from the FULL dataset) from each sheet (when jsut looking at the top 30 specialists) Otherwise export whole list (and/or with cutoff)
-specialist_res_subsetR_A <- subset((sigtab_taxR_A), rownames((sigtab_taxR_A)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-specialist_res_subsetA_R <- subset((sigtab_taxA_R), rownames((sigtab_taxA_R)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-specialist_res_subsetR_C <- subset((sigtab_taxR_C), rownames((sigtab_taxR_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-specialist_res_subsetA_C <- subset((sigtab_taxA_C), rownames((sigtab_taxA_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetR_A <- subset((sigtab_taxR_A), rownames((sigtab_taxR_A)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2',
+                                                                                     '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e',
+                                                                                     '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08',
+                                                                                     '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774',
+                                                                                     '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008',
+                                                                                     '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6',
+                                                                                     '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397',
+                                                                                     '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8',
+                                                                                     'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c',
+                                                                                     'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetA_R <- subset((sigtab_taxA_R), rownames((sigtab_taxA_R)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2',
+                                                                                     '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e',
+                                                                                     '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08',
+                                                                                     '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774',
+                                                                                     '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008',
+                                                                                     '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6',
+                                                                                     '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397',
+                                                                                     '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8',
+                                                                                     'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c',
+                                                                                     'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetR_C <- subset((sigtab_taxR_C), rownames((sigtab_taxR_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2',
+                                                                                     '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e',
+                                                                                     '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08',
+                                                                                     '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774',
+                                                                                     '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008',
+                                                                                     '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6',
+                                                                                     '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397',
+                                                                                     '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8',
+                                                                                     'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c',
+                                                                                     'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialist_res_subsetA_C <- subset((sigtab_taxA_C), rownames((sigtab_taxA_C)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2',
+                                                                                     '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e',
+                                                                                     '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08',
+                                                                                     '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774',
+                                                                                     '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008',
+                                                                                     '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6',
+                                                                                     '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397',
+                                                                                     '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8',
+                                                                                     'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c',
+                                                                                     'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
 #Export .csv of specialists only (fingers crossed)
 write.csv(as.data.frame(specialist_res_subsetR_A), 
-          file="DESeq2_specialists_R_A.csv")
+          file = "DESeq2_specialists_R_A.csv")
 write.csv(as.data.frame(specialist_res_subsetA_R), 
-          file="DESeq2_specialists_A_R.csv")
+          file = "DESeq2_specialists_A_R.csv")
 write.csv(as.data.frame(specialist_res_subsetR_C), 
-          file="DESeq2_specialists_R_C.csv")
+          file = "DESeq2_specialists_R_C.csv")
 write.csv(as.data.frame(specialist_res_subsetA_C), 
-          file="DESeq2_specialists_A_C.csv")
-#okay this all worked, is good. One point that has become apparent from this is that I need to double check which direction the logfold change is based on the contrasts chosen..I *think* they might actually be the revserve of what previously wrote
+          file = "DESeq2_specialists_A_C.csv")
+#okay this all worked, is good. One point that has become apparent from this is that I need to double check which direction the logfold change is based on the contrasts chosen..
+#I *think* they might actually be the revserve of what previously wrote
 #
 
 ####Leftover DESEQ testing and removed commands
@@ -1779,42 +1793,42 @@ res
 res <- tax_glom(OBJ_W14,taxrank = "Family")
 res
 write.csv(as.data.frame(res), 
-          file="DESeq2_specialist_subset_TEST.csv")
+          file = "DESeq2_specialist_subset_TEST.csv")
 
 #WIP TEST equivalence vs the contrast command, name
 #their example was these two commands being essentially equivalent except for some stuff about how contrast sets LFC to zero...not sure what this means in practice, hence why I want to test what differs
-res <- results(dds, name="condition_treated_vs_untreated")
-res <- results(dds, contrast=c("condition","treated","untreated"))
+res <- results(dds, name = "condition_treated_vs_untreated")
+res <- results(dds, contrast = c("condition","treated","untreated"))
 #This should print out valid comparison names
 resultsNames(diagdds)
 
-sigtabR_A <- results(diagdds, name="Location_Anode_vs_Root")
-sigtabR_C <- results(diagdds, name="Location_Cathode_vs_Root")
+sigtabR_A <- results(diagdds, name = "Location_Anode_vs_Root")
+sigtabR_C <- results(diagdds, name = "Location_Cathode_vs_Root")
 
 #These ones work only when using Anode as the baseline
-sigtabA_R <- results(diagdds, name="Location_Root_vs_Anode")
-sigtabA_C <- results(diagdds, name="Location_Cathode_vs_Anode")
+sigtabA_R <- results(diagdds, name = "Location_Root_vs_Anode")
+sigtabA_C <- results(diagdds, name = "Location_Cathode_vs_Anode")
 
 
 #TO DO (fix) Export .csv (now that I've figured otu speicialist subset need to reformat this to correctly point to the full datasheet...TO DO)
 write.csv(as.data.frame(sigtab_otuA), 
-          file="DESeq2_resultsA.csv")
+          file = "DESeq2_resultsA.csv")
 write.csv(as.data.frame(sigtab_otuB), 
-          file="DESeq2_resultsB.csv")
+          file = "DESeq2_resultsB.csv")
 write.csv(as.data.frame(sigtab_otuC), 
-          file="DESeq2_resultsC.csv")
+          file = "DESeq2_resultsC.csv")
 
 #convert to matrix
 sigtab_otu = cbind(as(sigtab, "data.frame"), as(tax_table(OBJ1_exp)[rownames(sigtab), ], "matrix"))
 
 write.csv(as.data.frame(res), 
-          file="raw_results.csv")
+          file = "raw_results.csv")
 
 #only print out results with adjusted P higher than:
 resSig <- subset(res, padj < 0.1)
 resSig
 write.csv(as.data.frame(resSig), 
-          file="sig_results.csv")
+          file = "sig_results.csv")
 
 resultsNames(diagdds)
 
@@ -1828,15 +1842,15 @@ scale_fill_discrete <- function(palname = "Set1", ...) {
 # Phylum order
 x = tapply(sigtab_otu$log2FoldChange, sigtab_otu$Phylum, function(x) max(x))
 x = sort(x, TRUE)
-sigtab_otu$Phylum = factor(as.character(sigtab_otu$Phylum), levels=names(x))
+sigtab_otu$Phylum = factor(as.character(sigtab_otu$Phylum), levels = names(x))
 # Class order
 x = tapply(sigtab_otu$log2FoldChange, sigtab_otu$Phylum, function(x) max(x))
 x = sort(x, TRUE)
-sigtab_otu$Phylum = factor(as.character(sigtab_otu$Phylum), levels=names(x))
+sigtab_otu$Phylum = factor(as.character(sigtab_otu$Phylum), levels = names(x))
  
 #Visulise
-ggplot(sigtab_otu, aes(x=Phylum, y=log2FoldChange, color=Phylum)) + geom_point(size=6) +
-  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
+ggplot(sigtab_otu, aes(x = Phylum, y = log2FoldChange, color = Phylum)) + geom_point(size = 6) +
+  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.5))
 
 
 ## DESeq for connection alone ----------------------------------------------
@@ -1862,7 +1876,7 @@ diagdds = phyloseq_to_deseq2(OBJ1_exp_Genus, ~ Location + Connection) #Re: order
 #import agglomerated family
 diagdds = phyloseq_to_deseq2(OBJ1_exp_Family , ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
 
-diagdds$Location<- relevel(diagdds$Connection, ref="Unconnected") # sets the reference point, baseline or control to be compared against
+diagdds$Location <- relevel(diagdds$Connection, ref = "Unconnected") # sets the reference point, baseline or control to be compared against
 
 #Subset Week 14
 diagdds <- diagdds[ , diagdds$Week == "Fourteen" ]
@@ -1873,7 +1887,7 @@ as.data.frame( colData(diagdds) )
 #Have added a new column that groups samples by the soil column they were in (without location data, so e.g W14UP4 for all three cathode/anode/root sampeles)
 
 #Run model and factors
-diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
+diagdds = DESeq(diagdds, test = "Wald", fitType = "parametric")
 res = results(diagdds, cooksCutoff = FALSE)
 res # print out results
 
@@ -1887,12 +1901,12 @@ res
 
 #Export .csv
 write.csv(as.data.frame(res), 
-          file="DESeq2_Genus_14.csv")
+          file = "DESeq2_Genus_14.csv")
 
 #For Agglomerated
 #Different Comparison Direction Sheets
-sigtabC_U = results(diagdds, contrast=c("Connection","Connected","Unconnected")) #a positive number here should represent an Increase in Connected FROM Unconnected
-sigtabU_C = results(diagdds, contrast=c("Connection","Unconnected","Connected")) #postive here should be switched, so a postive = Increase in Unconnected FROM Connected
+sigtabC_U = results(diagdds, contrast = c("Connection","Connected","Unconnected")) #a positive number here should represent an Increase in Connected FROM Unconnected
+sigtabU_C = results(diagdds, contrast = c("Connection","Unconnected","Connected")) #postive here should be switched, so a postive = Increase in Unconnected FROM Connected
 # So i think A should be the one to use...feels more logical to look at change towards connection (and makes discussion of electroactive enrichemnet easier)
 
 #Bind results sheets with OTU Taxa
@@ -1904,9 +1918,9 @@ sigtab_taxU_C
 
 #Export .csv
 write.csv(as.data.frame(sigtab_taxC_U), 
-          file="DESeq2_resultsC_U.csv")
+          file = "DESeq2_resultsC_U.csv")
 write.csv(as.data.frame(sigtab_taxU_C), 
-          file="DESeq2_resultsU_C.csv")
+          file = "DESeq2_resultsU_C.csv")
 
 
 ####Jen's DESEQ2 script to compare, figure out adapting commands
@@ -1922,11 +1936,11 @@ library("DESeq2")
 q1 <- subset_samples(OBJ1, Fig1 != "0_mg4")#use unrarefied data for DE so manually remove the sample that we know is undersampled
 
 diagdds = phyloseq_to_deseq2(q1 , ~ Location + Cd_dose) #model for your DE analysis READ VINGITTE FIRST
-diagdds$Cd_dose <- relevel(diagdds$Cd_dose, ref="0_mg") ##reset reference level
-diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
+diagdds$Cd_dose <- relevel(diagdds$Cd_dose, ref = "0_mg") ##reset reference level
+diagdds = DESeq(diagdds, test = "Wald", fitType = "parametric")
 resultsNames(diagdds)
 
-sigtab = results(diagdds, contrast=c("Cd_dose","100_mg","0_mg"))
+sigtab = results(diagdds, contrast = c("Cd_dose","100_mg","0_mg"))
 sigtab_otu = cbind(as(sigtab, "data.frame"), as(tax_table(q1)[rownames(sigtab), ], "matrix"))
 
 
@@ -1948,26 +1962,32 @@ colvec5 <- brewer.pal(10, "PiYG")
 colvec6 <- brewer.pal(10, "BrBG")
 colvec <- c(colvec1, colvec2,colvec3,colvec4,colvec5,colvec6)
 
-melt<-psmelt(OBJ1_DE2)
+melt <- psmelt(OBJ1_DE2)
 head(melt)
-melt<-melt[sort.list(melt[,11]), ]
+melt <- melt[sort.list(melt[,11]), ]
 
 ##ordering the x axis:
 
-melt$Fig1<- as.character(melt$Fig1)
+melt$Fig1 <- as.character(melt$Fig1)
 #Then turn it back into an ordered factor
-melt$Fig1 <- factor(melt$Fig1, levels=unique(melt$Fig1))
-melt$Fig1 <- factor(melt$Fig1, levels=c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5","20_mg1","20_mg2","20_mg3","20_mg4","20_mg5","100_mg1","100_mg2","100_mg3","100_mg4","100_mg5"))
+melt$Fig1 <- factor(melt$Fig1, levels = unique(melt$Fig1))
+melt$Fig1 <- factor(melt$Fig1, levels = c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5","20_mg1","20_mg2","20_mg3","20_mg4","20_mg5","100_mg1","100_mg2","100_mg3","100_mg4","100_mg5"))
 
-t1<-ggplot(melt, aes(Fig1, Abundance/5, fill=Order))+ geom_bar(stat = "identity",)
-t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7))+ scale_fill_manual(values = colvec)
-t1 <- t1+ labs(title = NULL, x=expression(Cadmium~dose~(mg~kg^{-1}~soil)), y= "Relative abundance")
-t1 <- t1 + scale_x_discrete(labels= c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
+t1 <- ggplot(melt, aes(Fig1, Abundance/5, fill = Order)) + geom_bar(stat = "identity",)
+t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7)) + scale_fill_manual(values = colvec)
+t1 <- t1 + labs(title = NULL, x = expression(Cadmium~dose~(mg~kg^{-1}~soil)), y = "Relative abundance")
+t1 <- t1 + scale_x_discrete(labels = c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
 t1
 
+# ANCOM-BC ----------------------------------------------------------------
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("ANCOMBC")
+
+library(ANCOMBC)
+
 # Heirarchical Clustering -------------------------------------------------
-
-
 
 ##HEIRACHICAL CLUSTERING____________________________________________________________________
 library(vegan)
@@ -1975,17 +1995,15 @@ library(vegan)
 ##make disimialrity matrix
 OBJ1_r_b <- distance(OBJ1_r, "bray")
 
-
 # This is the actual hierarchical clustering call, specifying average-link clustering
 
-OBJ1.hclust <- hclust(OBJ1_r_b, method="average")
+OBJ1.hclust <- hclust(OBJ1_r_b, method = "average")
 plot(OBJ1.hclust)
 
 # Convert hclust into a dendrogram and plot
 library(dendextend)
 dend <- as.dendrogram(OBJ1.hclust)
 plot(dend)
-
 
 ##for each colour scheme work out how many colour we need and
 ##in what order the colour vecor will need to be
@@ -1994,7 +2012,7 @@ length(levels(get_variable(OBJ1_r, "Group")))
 unique(levels(get_variable(OBJ1_r, "Group")))
 
 #make  a vector that asscoiates colurs you want with labels
-colorscale<- c("green4","red3", "darkorange1","green4", "red3","darkorange1")
+colorscale <- c("green4","red3", "darkorange1","green4", "red3","darkorange1")
 colours_to_use <- colorscale[get_variable(OBJ1_r, "Group")]
 
 #put them in the right order adn add them to the dend object
@@ -2009,18 +2027,17 @@ labels(dend) <- as.vector(labs_to_use)
 plot(dend)
 
 # Color in function of the cluster
-par(mar=c(1,1,1,7))
+par(mar = c(1,1,1,7))
 dend %>%
   set("labels_col", "black")  %>% #label colours
   set("labels_cex", 0.6)  %>% #label text size
   set("branches_k_color", value = rep(c("#138d75","goldenrod1", "darkorange" ),2), k = 6) %>% #colur k major splits
-  set("branches_lwd", 1.8)%>% #branch line weight
+  set("branches_lwd", 1.8) %>% #branch line weight
   set("leaves_pch", 19) %>%  # node point type
   set("leaves_cex", 1) %>%  # node point size
   set("leaves_col", labels_colors(dend)) %>% # node point color
-  plot(horiz=TRUE, axes=TRUE)
+  plot(horiz = TRUE, axes = TRUE)
 abline(v = 350, lty = 2)
-
 
 # Barcharts ---------------------------------------------------------------
 
@@ -2051,16 +2068,16 @@ OBJ1_Gen <- filter_taxa(OBJ1_Gen, function(x) mean(x) > 0.001, TRUE)
 OBJ1_Fam <- tax_glom(OBJ1_Gen,taxrank = "Family")#concatenate OTUs at a higher phylogenetic level
 OBJ1_Ord <- tax_glom(OBJ1_Gen,taxrank = "Order")#concatenate OTUs at a higher phylogenetic level
 
-p1 <- plot_bar(OBJ1_Ord, "Location", fill="Order")
-p1 <- plot_bar(OBJ1_Ord, "Connection", fill="Order", facet_grid=~Location)
+p1 <- plot_bar(OBJ1_Ord, "Location", fill = "Order")
+p1 <- plot_bar(OBJ1_Ord, "Connection", fill = "Order", facet_grid = ~Location)
 p1
 
-p1 <- plot_bar(OBJ1_Fam, "Location", fill="Family")
-p1 <- plot_bar(OBJ1_Fam, "Connection", fill="Family", facet_grid=~Location)
+p1 <- plot_bar(OBJ1_Fam, "Location", fill = "Family")
+p1 <- plot_bar(OBJ1_Fam, "Connection", fill = "Family", facet_grid = ~Location)
 p1
 
-p1 <- plot_bar(OBJ1_Gen, "Location", fill="Genus")
-p1 <- plot_bar(OBJ1_Gen, "Connection", fill="Genus", facet_grid=~Location)
+p1 <- plot_bar(OBJ1_Gen, "Location", fill = "Genus")
+p1 <- plot_bar(OBJ1_Gen, "Connection", fill = "Genus", facet_grid = ~Location)
 p1
 
 OBJ1_ord <- tax_glom(OBJ1_rr,taxrank = "Order")#concatenate OTUs at a higher phylogenetic level
@@ -2070,32 +2087,30 @@ OBJ1_ord2 <- filter_taxa(OBJ1_ord, function(x) mean(x) > 0.0005, TRUE)
 OBJ1_ord2 #much more manageable number of OTUs
 
 ##PLOT1 - all samples
-p1 <- plot_bar(OBJ1_ord2, "Sample", fill="Class")
-p1 <- p1 + scale_fill_manual(values=colvec)
-p1 <- p1 + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p1 <- plot_bar(OBJ1_ord2, "Sample", fill = "Class")
+p1 <- p1 + scale_fill_manual(values = colvec)
+p1 <- p1 + theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p1
 
 ##sometimes changes are subtle and hard to see
 ##one optinon is to plot only OTUs that are differetnially abundant (a lesson for later)
 
-
 ##PLOT2 - all samples faceted by phylum
 OBJ1_ord2 <- filter_taxa(OBJ1_ord, function(x) mean(x) > 0.005, TRUE)
-p2 <- plot_bar(OBJ1_ord2, "Sample", fill="Class", facet_grid=~Phylum)
-p2 <- p2 + scale_fill_manual(values=colvec)
-p2 <- p2 + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p2 <- plot_bar(OBJ1_ord2, "Sample", fill = "Class", facet_grid = ~Phylum)
+p2 <- p2 + scale_fill_manual(values = colvec)
+p2 <- p2 + theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p2
-
 
 lim <- c("Bulk_0","Bulk_20","Bulk_100","Rhizo_0","Rhizo_20","Rhizo_100")#order the axis how you want them
 lim_Cd_dose <- c("0_mg","20_mg","100_mg")#order the axis how you want them
 
 ##PLOT3 - Cd-dose groups faceted by Location
 OBJ1_ord2 <- filter_taxa(OBJ1_ord, function(x) mean(x) > 0.005, TRUE)
-p3 <- plot_bar(OBJ1_ord2, "Cd_dose", fill="Order", facet_grid=~Location)
-p3 <- p3 + scale_x_discrete(name = "Title", limits= lim_Cd_dose)
-p3 <- p3 + scale_fill_manual(values=colvec)
-p3 <- p3 + theme_bw()+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+p3 <- plot_bar(OBJ1_ord2, "Cd_dose", fill = "Order", facet_grid = ~Location)
+p3 <- p3 + scale_x_discrete(name = "Title", limits = lim_Cd_dose)
+p3 <- p3 + scale_fill_manual(values = colvec)
+p3 <- p3 + theme_bw() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 p3
 #note in this plot abundance goes to 5 b/c there are 5 reps
 #(this is also why each colour has 5 segments)
@@ -2121,20 +2136,20 @@ colvec5 <- brewer.pal(10, "PiYG")
 colvec6 <- brewer.pal(10, "BrBG")
 colvec <- c(colvec1, colvec2,colvec3,colvec4,colvec5,colvec6)
 
-melt<-psmelt(OBJ1_ord2)#extract the information from the phyloseq object
+melt <- psmelt(OBJ1_ord2)#extract the information from the phyloseq object
 head(melt) #check column headings
-melt<-melt[sort.list(melt[,10]), ] #reorder 'melt' by the column we will be plotting by (in this cae 'order si in col 10)
+melt <- melt[sort.list(melt[,10]), ] #reorder 'melt' by the column we will be plotting by (in this cae 'order si in col 10)
 
 ##ordering the x axis labels:
-melt$Cd_dose<- as.character(melt$Cd_dose)
+melt$Cd_dose <- as.character(melt$Cd_dose)
 #Then turn it back into an ordered factor
-melt$Cd_dose <- factor(melt$Cd_dose, levels=unique(melt$Cd_dose))
-melt$Cd_dose <- factor(melt$Cd_dose, levels=c("0_mg","20_mg","100_mg"))
+melt$Cd_dose <- factor(melt$Cd_dose, levels = unique(melt$Cd_dose))
+melt$Cd_dose <- factor(melt$Cd_dose, levels = c("0_mg","20_mg","100_mg"))
 
-t1<-ggplot(melt, aes(Cd_dose, Abundance/5, fill=Order))+ geom_bar(stat = "identity",)
-t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7))+ scale_fill_manual(values = colvec)
-t1 <- t1+ labs(title = NULL, x=expression(Cadmium~dose~(mg~kg^{-1}~soil)), y= "Relative abundance")
-t1 <- t1 + scale_x_discrete(labels= c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
+t1 <- ggplot(melt, aes(Cd_dose, Abundance/5, fill = Order)) + geom_bar(stat = "identity",)
+t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7)) + scale_fill_manual(values = colvec)
+t1 <- t1 + labs(title = NULL, x = expression(Cadmium~dose~(mg~kg^{-1}~soil)), y = "Relative abundance")
+t1 <- t1 + scale_x_discrete(labels = c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
 t1
 
 #trends in Sphingomonadales and Sphingobacterales are way clearer
@@ -2156,13 +2171,12 @@ library("DESeq2")
 q1 <- subset_samples(OBJ1, Fig1 != "0_mg4")#use unrarefied data for DE so manually remove the sample that we know is undersampled
 
 diagdds = phyloseq_to_deseq2(q1 , ~ Location + Cd_dose) #model for your DE analysis READ VINGITTE FIRST
-diagdds$Cd_dose <- relevel(diagdds$Cd_dose, ref="0_mg") ##reset reference level
-diagdds = DESeq(diagdds, test="Wald", fitType="parametric")
+diagdds$Cd_dose <- relevel(diagdds$Cd_dose, ref = "0_mg") ##reset reference level
+diagdds = DESeq(diagdds, test = "Wald", fitType = "parametric")
 resultsNames(diagdds)
 
-sigtab = results(diagdds, contrast=c("Cd_dose","100_mg","0_mg"))
+sigtab = results(diagdds, contrast = c("Cd_dose","100_mg","0_mg"))
 sigtab_otu = cbind(as(sigtab, "data.frame"), as(tax_table(q1)[rownames(sigtab), ], "matrix"))
-
 
 dim(sigtab_otu)
 sigtab_sigg <- subset(sigtab_otu, sigtab_otu$padj < 0.05)
@@ -2182,21 +2196,21 @@ colvec5 <- brewer.pal(10, "PiYG")
 colvec6 <- brewer.pal(10, "BrBG")
 colvec <- c(colvec1, colvec2,colvec3,colvec4,colvec5,colvec6)
 
-melt<-psmelt(OBJ1_DE2)
+melt <- psmelt(OBJ1_DE2)
 head(melt)
-melt<-melt[sort.list(melt[,11]), ]
+melt <- melt[sort.list(melt[,11]), ]
 
 ##ordering the x axis:
 
-melt$Fig1<- as.character(melt$Fig1)
+melt$Fig1 <- as.character(melt$Fig1)
 #Then turn it back into an ordered factor
-melt$Fig1 <- factor(melt$Fig1, levels=unique(melt$Fig1))
-melt$Fig1 <- factor(melt$Fig1, levels=c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5","20_mg1","20_mg2","20_mg3","20_mg4","20_mg5","100_mg1","100_mg2","100_mg3","100_mg4","100_mg5"))
+melt$Fig1 <- factor(melt$Fig1, levels = unique(melt$Fig1))
+melt$Fig1 <- factor(melt$Fig1, levels = c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5","20_mg1","20_mg2","20_mg3","20_mg4","20_mg5","100_mg1","100_mg2","100_mg3","100_mg4","100_mg5"))
 
-t1<-ggplot(melt, aes(Fig1, Abundance/5, fill=Order))+ geom_bar(stat = "identity",)
-t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7))+ scale_fill_manual(values = colvec)
-t1 <- t1+ labs(title = NULL, x=expression(Cadmium~dose~(mg~kg^{-1}~soil)), y= "Relative abundance")
-t1 <- t1 + scale_x_discrete(labels= c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
+t1 <- ggplot(melt, aes(Fig1, Abundance/5, fill = Order)) + geom_bar(stat = "identity",)
+t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7)) + scale_fill_manual(values = colvec)
+t1 <- t1 + labs(title = NULL, x = expression(Cadmium~dose~(mg~kg^{-1}~soil)), y = "Relative abundance")
+t1 <- t1 + scale_x_discrete(labels = c(rep("0 mg",5),rep("20 mg",5), rep("100 mg",5)))
 t1
 
 # PICRUSt2 ----------------------------------------------------------------
@@ -2211,23 +2225,22 @@ t1
 #And finally, your abundances and sample labels for readmap
 #Unless you've manually selected subsets, or done som eautomatic subsetting that differs from your above analysis you should be able to substitute the same metadata/mapping file as above
 
-
 ## Import ------------------------------------------------------------------
 
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 
 # Readmap
-EC_table <- as.data.frame(read.csv("readmap_EC.csv", header=TRUE,row.names = "OTU_ID"))
-KO_table <- as.data.frame(read.csv("readmap_KO.csv", header=TRUE,row.names = "OTU_ID"))
-Path_table <- as.data.frame(read.csv("readmap_Path.csv", header=TRUE,row.names = "OTU_ID"))
+EC_table <- as.data.frame(read.csv("readmap_EC.csv", header = TRUE,row.names = "OTU_ID"))
+KO_table <- as.data.frame(read.csv("readmap_KO.csv", header = TRUE,row.names = "OTU_ID"))
+Path_table <- as.data.frame(read.csv("readmap_Path.csv", header = TRUE,row.names = "OTU_ID"))
 
 # "Tax" function table
-EC_mat <- as.matrix(read.csv("tax_EC.csv", row.names=1, header=TRUE))
-KO_mat <- as.matrix(read.csv("tax_KO.csv", row.names=1, header=TRUE))
-Path_mat <- as.matrix(read.csv("tax_Path.csv", row.names=1, header=TRUE))
+EC_mat <- as.matrix(read.csv("tax_EC.csv", row.names = 1, header = TRUE))
+KO_mat <- as.matrix(read.csv("tax_KO.csv", row.names = 1, header = TRUE))
+Path_mat <- as.matrix(read.csv("tax_Path.csv", row.names = 1, header = TRUE))
 
 # Metadata/Mapping/Treatment file
-treat <- as.data.frame(read.csv("mapping_file.csv", row.names=1, header=TRUE))
+treat <- as.data.frame(read.csv("mapping_file.csv", row.names = 1, header = TRUE))
 
 # Make Phylo object
 library(phyloseq)
@@ -2310,54 +2323,52 @@ library("ggplot2")
 library("RColorBrewer")
 
 #subsetted timepoints WEIGHTED
-PATH_NMDS_W14w <- ordinate(PATH_W14, "NMDS", distance="bray", binary=FALSE)
+PATH_NMDS_W14w <- ordinate(PATH_W14, "NMDS", distance = "bray", binary = FALSE)
 PATH_NMDS_W14w
 
 #Week 0
-PATH_NMDS_W0w <- ordinate(PATH_W0, "NMDS", distance="bray", binary=FALSE)
+PATH_NMDS_W0w <- ordinate(PATH_W0, "NMDS", distance = "bray", binary = FALSE)
 PATH_NMDS_W0w
 
-
 #Subsetted timepoints UNWEIGHTED
-PATH_NMDS_W14u <- ordinate(PATH_W14, "NMDS", distance="bray", binary=TRUE)
+PATH_NMDS_W14u <- ordinate(PATH_W14, "NMDS", distance = "bray", binary = TRUE)
 PATH_NMDS_W14u
 
 #Week 0
-PATH_NMDS_W0u <- ordinate(PATH_W0, "NMDS", distance="bray", binary=TRUE)
+PATH_NMDS_W0u <- ordinate(PATH_W0, "NMDS", distance = "bray", binary = TRUE)
 PATH_NMDS_W0u
 
 #Plot Ordination weighted
-path_W14w_ord<-plot_ordination(PATH_W14, PATH_NMDS_W14w, color="Treatment", shape="Location", label=NULL)
+path_W14w_ord <- plot_ordination(PATH_W14, PATH_NMDS_W14w, color = "Treatment", shape = "Location", label = NULL)
 path_W14w_ord
 path_W14w_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Plot Ordination unweighted
-path_W14u_ord<-plot_ordination(PATH_W14, PATH_NMDS_W14u, color="Treatment", shape="Location", label=NULL)
+path_W14u_ord <- plot_ordination(PATH_W14, PATH_NMDS_W14u, color = "Treatment", shape = "Location", label = NULL)
 path_W14u_ord
 path_W14u_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Time Zero weighted
-path_W0w_ord<-plot_ordination(PATH_W0, PATH_NMDS_W0w, color="Treatment", shape="Location", label=NULL)
+path_W0w_ord <- plot_ordination(PATH_W0, PATH_NMDS_W0w, color = "Treatment", shape = "Location", label = NULL)
 path_W0w_ord
 path_W0w_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Time Zero unweighted
-path_W0u_ord<-plot_ordination(PATH_W0, PATH_NMDS_W0u, color="Treatment", shape="Location", label=NULL)
+path_W0u_ord <- plot_ordination(PATH_W0, PATH_NMDS_W0u, color = "Treatment", shape = "Location", label = NULL)
 path_W0u_ord
 path_W0u_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-
 #Connection alone at W14
 #Unconnected
-PATH_NMDS_W14_un_w <- ordinate(PATH_W14_unconnected, "NMDS", distance="bray", binary=FALSE)
-PATH_NMDS_W14_un_u <- ordinate(PATH_W14_unconnected, "NMDS", distance="bray", binary=TRUE)
+PATH_NMDS_W14_un_w <- ordinate(PATH_W14_unconnected, "NMDS", distance = "bray", binary = FALSE)
+PATH_NMDS_W14_un_u <- ordinate(PATH_W14_unconnected, "NMDS", distance = "bray", binary = TRUE)
 
 PATH_NMDS_W14_un_w
 PATH_NMDS_W14_un_u
 
 #Connected
-PATH_NMDS_W14_con_w <- ordinate(PATH_W14_connected, "NMDS", distance="bray", binary=FALSE)
-PATH_NMDS_W14_con_u <- ordinate(PATH_W14_connected, "NMDS", distance="bray", binary=TRUE)
+PATH_NMDS_W14_con_w <- ordinate(PATH_W14_connected, "NMDS", distance = "bray", binary = FALSE)
+PATH_NMDS_W14_con_u <- ordinate(PATH_W14_connected, "NMDS", distance = "bray", binary = TRUE)
 
 PATH_NMDS_W14_con_w
 PATH_NMDS_W14_con_u
@@ -2380,8 +2391,8 @@ Inoculum <- get_variable(PATH_W14, "Inoculum")
 Inoculum0 <- get_variable(PATH_W0, "Inoculum")
 
 #W14
-PATH_W14perm_w <- distance(PATH_W14, "bray" , binary=FALSE)
-PATH_W14perm_u <- distance(PATH_W14, "bray" , binary=TRUE)
+PATH_W14perm_w <- distance(PATH_W14, "bray" , binary = FALSE)
+PATH_W14perm_u <- distance(PATH_W14, "bray" , binary = TRUE)
 
 PATH_W14_ado_w = adonis(PATH_W14perm_w ~ Location * Connection * Inoculum, permutations = 9999)
 PATH_W14_ado_w
@@ -2390,15 +2401,14 @@ PATH_W14_ado_u = adonis(PATH_W14perm_u ~ Location * Connection * Inoculum, permu
 PATH_W14_ado_u
 
 #W0
-PATH_W0perm_w <- distance(PATH_W0, "bray" , binary=FALSE)
-PATH_W0perm_u <- distance(PATH_W0, "bray" , binary=TRUE)
+PATH_W0perm_w <- distance(PATH_W0, "bray" , binary = FALSE)
+PATH_W0perm_u <- distance(PATH_W0, "bray" , binary = TRUE)
 
 PATH_W0_ado_w = adonis(PATH_W0perm_w ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
 PATH_W0_ado_w
 
 PATH_W0_ado_u = adonis(PATH_W0perm_u ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
 PATH_W0_ado_u
-
 
 # CLAM Clamtest for Specialist and Generalist categorisation - WIP --------
 #https://rdrr.io/rforge/vegan/man/clamtest.html
@@ -2417,11 +2427,11 @@ clamtest(comm, groups, coverage.limit = 10, specialization = 2/3,  npoints = 20,
 
 data(mite)
 data(mite.env)
-sol <- with(mite.env, clamtest(mite, Shrub=="None", alpha=0.005)) # with Shrub==none , Spec_TRUE species fall on the lower right, and Spec_FLASE species fall on upper left of plot
+sol <- with(mite.env, clamtest(mite, Shrub == "None", alpha = 0.005)) # with Shrub==none , Spec_TRUE species fall on the lower right, and Spec_FLASE species fall on upper left of plot
 #Shrub==NONE in this instance results in NONE specialists being called Spec_TRUE, all others lumped as Spec_FALS
 summary(sol)
 head(sol)
-plot(sol, xlab="None", ylab="Other", position=NULL)
+plot(sol, xlab = "None", ylab = "Other", position = NULL)
 
 #Try to adapt to my data....
 #first otu table must be transposed so that species are columns, samples = rows
@@ -2430,22 +2440,19 @@ plot(sol, xlab="None", ylab="Other", position=NULL)
 
 t_otu_table <- as.data.frame(t(otu_table))
 
-sol <- with(treat, clamtest(t_otu_table, Substrate=="Water", alpha=0.005))
+sol <- with(treat, clamtest(t_otu_table, Substrate == "Water", alpha = 0.005))
 
-sol <- with(treat, clamtest(t_otu_table, Location=="Root", alpha=0.005))
-
-
+sol <- with(treat, clamtest(t_otu_table, Location == "Root", alpha = 0.005))
 
 summary(sol)
 head(sol)
-plot(sol, position="topright", bty = "n", xpd=TRUE)
-plot(sol, xlab="Anode", ylab="Other", position=NULL, bty = "n", xpd=TRUE)
-plot(sol, xlab="Water", ylab="Soil")
+plot(sol, position = "topright", bty = "n", xpd = TRUE)
+plot(sol, xlab = "Anode", ylab = "Other", position = NULL, bty = "n", xpd = TRUE)
+plot(sol, xlab = "Water", ylab = "Soil")
 
 write.csv(sol,"File_.csv", row.names = TRUE)
 
 # Other WIP / General Useful script section -------------------------------
-
 
 ## A Colour Palette Interlude ------------------------------------------------
 ## This section used to decide on what colour palettes ill apply to each condition/treaatment, and based on ordination sections primarily
@@ -2471,20 +2478,18 @@ cbp2 <- c("#000000", "#E69F00", "#56B4E9", "#009E73","#F0E442", "#0072B2", "#D55
 #Montebello Unconnected: Light Orange:"#E09900"
 #Pseudomonas Connected: Green:"#008F47"
 #Pseudomonas Unconnected: Light Green:"#00B85C"
-#Uninoculated Connected: Black ="#141414"
-#Uninoculated Unconnected: Grey ="#7A7A7A"
+#Uninoculated Connected: Black  = "#141414"
+#Uninoculated Unconnected: Grey  = "#7A7A7A"
 my_colvec <- c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A")
 
 #### To use for fills, add
 bp + scale_fill_manual(values = cbp2)
 ### To use for line and point colors, add
-sp + scale_colour_manual(values=cbp2)
+sp + scale_colour_manual(values = cbp2)
 #Themes
 # https://ggplot2.tidyverse.org/reference/ggtheme.html
 #Colours
 #### https://www.datanovia.com/en/blog/ggplot-colors-best-tricks-you-will-love/ , https://cran.r-project.org/web/packages/ggsci/vignettes/ggsci.html
-
-
 
 ## Image export resolution testing  -------------------------------------
 ##is based on species heeatmap plot section for specialists, but can replot and test with others
@@ -2525,9 +2530,7 @@ plot(speciesheatplot_ORD)
 dev.off()
 ####
 
-
 # New notes and/or functions to fix up and integrate ----------------------
-
 
 # Pairise perma, log transofrm, ancom-bc are main things to integrate as of now....
 
@@ -2550,13 +2553,14 @@ library(xlsx)
 #do log transform
 OBJ2 <- phyloseq_standardize_otu_abundance(OBJ1, method = "log")
 
-
 #Where OBJ1_X_PICRUST is your functional Phyloseq object
 OBJ1_PICRUST = aggregate_taxa(OBJ1_X_PICRUST, "Family")
-outPICRUST = ancombc(phyloseq = OBJ1_PICRUST, formula = "Treatment + CollectionPoint", p_adj_method = "BH", zero_cut = 0.90, lib_cut = 1000,group = "Treatment", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0504, global = TRUE)
+outPICRUST = ancombc(phyloseq = OBJ1_PICRUST, formula = "Treatment + CollectionPoint", p_adj_method = "BH", zero_cut = 0.90, lib_cut = 1000,group = "Treatment",
+                     struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0504, global = TRUE)
 resPICRUST = outPICRUST$res
 resPICRUST_global = outPICRUST$res_global
-outPICRUST2 = ancombc(phyloseq = OBJ1_PICRUST, formula = "CollectionPoint + Treatment", p_adj_method = "BH", zero_cut = 0.90, lib_cut = 1000, group = "CollectionPoint", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0504, global = TRUE)
+outPICRUST2 = ancombc(phyloseq = OBJ1_PICRUST, formula = "CollectionPoint + Treatment", p_adj_method = "BH", zero_cut = 0.90, lib_cut = 1000, group = "CollectionPoint",
+                      struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0504, global = TRUE)
 resPICRUST2 = outPICRUST2$res
 resPICRUST_global2 = outPICRUST2$res_global
 write.xlsx(resPICRUST_global, "ANCOM_BC-PICRUST-BH.xlsx", sheetName = "Treatment",append = TRUE)
@@ -2590,9 +2594,9 @@ data(iris)
 pairwise.adonis(iris[,1:4],iris$Species)
 
 # For strata (blocks), following example of Jari Oksanen in adonis2. 
-dat <- expand.grid(rep=gl(2,1), NO3=factor(c(0,10,30)),field=gl(3,1) )
-Agropyron <- with(dat, as.numeric(field) + as.numeric(NO3)+2) +rnorm(18)/2
-Schizachyrium <- with(dat, as.numeric(field) - as.numeric(NO3)+2) +rnorm(18)/2
+dat <- expand.grid(rep = gl(2,1), NO3 = factor(c(0,10,30)),field = gl(3,1) )
+Agropyron <- with(dat, as.numeric(field) + as.numeric(NO3) + 2) + rnorm(18)/2
+Schizachyrium <- with(dat, as.numeric(field) - as.numeric(NO3) + 2) + rnorm(18)/2
 Y <- data.frame(Agropyron, Schizachyrium)
 
 pairwise.adonis2(Y ~ NO3, data = dat, strata = 'field')
@@ -2607,8 +2611,8 @@ pairwise.adonis(OBJ1BacVegan, VeganSam$ID, perm = 9999, p.adjust.m = "BH")
 #FOR ANCOM BC pre-treatment/transform
 #TSS then Log+1
 #Despite its name simply being "log", the Anderson "log" function from Anderson 2006 does seem to be a modified log transofrm
-#it should accounts for zeros, it is not technically just a log+1 either accordingto documentation, but modified based on the number encountered and adjusted to repvent unusable transofmation (presumably)
-
+#it should accounts for zeros, it is not technically just a log+1 either accordingto documentation,
+#but modified based on the number encountered and adjusted to repvent unusable transofmation (presumably)
 
 # Broken or Deprecated script ---------------------------------------------
 #Double check nothing useful within tnaythinghere before deleting
@@ -2616,10 +2620,19 @@ pairwise.adonis(OBJ1BacVegan, VeganSam$ID, perm = 9999, p.adjust.m = "BH")
 #DESEQ Subsetting for top specialists (NOT WORKING, MAY BE EASIER TO SUBSET THE FULL SET ABOVE AFTER BINDING TAX etc)
 #SUBSETTING FOR SPECIALISTS ALONE
 #This one will only ever work at ASV level, but may come in handy for any other work we do on the specilaist or "hyper" specilast subsets, lets us pull them out immediately
-specialist_res_subset <- subset((res), rownames((res)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2', '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e', '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08', '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774', '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008', '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6', '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397', '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8', 'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c', 'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
-specialistsR_A = results(specialist_res_subset, contrast=c("Location","Root","Anode"))
-specialistsR_C = results(specialist_res_subset, contrast=c("Location","Root","Cathode"))
-specialistsA_C = results(specialist_res_subset, contrast=c("Location","Anode","Cathode"))
+specialist_res_subset <- subset((res), rownames((res)) %in% c('0238e0e03ffd3faa629954545d336e61', '052f174cab37be599600e58c78283fa2', '0592d48e1457e0fafb90b4158fa522c2',
+                                                              '084e19e29dc9ebe03f4401003d10bff6', '26be318a519d7fe51cc6cf5d2378d1c8', '275c04dcabb809d184f0b6838763e20e',
+                                                              '2e7210652ae3b77f31c42743c148406b', '321da2e457e5a9b769814b25476c4b10', '33d9e0d38932e8ce14c359de566b7d08',
+                                                              '34c559c02664a1ac5ece941ca9000309', '4b8d75e30b64a18cf561c75cdc17043f', '4bb91812872f443514a3977be8c58774',
+                                                              '4ce53584fbaa2aa3650f10bbe615c714', '57e66fdc78f87cd026455c6394730932', '5fca9caffa56a57fcc31d7ccba92d008',
+                                                              '770af6feae23fae0ab3f1282a0ccbf18', '79eb38e43351aa3b12eae197935b81fb', '893c52ddb9dd678876c58f35b7ecbad6',
+                                                              '89514854a16cbb3269c2e9e94a05e9d7', '908664fbed1b4350a0be7c1dc38094a8', '9690acde73fcd49a81835468c4b92397',
+                                                              '9f9b3c564446dde56bbc0ef69261369f', 'a79e5838a5e0b50040e7f9aecf923028', 'b7f611ae7c6166d62354f04ca25391d8',
+                                                              'ba37b62f122aca2aaff8ad84244df273', 'bd5b2a1bc31a73a4f37561a50e8e238c', 'c0664e6873e08cb34f7333015aabb07c',
+                                                              'c36dba3bdc497773e638b8c441a9a0eb', 'c752096e70b99e9b3feeb36fb2beb2e1', 'd8a16afe0d36d2502e504377df9e7e44'))
+specialistsR_A = results(specialist_res_subset, contrast = c("Location","Root","Anode"))
+specialistsR_C = results(specialist_res_subset, contrast = c("Location","Root","Cathode"))
+specialistsA_C = results(specialist_res_subset, contrast = c("Location","Anode","Cathode"))
 
 #Bind results sheets with OTU Taxa
 specialistsR_A_tax = cbind(as(specialistsR_A, "data.frame"), as(tax_table(OBJ1_exp)[rownames(specialistsR_A), ], "matrix"))
@@ -2633,15 +2646,13 @@ sigtab_otuC
 
 #Export .csv
 write.csv(as.data.frame(specialistsR_A_tax), 
-          file="DESeq2_results_R_A_spec.csv")
+          file = "DESeq2_results_R_A_spec.csv")
 write.csv(as.data.frame(sigtab_otuB), 
-          file="DESeq2_resultsB.csv")
+          file = "DESeq2_resultsB.csv")
 write.csv(as.data.frame(sigtab_otuC), 
-          file="DESeq2_resultsC.csv")
+          file = "DESeq2_resultsC.csv")
 
 write.csv(as.data.frame(specialist_res_subset), 
-          file="DESeq2_specialist_subset_TEST.csv")
+          file = "DESeq2_specialist_subset_TEST.csv")
 ## END SUBSETTING WIP
-
-
 
