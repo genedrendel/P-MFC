@@ -28,7 +28,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 BiocManager::install("phyloseq")
 
-## Working Directory -------------------------------------------------------
+# Working Directory -------------------------------------------------------
 #Set your working directory, location for data tables, tree, etc
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 #Quick import all to skip the below
@@ -51,12 +51,12 @@ OBJ1 <- OBJ1 %>%
   )
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
-#Plus one OR the other of the treatment cut versions (if ending up suing them). New Treatment TSS'd subset
+#Plus one OR the other of the treatment cut versions (if ending up using them). New Treatment TSS'd subset
 
-
-## Import ------------------------------------------------------------------
+### Import ------------------------------------------------------------------
 #Import .csv as OTU table
-#Replaced import with the below: Not sure if any functional difference once imported like this? But the other one didn't work, assuming mostly just a txt vs csv thing
+#Replaced import with the below: Not sure if any functional difference once imported like this?
+#But the other one didn't work, assuming mostly just a txt vs csv thing
 otu_table <- as.data.frame(read.csv("raw_readmap.csv", header = TRUE,row.names = "OTU_ID"))
 
 ##look at the total reads per sample and decide on a rarefaction depth
@@ -103,7 +103,7 @@ OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
 
 sample_data(OBJ1)
 
-## Remove unwanted taxa ----------------------------------------------------
+#### Remove unwanted taxa ----------------------------------------------------
 ##you may wan to remove mitochondria and chloroplasts. you can use this script
 
 library(magrittr)
@@ -126,14 +126,16 @@ tax_table(OBJ1) #look at taxonomy table
 install.packages("shiny")
 shiny::runGitHub("shiny-phyloseq","joey711")
 
-## Subsetting --------------------------------------------------------------
+#### Subsetting --------------------------------------------------------------
 
-#First thing first GET RID OF THE CONTROL SAMPLE AND ONLY SUBSET FROM THAT OBJECT SO THAT IT STOPS FUCKING WITH ORDINATION DISTANCES
-#Similarly, will use this to remove problematic samples , e.g those with low read depth that entirely skew ordination patterns by being entirely alone
+#First thing first GET RID OF THE CONTROL SAMPLE AND ONLY SUBSET FROM THAT OBJECT
+#SO THAT IT STOPS FUCKING WITH ORDINATION DISTANCES
+#Similarly, will use this to remove problematic samples , 
+#e.g those with low read depth that entirely skew ordination patterns by being entirely alone
 #To do this, created additional column of treatment file indicating Y (yes) and N (no) for all data minus the control
 #Lets call this OBJ1_exp as an indication of it being the proper "experimental" dataset
 
-## Experimental Sample Subset (and TSS it) ----------------------------------------------
+#### Experimental Sample Subset (and TSS it) ----------------------------------------------
 #Main Experimental Data Subset - run this one EVERY TIME
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 #TSS Transform on ALL Experimental data as pre-treatment for ordinations (rather than doing TSS for each individual subset)
@@ -141,49 +143,11 @@ OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
 OBJ1_exp_tss
 
-# Sheet Exports (test) -----------------------------------------------------------
-
-##Small interlude to test exporting the TSS's OTU by itself, to check the transform and agglomerating wksheets
-#export TSS sheet
-# Extract abundance matrix from the phyloseq object
-OTU1 = as(otu_table(OBJ1_exp_tss), "matrix")
-# transpose if necessary
-#only if transposing:# if(taxa_are_rows(OBJ1_exp_tss)){OTU1 <- t(OTU1)}
-# Coerce to data.frame
-OTUdf = as.data.frame(OTU1)
-write.csv(OTUdf,"TSS_objexp_transform.csv", row.names = TRUE)
-
-##Same as above but for agglomerated taxa
-#family
-OBJ1_tss_FAM <- tax_glom(OBJ1_exp_tss,taxrank = "Family")
-OTU2 = as(otu_table(OBJ1_tss_FAM), "matrix")
-# transpose if necessary
-#only if transposing:# if(taxa_are_rows(physeq1)){OTU2 <- t(OTU2)}
-# Coerce to data.frame
-OTUdf2 = as.data.frame(OTU2)
-write.csv(OTUdf,"TSS_Family_transform.csv", row.names = TRUE)
-#write corresopnding tax table
-TAX2 = as(tax_table(OBJ1_tss_FAM), "matrix")
-TAXdf2 = as.data.frame(TAX2)
-write.csv(TAXdf2,"TSS_Family_tax.csv", row.names = TRUE)
-
-#genus
-OBJ1_tss_GEN <- tax_glom(OBJ1_exp_tss,taxrank = "Genus")
-OTU3 = as(otu_table(OBJ1_tss_GEN), "matrix")
-# transpose if necessary
-#if(taxa_are_rows(physeq1)){OTU3 <- t(OTU3)}
-# Coerce to data.frame
-OTUdf3 = as.data.frame(OTU3)
-write.csv(OTUdf3,"TSS_Genus_transform.csv", row.names = TRUE)
-#write corresopnding tax table
-TAX3 = as(tax_table(OBJ1_tss_GEN), "matrix")
-TAXdf3 = as.data.frame(TAX3)
-write.csv(TAXdf3,"TSS_Genus_tax.csv", row.names = TRUE)
-
 #Subsets on TSS data
 
-## Treatment Subsets -------------------------------------------------------
-#Treatments (by connection) - for trying to get all the info on treatment combos in one (e.g keep in mind for ordinations = using open and closed symbols + colour
+#### Treatment Subsets -------------------------------------------------------
+#Treatments (by connection) - for trying to get all the info on treatment combos in one
+#(e.g keep in mind for ordinations = using open and closed symbols + colour
 #to distinguish the significant inoculum+connection effect that seems to be happening based on the permanova
 OBJ_Unin_Conn_tss <- subset_samples(OBJ1_exp_tss, Treatment == "Uninoculated Connected")
 OBJ_Unin_Unconn_tss <- subset_samples(OBJ1_exp_tss, Treatment == "Uninoculated Unconnected")
@@ -247,7 +211,7 @@ OBJ_Geo_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Geobacter")
 OBJ_Mont_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Montebello")
 OBJ_Pseudo_tss <- subset_samples(OBJ1_exp_tss, Inoculum == "Pseudomonas")
 
-## Non-transformed subsets ------------------------------------
+#### Non-transformed subsets ------------------------------------
 #Subsets for NON transformed dataset
 #Retained for other tests that use their own transformations , treatments etc
 
@@ -272,7 +236,7 @@ OBJ1_14roots <- subset_samples(OBJ_W14, Location == "Root")
 
 sample_data(OBJ1_anode)
 
-## Agglomerate taxa -------------------------------------------------
+#### Agglomerate taxa -------------------------------------------------
 #e.g subset for taxa too (ATTENTION RE:still need to change for tss vs norm if goin to do this for ordinations vs boxplots etc)
 #Experimental
 OBJ1_Desulf = subset_taxa(OBJ1_exp_tss, Order == "Desulfuromonadales")
@@ -285,7 +249,7 @@ OBJ_W14_tss_ORD <- tax_glom(OBJ_W14_tss,taxrank = "Order")
 OBJ_W14_tss_FAM <- tax_glom(OBJ_W14_tss,taxrank = "Family")
 OBJ_W14_tss_GEN <- tax_glom(OBJ_W14_tss,taxrank = "Genus")
 
-## Subset specific ASVs/OTUs -----------------------------------------------
+#### Subset specific ASVs/OTUs -----------------------------------------------
 
 ## WIP
 #This one will only ever work at ASV level of course, but can then go back and agglomerate the subset if you with, 
@@ -313,7 +277,7 @@ write.csv(as.data.frame(specialist_res_subset),
 #This results in a new phyloseq object that is subset to the list of OTU ids you provided.
 ## WIP
 
-# Rarefy / TSS ---------------------------------------------
+#### Rarefy / TSS ---------------------------------------------
 ##normalisation opton 1: rarefy data
 set.seed(8385) #there is an element of randomness in rarfying. this eliminates that
 OBJ1_r <- rarefy_even_depth(OBJ1, sample.size = 3500,  rngseed = TRUE, replace = FALSE, trimOTUs = TRUE)
@@ -345,6 +309,45 @@ OBJ1_ts_multiplied = transform_sample_counts(OBJ1_ts, function(OTU) OTU*1000000 
 otu_table(OBJ1_ts_multiplied)
 #Josh Suggested trying by 100 insetad....may as well try a few variations 1000 etc... but question remains what should really be done
 #e.g are shannons and simpsons impacted ONLY by ratios, or do they need whole numbers? Need to test some comparisons and see what other people do
+
+#### Sheet Exports (test) -----------------------------------------------------------
+
+##Small interlude to test exporting the TSS's OTU by itself, to check the transform and agglomerating wksheets
+#export TSS sheet
+# Extract abundance matrix from the phyloseq object
+OTU1 = as(otu_table(OBJ1_exp_tss), "matrix")
+# transpose if necessary
+#only if transposing:# if(taxa_are_rows(OBJ1_exp_tss)){OTU1 <- t(OTU1)}
+# Coerce to data.frame
+OTUdf = as.data.frame(OTU1)
+write.csv(OTUdf,"TSS_objexp_transform.csv", row.names = TRUE)
+
+##Same as above but for agglomerated taxa
+#family
+OBJ1_tss_FAM <- tax_glom(OBJ1_exp_tss,taxrank = "Family")
+OTU2 = as(otu_table(OBJ1_tss_FAM), "matrix")
+# transpose if necessary
+#only if transposing:# if(taxa_are_rows(physeq1)){OTU2 <- t(OTU2)}
+# Coerce to data.frame
+OTUdf2 = as.data.frame(OTU2)
+write.csv(OTUdf,"TSS_Family_transform.csv", row.names = TRUE)
+#write corresopnding tax table
+TAX2 = as(tax_table(OBJ1_tss_FAM), "matrix")
+TAXdf2 = as.data.frame(TAX2)
+write.csv(TAXdf2,"TSS_Family_tax.csv", row.names = TRUE)
+
+#genus
+OBJ1_tss_GEN <- tax_glom(OBJ1_exp_tss,taxrank = "Genus")
+OTU3 = as(otu_table(OBJ1_tss_GEN), "matrix")
+# transpose if necessary
+#if(taxa_are_rows(physeq1)){OTU3 <- t(OTU3)}
+# Coerce to data.frame
+OTUdf3 = as.data.frame(OTU3)
+write.csv(OTUdf3,"TSS_Genus_transform.csv", row.names = TRUE)
+#write corresopnding tax table
+TAX3 = as(tax_table(OBJ1_tss_GEN), "matrix")
+TAXdf3 = as.data.frame(TAX3)
+write.csv(TAXdf3,"TSS_Genus_tax.csv", row.names = TRUE)
 
 # Alpha Diversity ---------------------------------------------------------
 ##ALPHA DIVERSITY_____________________________________________________________________________
@@ -502,7 +505,7 @@ mycols <- c(Anode = "#eb5717", Cathode = "#352ea8", Root = "#0fa676")
 plot(venn(list_core),
      fills = mycols)
 
-## Normality Tests ---------------------------------------------------------
+### Normality Tests ---------------------------------------------------------
 
 ##we need to know if data meets normailtiy and homogeneity of varience assumptions
 ##so we can decide how to test for statistical differences
@@ -542,7 +545,7 @@ summary(ANOVA1)
 TUKEY <- TukeyHSD(ANOVA1,'Div$Location', conf.level = 0.95)
 TUKEY
 
-## WIP - Boxplot labels ----------------------------------------------------
+### WIP - Boxplot labels ----------------------------------------------------
 
 ##WORK IN PROGRESS - AUTOMATING A WAY TO PUT THE LETTERS ON THE BOXPLOTS
 # library
@@ -562,10 +565,12 @@ generate_label_df <- function(TUKEY, variable){
 LABELS <- generate_label_df(TUKEY, "Div$Location")
 LABELS
 
-my_colors <- c("green4","red3","darkorange1","green4","red3","darkorange1") #make sure you colours appear in the order that corresponds to your factor levels
+my_colors <- c("green4","red3","darkorange1","green4","red3","darkorange1") 
+#make sure you colours appear in the order that corresponds to your factor levels
 
 # Draw the basic boxplot
-a <- boxplot(Div$Shannon ~ Div$Location , ylim = c(min(Div$Shannon), 1.1*max(Div$Shannon)) , col = my_colors[as.numeric(LABELS[,1])] , ylab = "Shannon Diversity" , main = "")
+a <- boxplot(Div$Shannon ~ Div$Location , ylim = c(min(Div$Shannon), 1.1*max(Div$Shannon)) ,
+             col = my_colors[as.numeric(LABELS[,1])] , ylab = "Shannon Diversity" , main = "")
 # I want to write the letter over each box. Over is how high I want to write it.
 over <- 0.1*max( a$stats[nrow(a$stats),] )
 text( c(1:nlevels(Div$Group)) , a$stats[nrow(a$stats),] + over , LABELS[,1]  , col = my_colors[as.numeric(LABELS[,1])] )
@@ -579,7 +584,7 @@ library(FSA)
 PT = dunnTest(Shannon ~ Location, data = Div, method = "bh")
 PT
 
-## Boxplots ----------------------------------------------------------------
+#### Boxplots ----------------------------------------------------------------
 
 ##BOXPLOTS
 library(ggplot2)
@@ -688,7 +693,7 @@ theme_set(theme_bw())
 #metadata applies for both top and hyper specialists
 treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names = 1, header = TRUE))
 
-## Top specialists ---------------------------------------------------------
+### Top specialists ---------------------------------------------------------
 
 #asv_id for top specialists by abundance across all samples
 otu_table_spec <- as.data.frame(read.csv("readmap_spec_index.csv", header = TRUE,row.names = "OTU_ID"))
@@ -717,9 +722,9 @@ OBJ1_spec_ts
 #Top 30 ASVs above 0.8 specialisation index and high abundance
 High_spec_gp <- subset_taxa(OBJ1_spec_ts, Kingdom == "Bacteria")
 High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:30]), High_spec_gp)
-plot_heatmap(High_spec_gp, sample.label = "Location") # this will do the default phyloseq ordination based sorting with ASV ID labels
+plot_heatmap(High_spec_gp, sample.label = "Location") # default phyloseq ordination based sorting with ASV ID labels
 plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Species") # replace ASV labels with species
-plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Species") #these arguments will let you reorganise order and labelling
+plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Species") #these arguments let you reorganise order/labelling
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species")
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species")
 heatmap(otu_table(High_spec_gp))
@@ -799,7 +804,7 @@ plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order 
 plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
 
-## Top specialists (pt2 - treatment CUT) ---------------------------------------------------------
+#### Top specialists (pt2 - treatment CUT) ---------------------------------------------------------
 
 #asv_id for top specialists by abundance across all samples
 otu_table_spec <- as.data.frame(read.csv("readmap_newcut_spec.csv", header = TRUE,row.names = "OTU_ID"))
@@ -909,7 +914,7 @@ plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order 
 plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
 
-# "Hyper" specialists -----------------------------------------------------
+###### "Hyper" specialists -----------------------------------------------------
 # These are ASVs chose using the specialist index worksheet (as above). This timelooking specifically for ASVs that appear solely in one location, hence "hyper" specialists. 
 # These are not sorted or picked by abundance, but instead by getting the # of samples that each ASV appearred in, and sorting for highest in one location, and lowest in the other two
 # Excel allows the sorting for those 3 columns to best match the ascending/descending cimbination, and then ASVs with a sample count appearannce of 6 or greater were selected
@@ -1003,7 +1008,7 @@ High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), H
 plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
 
-## ABRIDGED Hyper meatmap --------------------------------------------------
+##### ABRIDGED Hyper meatmap --------------------------------------------------
 #Paper figure version (abridged)
 #Because of sheer number of cathode specific ASVs when looking at unique ASVs by location putting an upper cap of 20 on most abundant cathode asvs
 #rest can appear in supplementary figure if necessary
@@ -1100,7 +1105,7 @@ High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), H
 plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
 
-## Unique specialists (pt2 - treatment cut data) -----------------------------------------------------
+##### Unique specialists (pt2 - treatment cut data) -----------------------------------------------------
 # These are ASVs chose using the specialist index worksheet (as above). This timelooking specifically for ASVs that appear solely in one location, hence "hyper" specialists. 
 # These are not sorted or picked by abundance, but instead by getting the # of samples that each ASV appearred in, and sorting for highest in one location, and lowest in the other two
 # Excel allows the sorting for those 3 columns to best match the ascending/descending cimbination, and then ASVs with a sample count appearannce of 6 or greater were selected
@@ -1424,7 +1429,8 @@ p1w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9"
   legend.text = element_text(color = "white")
   )
 #Week 14 - weighted (run the relevant W14 section above first)
-p4w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
+p4w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900",
+                                                             "#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
   # get rid of panel grids
   panel.grid.major = element_blank(),
   panel.grid.minor = element_blank(),
@@ -1823,14 +1829,16 @@ OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
 res = cbind(as(res, "data.frame"), as(tax_table(OBJ_W14)[rownames(res), ], "matrix"))
 res
 
-#Aglommerate to certain taxa intead of ASV #I THINK THIS IS THE STUMBLING BLOCK, is overwriting deseq with the entire physeq objsect when we just want it to append taxa at the family level to match
+#Aglommerate to certain taxa intead of ASV #I THINK THIS IS THE STUMBLING BLOCK, is overwriting deseq with the entire physeq objsect
+#when we just want it to append taxa at the family level to match
 res <- tax_glom(OBJ_W14,taxrank = "Family")
 res
 write.csv(as.data.frame(res), 
           file = "DESeq2_specialist_subset_TEST.csv")
 
 #WIP TEST equivalence vs the contrast command, name
-#their example was these two commands being essentially equivalent except for some stuff about how contrast sets LFC to zero...not sure what this means in practice, hence why I want to test what differs
+#their example was these two commands being essentially equivalent except for some stuff about how contrast sets LFC to zero...
+#not sure what this means in practice, hence why I want to test what differs
 res <- results(dds, name = "condition_treated_vs_untreated")
 res <- results(dds, contrast = c("condition","treated","untreated"))
 #This should print out valid comparison names
@@ -2005,7 +2013,8 @@ melt <- melt[sort.list(melt[,11]), ]
 melt$Fig1 <- as.character(melt$Fig1)
 #Then turn it back into an ordered factor
 melt$Fig1 <- factor(melt$Fig1, levels = unique(melt$Fig1))
-melt$Fig1 <- factor(melt$Fig1, levels = c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5","20_mg1","20_mg2","20_mg3","20_mg4","20_mg5","100_mg1","100_mg2","100_mg3","100_mg4","100_mg5"))
+melt$Fig1 <- factor(melt$Fig1, levels = c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5","20_mg1","20_mg2","20_mg3","20_mg4",
+                                          "20_mg5","100_mg1","100_mg2","100_mg3","100_mg4","100_mg5"))
 
 t1 <- ggplot(melt, aes(Fig1, Abundance/5, fill = Order)) + geom_bar(stat = "identity",)
 t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7)) + scale_fill_manual(values = colvec)
@@ -2023,15 +2032,18 @@ library(microbiome)
 library(xlsx)
 #As per: https://github.com/FrederickHuangLin/ANCOMBC/issues/19
 #Using transofrmed/fractional counts is NOT recommended for ANCOM, it is 
-#The ANCOM-BC methodology is developed for differential abundance analysis with regards to absolute abundances, i.e. reading in raw counts data is required. Using fractional relative abundances is highly not recommended.
+#The ANCOM-BC methodology is developed for differential abundance analysis with regards to absolute abundances,
+#i.e. reading in raw counts data is required. Using fractional relative abundances is highly not recommended.
 
 #FULL DATASET
 #Unsure of formula structure re: direction change, etc...test if you can just test for location alone
-out = ancombc(phyloseq = OBJ_W14, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+out = ancombc(phyloseq = OBJ_W14, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
 res = out$res
 res_global = out$res_global
 #This one should be essentially the same but adjust for connection diffferences? Overall seems VERY similar comparong the two, some very slight shifts
-out2 = ancombc(phyloseq = OBJ_W14, formula = "Location + Connection", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+out2 = ancombc(phyloseq = OBJ_W14, formula = "Location + Connection", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
+               struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
 res = out2$res
 res_global2 = out2$res_global
 
@@ -2045,7 +2057,8 @@ write.csv(as.data.frame(res_global_tax), file = "ANCOM-BC_ALL_ASV_W14_Loc.csv")
 write.csv(as.data.frame(res_global_tax2), file = "ANCOM-BC_ALL_ASV_W14_Loc2.csv")
 
 ##CUT DATASET
-out = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+out = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
 res = out$res
 res_global = out$res_global
 #Bind results sheets with OTU Taxa
@@ -2062,7 +2075,8 @@ write.csv(as.data.frame(tab_q), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut_adjusted_P.
 
 
 #HALFCUT DATASET (if full cut is lacklustre)
-out = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+out = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
 res = out$res
 res_global = out$res_global
 #Bind results sheets with OTU Taxa
@@ -2310,7 +2324,8 @@ melt <- melt[sort.list(melt[,11]), ]
 melt$Fig1 <- as.character(melt$Fig1)
 #Then turn it back into an ordered factor
 melt$Fig1 <- factor(melt$Fig1, levels = unique(melt$Fig1))
-melt$Fig1 <- factor(melt$Fig1, levels = c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5","20_mg1","20_mg2","20_mg3","20_mg4","20_mg5","100_mg1","100_mg2","100_mg3","100_mg4","100_mg5"))
+melt$Fig1 <- factor(melt$Fig1, levels = c("0_mg1","0_mg2","0_mg3","0_mg4","0_mg5","20_mg1",
+                                          "20_mg2","20_mg3","20_mg4","20_mg5","100_mg1","100_mg2","100_mg3","100_mg4","100_mg5"))
 
 t1 <- ggplot(melt, aes(Fig1, Abundance/5, fill = Order)) + geom_bar(stat = "identity",)
 t1 <- t1 + facet_grid(Location~.) + theme(axis.text.x = element_text(angle = 45, size = 9,vjust = 0.7)) + scale_fill_manual(values = colvec)
@@ -2368,7 +2383,8 @@ Path_TAX = tax_table(Path_mat)
 TREAT = sample_data(treat)
 Path_PHYLO = phyloseq(Path_OTU,Path_TAX,TREAT)
 
-#BEFORE PROCEEDING need to transform, first: TSS AND then LOG+1/anderson log on the phyloseq object (this just here to test that the standardise function was doing the exact same thing)
+#BEFORE PROCEEDING need to transform, first: TSS AND then LOG+1/anderson log on the phyloseq object 
+#(this just here to test that the standardise function was doing the exact same thing)
 Path_PHYLO_tss_manual = transform_sample_counts(Path_PHYLO, function(OTU) OTU/sum(OTU) )
 Path_PHYLO_tss_manual
 #ALTERNATIVELY can use metagMisc  package to do both TSS and anderson log
@@ -2446,22 +2462,26 @@ PATH_NMDS_W0u
 #Plot Ordination weighted
 path_W14w_ord <- plot_ordination(PATH_W14, PATH_NMDS_W14w, color = "Treatment", shape = "Location", label = NULL)
 path_W14w_ord
-path_W14w_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+path_W14w_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47",
+                                                                                                                              "#00B85C","#141414","#7A7A7A"))
 
 #Plot Ordination unweighted
 path_W14u_ord <- plot_ordination(PATH_W14, PATH_NMDS_W14u, color = "Treatment", shape = "Location", label = NULL)
 path_W14u_ord
-path_W14u_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+path_W14u_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47",
+                                                                                                                              "#00B85C","#141414","#7A7A7A"))
 
 #Time Zero weighted
 path_W0w_ord <- plot_ordination(PATH_W0, PATH_NMDS_W0w, color = "Treatment", shape = "Location", label = NULL)
 path_W0w_ord
-path_W0w_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+path_W0w_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47",
+                                                                                                                             "#00B85C","#141414","#7A7A7A"))
 
 #Time Zero unweighted
 path_W0u_ord <- plot_ordination(PATH_W0, PATH_NMDS_W0u, color = "Treatment", shape = "Location", label = NULL)
 path_W0u_ord
-path_W0u_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+path_W0u_ord + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47",
+                                                                                                                             "#00B85C","#141414","#7A7A7A"))
 
 #Connection alone at W14
 #Unconnected
@@ -2532,8 +2552,9 @@ clamtest(comm, groups, coverage.limit = 10, specialization = 2/3,  npoints = 20,
 
 data(mite)
 data(mite.env)
-sol <- with(mite.env, clamtest(mite, Shrub == "None", alpha = 0.005)) # with Shrub==none , Spec_TRUE species fall on the lower right, and Spec_FLASE species fall on upper left of plot
-#Shrub==NONE in this instance results in NONE specialists being called Spec_TRUE, all others lumped as Spec_FALS
+sol <- with(mite.env, clamtest(mite, Shrub == "None", alpha = 0.005)) # with Shrub==none , Spec_TRUE species fall on the lower right,
+#and Spec_FLASE species fall on upper left of plot, Shrub==NONE in this instance results in NONE specialists being called Spec_TRUE,
+#all others lumped as Spec_FALS
 summary(sol)
 head(sol)
 plot(sol, xlab = "None", ylab = "Other", position = NULL)
