@@ -31,6 +31,28 @@ BiocManager::install("phyloseq")
 ## Working Directory -------------------------------------------------------
 #Set your working directory, location for data tables, tree, etc
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
+#Quick import all to skip the below
+library(phyloseq)
+library(ape)
+otu_table <- as.data.frame(read.csv("raw_readmap.csv", header = TRUE,row.names = "OTU_ID"))
+taxmat <- as.matrix(read.csv("tax_table.csv", row.names = 1, header = TRUE))
+treat <- as.data.frame(read.csv("mapping_file.csv", row.names = 1, header = TRUE))
+TREE <- read.tree("rooted_tree.nwk")
+OTU = otu_table(otu_table, taxa_are_rows = TRUE)
+TAX = tax_table(taxmat)
+TREAT = sample_data(treat)
+OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
+library(magrittr)
+OBJ1 <- OBJ1 %>%
+  subset_taxa(
+    Kingdom == "Bacteria" &
+    Family  != "mitochondria" &
+    Class   != "Chloroplast"
+  )
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
+#Plus one OR the other of the treatment cut versions (if ending up suing them). New Treatment TSS'd subset
+
 
 ## Import ------------------------------------------------------------------
 #Import .csv as OTU table
@@ -186,17 +208,29 @@ OBJ_W6_tss <- subset_samples(OBJ1_exp_tss, Week == "Six")
 OBJ_W8_tss <- subset_samples(OBJ1_exp_tss, Week == "Eight")
 OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
 
-#New Treatment TSS'd subset
-#Overall
-OBJ_Overall_TRIM <- subset_samples(OBJ1_exp_tss, Treatment_Trim == "Retain")
-
+#New Treatment Cuts RAW COUNTS
+#New Treatment TSS'd subsets
+#Overall - cut both pseudo and monebello
+OBJ_Overall_TRIM <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
 #Half trim that retains Pseudomonas
-OBJ_Overall_TRIM <- subset_samples(OBJ1_exp_tss, Treatment_Half_Trim == "Retain")
-
+OBJ_Overall_TRIM <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
 #Just Week Zero
-OBJ_W0_TRIM <- subset_samples(OBJ1_exp_tss, Treatment_Trim == "Retain")
+OBJ_W0_TRIM <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
 #Just Week 14
-OBJ_W14_TRIM <- subset_samples(OBJ_W14_tss, Treatment_Trim == "Retain")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+OBJ_W14_TRIM <- subset_samples(OBJ_W14, Treatment_Trim == "Retain")
+#OR
+OBJ_W14_TRIM <- subset_samples(OBJ_W14, Treatment_Half_Trim == "Retain")
+
+#New Treatment TSS'd subsets
+#Overall - cut both pseudo and monebello
+OBJ_Overall_TRIM_tss <- subset_samples(OBJ1_exp_tss, Treatment_Trim == "Retain")
+#Half trim that retains Pseudomonas
+OBJ_Overall_TRIM_tss <- subset_samples(OBJ1_exp_tss, Treatment_Half_Trim == "Retain")
+#Just Week Zero
+OBJ_W0_TRIM_tss <- subset_samples(OBJ1_W0_tss, Treatment_Trim == "Retain")
+#Just Week 14
+OBJ_W14_TRIM_tss <- subset_samples(OBJ_W14_tss, Treatment_Trim == "Retain")
 
 #Wk14 Connected and Unconnected Subsets
 OBJ1_W14_connected_tss <- subset_samples(OBJ_W14_tss, Connection == "Connected")
@@ -1984,8 +2018,79 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("ANCOMBC")
-
 library(ANCOMBC)
+library(microbiome)
+library(xlsx)
+#As per: https://github.com/FrederickHuangLin/ANCOMBC/issues/19
+#Using transofrmed/fractional counts is NOT recommended for ANCOM, it is 
+#The ANCOM-BC methodology is developed for differential abundance analysis with regards to absolute abundances, i.e. reading in raw counts data is required. Using fractional relative abundances is highly not recommended.
+
+#FULL DATASET
+#Unsure of formula structure re: direction change, etc...test if you can just test for location alone
+out = ancombc(phyloseq = OBJ_W14, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res = out$res
+res_global = out$res_global
+#This one should be essentially the same but adjust for connection diffferences? Overall seems VERY similar comparong the two, some very slight shifts
+out2 = ancombc(phyloseq = OBJ_W14, formula = "Location + Connection", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res = out2$res
+res_global2 = out2$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax = cbind(as(res_global, "data.frame"), as(tax_table(OBJ_W14)[rownames(res_global), ], "matrix"))
+res_global_tax
+res_global_tax2 = cbind(as(res_global2, "data.frame"), as(tax_table(OBJ_W14)[rownames(res_global2), ], "matrix"))
+res_global_tax2
+#for printing out results
+write.csv(as.data.frame(res_global_tax), file = "ANCOM-BC_ALL_ASV_W14_Loc.csv")
+write.csv(as.data.frame(res_global_tax2), file = "ANCOM-BC_ALL_ASV_W14_Loc2.csv")
+
+##CUT DATASET
+out = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res = out$res
+res_global = out$res_global
+#Bind results sheets with OTU Taxa
+res_global_tax = cbind(as(res_global, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global), ], "matrix"))
+res_global_tax
+#for printing out results
+write.csv(as.data.frame(res_global_tax), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut.csv")
+#Find pairwise coefficients with this?
+tab_coef = res$beta
+write.csv(as.data.frame(tab_coef), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut_coefficients.csv")
+tab_q = res$q
+write.csv(as.data.frame(tab_q), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut_adjusted_P.csv")
+
+
+
+#HALFCUT DATASET (if full cut is lacklustre)
+out = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res = out$res
+res_global = out$res_global
+#Bind results sheets with OTU Taxa
+res_global_tax = cbind(as(res_global, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global), ], "matrix"))
+res_global_tax
+#for printing out results
+write.csv(as.data.frame(res_global_tax), file = "ANCOM-BC_ALL_ASV_W14_Loc_HalfCut.csv")
+#Find pairwise coefficients with this?
+tab_coef = res$beta
+write.csv(as.data.frame(tab_coef), file = "ANCOM-BC_ALL_ASV_W14_Loc_HalfCut_coefficients.csv")
+tab_q = res$q
+write.csv(as.data.frame(tab_q), file = "ANCOM-BC_ALL_ASV_W14_Loc_HalfCut_adjusted_P.csv")
+
+###Sarah's export version....
+#collating the pairwise results:
+tab_coef = res$beta
+write.xlsx(tab_coef, "ANCOM_BC-ASV.xlsx", sheetName = "coef",append = TRUE)
+tab_se = res$se
+write.xlsx(tab_se, "ANCOM_BC-ASV.xlsx", sheetName = "residuals",append = TRUE)
+tab_w = res$W
+write.xlsx(tab_w, "ANCOM_BC-ASV.xlsx", sheetName = "W_stat",append = TRUE)
+tab_p = res$p_val
+write.xlsx(tab_p, "ANCOM_BC-ASV.xlsx", sheetName = "p",append = TRUE)
+tab_q = res$q
+write.xlsx(tab_q, "ANCOM_BC-ASV.xlsx", sheetName = "adjusted_p",append = TRUE)
+tab_diff = res$diff_abn
+write.xlsx(tab_diff, "ANCOM_BC-ASV.xlsx", sheetName = "DA",append = TRUE)
+#Keep in mind the extra stats , not all are exported in the global tab
 
 # Heirarchical Clustering -------------------------------------------------
 
