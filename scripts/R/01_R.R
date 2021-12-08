@@ -51,7 +51,17 @@ OBJ1 <- OBJ1 %>%
   )
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
-#Plus one OR the other of the treatment cut versions (if ending up using them). New Treatment TSS'd subset
+#Plus one or the other of the treatment cut versions (if ending up using them). New Treatment TSS'd subset
+#Full cut , getting rid of both pseudo and monebello
+OBJ_Overall_TRIMfull <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
+OBJ_W0_TRIMfull <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+OBJ_W14_TRIMfull <- subset_samples(OBJ_W14, Treatment_Trim == "Retain")
+#Half cut that retains Pseudomonas
+OBJ_Overall_TRIMhalf <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
+OBJ_W0_TRIMhalf <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+OBJ_W14_TRIMhalf <- subset_samples(OBJ_W14, Treatment_Half_Trim == "Retain")
 
 ### Import ------------------------------------------------------------------
 #Import .csv as OTU table
@@ -174,17 +184,24 @@ OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
 
 #New Treatment Cuts RAW COUNTS
 #New Treatment TSS'd subsets
-#Overall - cut both pseudo and monebello
-OBJ_Overall_TRIM <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
-#Half trim that retains Pseudomonas
-OBJ_Overall_TRIM <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
+
+#Overall cut, full cut , getting rid of both pseudo and monebello
+OBJ_Overall_TRIMfull <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
 #Just Week Zero
-OBJ_W0_TRIM <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
+OBJ_W0_TRIMfull <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
 #Just Week 14
 OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
-OBJ_W14_TRIM <- subset_samples(OBJ_W14, Treatment_Trim == "Retain")
+OBJ_W14_TRIMfull <- subset_samples(OBJ_W14, Treatment_Trim == "Retain")
+
 #OR
-OBJ_W14_TRIM <- subset_samples(OBJ_W14, Treatment_Half_Trim == "Retain")
+
+#Half trim that retains Pseudomonas
+OBJ_Overall_TRIMhalf <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
+#Just Week Zero
+OBJ_W0_TRIMhalf <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
+#Just Week 14
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+OBJ_W14_TRIMhalf <- subset_samples(OBJ_W14, Treatment_Half_Trim == "Retain")
 
 #New Treatment TSS'd subsets
 #Overall - cut both pseudo and monebello
@@ -1333,7 +1350,7 @@ p4w <- plot_ordination(OBJ_W14_tss, NMDS_W14w, color = "Treatment", shape = "Loc
 p4w
 p4w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
-##W14 with TRIMMED data --------------------------------------------------
+###W14 with TRIMMED data --------------------------------------------------
 
 #W14 with TRIMMED data
 p4uTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color = "Connection", shape = "Location", label = NULL)
@@ -1386,7 +1403,7 @@ p14U_u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size 
 OBJ1_W14_connected_tss 
 OBJ1_W14_unconnected_tss 
 
-# Cleaned up plot element controls (for poster format) ----------------------------------------
+#### Cleaned up plot element controls (for poster format) ----------------------------------------
 
 #TESTING FOR CUSTOM THEME - DARK
 p1w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
@@ -1514,7 +1531,7 @@ p2
 library(Rmisc)
 multiplot(p1,p2, cols = 2)
 
-## ANOSIM AND PERMANOVA ----------------------------
+# ANOSIM AND PERMANOVA ----------------------------
 
 library(vegan)
 #Setup objects for testing significance, effect size, correlation.
@@ -1895,7 +1912,7 @@ ggplot(sigtab_otu, aes(x = Phylum, y = log2FoldChange, color = Phylum)) + geom_p
   theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust = 0.5))
 
 
-## DESeq for connection alone ----------------------------------------------
+### DESeq for connection alone ----------------------------------------------
 library(ggplot2)
 library("DESeq2")
 #Start here if haven't already (use raw vaules, but still subset out bad samples)
@@ -2029,7 +2046,6 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install("ANCOMBC")
 library(ANCOMBC)
 library(microbiome)
-library(xlsx)
 #As per: https://github.com/FrederickHuangLin/ANCOMBC/issues/19
 #Using transofrmed/fractional counts is NOT recommended for ANCOM, it is 
 #The ANCOM-BC methodology is developed for differential abundance analysis with regards to absolute abundances,
@@ -2057,7 +2073,7 @@ write.csv(as.data.frame(res_global_tax), file = "ANCOM-BC_ALL_ASV_W14_Loc.csv")
 write.csv(as.data.frame(res_global_tax2), file = "ANCOM-BC_ALL_ASV_W14_Loc2.csv")
 
 ##CUT DATASET
-out = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
+out = ancombc(phyloseq = OBJ_W14_TRIMfull, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
               struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
 res = out$res
 res_global = out$res_global
@@ -2075,7 +2091,7 @@ write.csv(as.data.frame(tab_q), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut_adjusted_P.
 
 
 #HALFCUT DATASET (if full cut is lacklustre)
-out = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+out = ancombc(phyloseq = OBJ_W14_TRIMhalf, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
               struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
 res = out$res
 res_global = out$res_global
@@ -2345,7 +2361,7 @@ t1
 #And finally, your abundances and sample labels for readmap
 #Unless you've manually selected subsets, or done som eautomatic subsetting that differs from your above analysis you should be able to substitute the same metadata/mapping file as above
 
-## Import ------------------------------------------------------------------
+#### Import ------------------------------------------------------------------
 
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 
@@ -2402,7 +2418,7 @@ Path_PHYLO_log
 #and cut out unwanted samples
 Path_PHYLO_log <- subset_samples(Path_PHYLO_log, Experiment == "Y")
 
-## Subset ------------------------------------------------------------------
+#### Subset ------------------------------------------------------------------
 
 #Combined treatments
 PATH_Unin_Conn <- subset_samples(Path_PHYLO_log, Treatment == "Uninoculated Connected")
@@ -2438,7 +2454,7 @@ PATH_Geo <- subset_samples(Path_PHYLO_log, Inoculum == "Geobacter")
 PATH_Mont <- subset_samples(Path_PHYLO_log, Inoculum == "Montebello")
 PATH_Pseudo <- subset_samples(Path_PHYLO_log, Inoculum == "Pseudomonas")
 
-## NMDS + Ordination Plots -------------------------------------------------------------
+### NMDS + Ordination Plots -------------------------------------------------------------
 
 library("ggplot2")
 library("RColorBrewer")
