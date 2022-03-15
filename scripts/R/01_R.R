@@ -31,6 +31,7 @@ BiocManager::install("phyloseq")
 # Working Directory -------------------------------------------------------
 #Set your working directory, location for data tables, tree, etc
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
+
 #Quick import all to skip the below
 library(phyloseq)
 library(ape)
@@ -695,7 +696,6 @@ OBJ_all_tss_FAM <- subset_taxa(OBJ_all_tss_FAM, Kingdom == "Bacteria")
 OBJ_all_tss_FAM <- prune_taxa(names(sort(taxa_sums(OBJ_all_tss_FAM),TRUE)[1:30]), OBJ_all_tss_FAM)
 plot_heatmap(OBJ_all_tss_FAM, method = "MDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
 heatmap(otu_table(OBJ_all_tss_FAM))
-
 
 ## Heatmap for specialisation index -------------------------------------
 #Separating out most variable asvs across trial for paper figure
