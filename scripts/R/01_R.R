@@ -52,12 +52,35 @@ OBJ1 <- OBJ1 %>%
   )
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
-#Plus one or the other of the treatment cut versions (if ending up using them). New Treatment TSS'd subset
-#Full cut , getting rid of both pseudo and monebello
+#Half cut that retains Pseudomonas (use these ones moving forward from now!)
+OBJ_Overall_TRIM <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
+OBJ_Overall_TRIM_tss <- subset_samples(OBJ1_exp_tss, Treatment_Half_Trim == "Retain")
+OBJ_W0 <- subset_samples(OBJ1_exp, Week == "Zero")
+OBJ_W0_TRIM <- subset_samples(OBJ_W0, Treatment_Half_Trim == "Retain")
+OBJ_W0_tss <- subset_samples(OBJ1_exp_tss, Week == "Zero")
+OBJ_W0_TRIM_tss <- subset_samples(OBJ_W0_tss, Treatment_Half_Trim == "Retain")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+OBJ_W14_TRIM <- subset_samples(OBJ_W14, Treatment_Half_Trim == "Retain")
+OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Treatment_Half_Trim == "Retain")
+OBJ_W14_TRIM_tss <- subset_samples(OBJ_W14_tss, Treatment_Half_Trim == "Retain")
+
+#Main Functional object  outputs from this:
+OBJ_Overall_TRIM
+OBJ_Overall_TRIM_tss
+OBJ_W0_TRIM
+OBJ_W0_TRIM_tss
+OBJ_W14_TRIM
+OBJ_W14_TRIM_tss
+
+#Deprecated, see above for half cut import workflow including overall, 0, 14, and raw vs tss
+# CHOOSE ONE. -note after comparisons, unless anything else comes to light, should only need/use the half cut dataset from now on
+#Plus one OR the other of the treatment cut versions (if ending up using them). New Treatment TSS'd subset
+#Full cut , getting rid of both pseudo and montebello
 OBJ_Overall_TRIMfull <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
 OBJ_W0_TRIMfull <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
 OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
 OBJ_W14_TRIMfull <- subset_samples(OBJ_W14, Treatment_Trim == "Retain")
+# OR
 #Half cut that retains Pseudomonas
 OBJ_Overall_TRIMhalf <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
 OBJ_W0_TRIMhalf <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
@@ -193,12 +216,11 @@ OBJ_W0_TRIMfull <- subset_samples(OBJ1_exp, Treatment_Trim == "Retain")
 #Just Week 14
 OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
 OBJ_W14_TRIMfull <- subset_samples(OBJ_W14, Treatment_Trim == "Retain")
-
 #OR
-
 #Half trim that retains Pseudomonas
 OBJ_Overall_TRIMhalf <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
 #Just Week Zero
+OBJ_W0 <- subset_samples(OBJ1_exp, Week == "Zero")
 OBJ_W0_TRIMhalf <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
 #Just Week 14
 OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
@@ -1236,6 +1258,111 @@ library("RColorBrewer")
 #Group all samples per soil columns: Soil_Column
 #Group based on whether soil based subtrate (root/anode) vs Water for cathode samples: Substrate
 
+# Final Ordinations using half cut set ------------------------------------
+
+#Main Functional object  outputs from this:, double check that these are correctly referenced due to copy pasting etc
+OBJ_Overall_TRIM_tss
+OBJ_W0_TRIM_tss
+OBJ_W14_TRIM_tss
+
+#Note re: Rstudio export, using SVG format and dimensions 1150 x 900 results in square ordination when accounting for legend size 
+
+#weighted TSS
+NMDS_W14wTRIM <- ordinate(OBJ_W14_TRIM_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W14wTRIM
+#unweighted TSS
+NMDS_W14uTRIM <- ordinate(OBJ_W14_TRIM_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W14uTRIM
+
+#W14 with TRIMMED data (half set, so FINAL) TSS
+p4uTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14uTRIM, color = "Connection", shape = "Location", label = NULL)
+p4uTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14uTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p4uTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14uTRIM, color = "Treatment", shape = "Location", label = NULL)
+p4uTRIM
+p4uTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+p4wTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14wTRIM, color = "Connection", shape = "Location", label = NULL)
+p4wTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14wTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p4wTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14wTRIM, color = "Treatment", shape = "Location", label = NULL)
+p4wTRIM
+p4wTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+#Week0
+#weighted TSS
+NMDS_W0wTRIM <- ordinate(OBJ_W0_TRIMhalf, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W0wTRIM
+#unweighted TSS
+NMDS_W0uTRIM <- ordinate(OBJ_W0_TRIMhalf, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W0uTRIM
+
+#Unweighted TSS
+p1u <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0uTRIM, color = "Connection", shape = "Location", label = NULL)
+p1u <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0uTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p1u <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0uTRIM, color = "Treatment", shape = "Location", label = NULL)
+p1u
+p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+#Weighted TSS
+p1w <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0wTRIM, color = "Connection", shape = "Location", label = NULL)
+p1w <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0wTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p1w <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0wTRIM, color = "Treatment", shape = "Location", label = NULL)
+p1w
+p1w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+
+
+
+
+
+
+
+
+########EXPERIEMNT OUT OF CURISOITY - ordination for half cut set with raw non-TSS...just to compare
+#HALF CUT SET
+#half cut (replacing old full cut lines with this as will be moving forward with the half cu set, including Pseudomonas but cutting out Montebello)
+#Note re: Rstudio export, using SVG format and dimensions 1150 x 900 results in square ordination when accounting for legend size 
+#weighted RAW
+NMDS_W14wTRIM <- ordinate(OBJ_W14_TRIMhalf, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W14wTRIM
+#unweighted RAW
+NMDS_W14uTRIM <- ordinate(OBJ_W14_TRIMhalf, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W14uTRIM
+
+#W14 with TRIMMED data (half set, so FINAL) RAW
+p4uTRIM <- plot_ordination(OBJ_W14_TRIMhalf, NMDS_W14uTRIM, color = "Connection", shape = "Location", label = NULL)
+p4uTRIM <- plot_ordination(OBJ_W14_TRIMhalf, NMDS_W14uTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p4uTRIM <- plot_ordination(OBJ_W14_TRIMhalf, NMDS_W14uTRIM, color = "Treatment", shape = "Location", label = NULL)
+p4uTRIM
+p4uTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+p4wTRIM <- plot_ordination(OBJ_W14_TRIMhalf, NMDS_W14wTRIM, color = "Connection", shape = "Location", label = NULL)
+p4wTRIM <- plot_ordination(OBJ_W14_TRIMhalf, NMDS_W14wTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p4wTRIM <- plot_ordination(OBJ_W14_TRIMhalf, NMDS_W14wTRIM, color = "Treatment", shape = "Location", label = NULL)
+p4wTRIM
+p4wTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+#Week0
+#weighted RAW
+NMDS_W0wTRIM <- ordinate(OBJ_W0_TRIMhalf, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W0wTRIM
+#unweighted RAW
+NMDS_W0uTRIM <- ordinate(OBJ_W0_TRIMhalf, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W0uTRIM
+
+#Unweighted RAW
+p1u <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0uTRIM, color = "Connection", shape = "Location", label = NULL)
+p1u <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0uTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p1u <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0uTRIM, color = "Treatment", shape = "Location", label = NULL)
+p1u
+p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+#Weighted RAW
+p1w <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0wTRIM, color = "Connection", shape = "Location", label = NULL)
+p1w <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0wTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p1w <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0wTRIM, color = "Treatment", shape = "Location", label = NULL)
+p1w
+p1w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+
+
 ##NMDS:
 NMDS1 <- ordinate(OBJ1_exp_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS1 #use to check that stress is  < 0.2
@@ -1254,9 +1381,6 @@ NMDS_W8w
 NMDS_W14w <- ordinate(OBJ_W14_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS_W14w
 
-NMDS_W14wTRIM <- ordinate(OBJ_W14_TRIM, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
-NMDS_W14wTRIM
-
 #subsetted timepoints UNWEIGHTED
 NMDS_W0u <- ordinate(OBJ_W0_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W0u
@@ -1267,8 +1391,6 @@ NMDS_W8u
 NMDS_W14u <- ordinate(OBJ_W14_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W14u
 
-NMDS_W14uTRIM <- ordinate(OBJ_W14_TRIM, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
-NMDS_W14uTRIM
 
 #Subsetted as only geobacter relatived taxa just out of curiosoty....
 NMDS_Desulf <- ordinate(OBJ1_exp_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
@@ -1349,21 +1471,6 @@ p4w <- plot_ordination(OBJ_W14_tss, NMDS_W14w, color = "Inoculum", shape = "Loca
 p4w <- plot_ordination(OBJ_W14_tss, NMDS_W14w, color = "Treatment", shape = "Location", label = NULL)
 p4w
 p4w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-###W14 with TRIMMED data --------------------------------------------------
-
-#W14 with TRIMMED data
-p4uTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color = "Connection", shape = "Location", label = NULL)
-p4uTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color = "Inoculum", shape = "Location", label = NULL)
-p4uTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14uTRIM, color = "Treatment", shape = "Location", label = NULL)
-p4uTRIM
-p4uTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-p4wTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color = "Connection", shape = "Location", label = NULL)
-p4wTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color = "Inoculum", shape = "Location", label = NULL)
-p4wTRIM <- plot_ordination(OBJ_W14_TRIM, NMDS_W14wTRIM, color = "Treatment", shape = "Location", label = NULL)
-p4wTRIM
-p4wTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
 #Same plot with sample names added if needing to single out problematic sames etc
 p4 <- plot_ordination(OBJ_W14_tss, NMDS_W14, color = "Connection", shape = "Location", label = "Sample_Name")
