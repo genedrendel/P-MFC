@@ -61,7 +61,7 @@ OBJ_W0_tss <- subset_samples(OBJ1_exp_tss, Week == "Zero")
 OBJ_W0_TRIM_tss <- subset_samples(OBJ_W0_tss, Treatment_Half_Trim == "Retain")
 OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
 OBJ_W14_TRIM <- subset_samples(OBJ_W14, Treatment_Half_Trim == "Retain")
-OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Treatment_Half_Trim == "Retain")
+OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
 OBJ_W14_TRIM_tss <- subset_samples(OBJ_W14_tss, Treatment_Half_Trim == "Retain")
 
 #Main Functional object  outputs from this:
@@ -731,9 +731,40 @@ theme_set(theme_bw())
 
 #metadata applies for both top and hyper specialists
 treat_spec <- as.data.frame(read.csv("mapping_file_spec_index.csv", row.names = 1, header = TRUE))
+treat <- as.data.frame(read.csv("mapping_file.csv", row.names = 1, header = TRUE))
+TREE <- read.tree("rooted_tree.nwk")
 
 ### Top specialists ---------------------------------------------------------
 
+
+# FINAL dataset - specialist list derived from set with montebello --------
+
+
+### FINAL dataset - specialist list derived from set with montebello treatment cut out....
+#will make a few different sheet options here....
+#One will be the same as previously made specilaist sheets, just the top 30 by average proportion from specialisation nidex
+#next is a top 100 asvs
+#and finallly a sheet with ALL Goebacter ASVs from the final dataset...this is ~204 total and also consists of all Geobacteraceae and Desulforomanas (because Geobacter is the only representative in this set)
+#asv_id for top specialists by abundance across all samples (noteusing same object names past here as with the full set, so make sure to nly run one orthe other)
+
+#Top 30
+otu_table_spec <- as.data.frame(read.csv("ReadMap_FINAL_SPEC.csv", header = TRUE,row.names = "OTU_ID"))
+taxmat_spec <- as.matrix(read.csv("Tax_FINAL_SPEC.csv", row.names = 1, header = TRUE))
+
+#Top100
+otu_table_spec <- as.data.frame(read.csv("ReadMap_FinalT100_SPEC.csv", header = TRUE,row.names = "OTU_ID"))
+taxmat_spec <- as.matrix(read.csv("Tax_FinalT100_SPEC.csv", row.names = 1, header = TRUE))
+
+#Geobacter
+otu_table_spec <- as.data.frame(read.csv("ReadMap_FINALGeoONLY.csv", header = TRUE,row.names = "OTU_ID"))
+taxmat_spec <- as.matrix(read.csv("Tax_FINALGeoONLY.csv", row.names = 1, header = TRUE))
+
+#not done for new cut...yet, use this one instead of the line above now as I have appended higher taxonomy to levels that were missing to make figures clearer
+#taxmat_spec <- as.matrix(read.csv("tax_spec_index_append_hi_tax.csv", row.names = 1, header = TRUE))
+
+
+
+#####Old spec import
 #asv_id for top specialists by abundance across all samples
 otu_table_spec <- as.data.frame(read.csv("readmap_spec_index.csv", header = TRUE,row.names = "OTU_ID"))
 #taxonomy for top specialists by abundance across all samples
@@ -743,7 +774,7 @@ taxmat_spec <- as.matrix(read.csv("tax_spec_index_append_hi_tax.csv", row.names 
 
 OTU = otu_table(otu_table_spec, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat_spec)
-TREAT = sample_data(treat_spec)
+TREAT = sample_data(treat)
 TREE <- read.tree("rooted_tree.nwk")
 OBJ_SPEC = phyloseq(OTU,TAX,TREAT,TREE)
 
@@ -760,15 +791,17 @@ OBJ1_spec_ts
 
 #Top 30 ASVs above 0.8 specialisation index and high abundance
 High_spec_gp <- subset_taxa(OBJ1_spec_ts, Kingdom == "Bacteria")
-High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:30]), High_spec_gp)
+High_spec_gp <- prune_taxa(names(sort(taxa_sums(High_spec_gp),TRUE)[1:300]), High_spec_gp)
 plot_heatmap(High_spec_gp, sample.label = "Location") # default phyloseq ordination based sorting with ASV ID labels
-plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Species") # replace ASV labels with species
+plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Genus") # replace ASV labels with species
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.label = "Connection", taxa.label = "Species") #these arguments let you reorganise order/labelling
 plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species")
-plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species")
+plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Family", taxa.label = "Family")
+plot_heatmap(High_spec_gp, sample.label = "Location", sample.order = "Location", taxa.order = "Species") # default phyloseq ordination based sorting with ASV ID labels
 heatmap(otu_table(High_spec_gp))
 #label legibility
 ASVheatplot_ORD <- plot_heatmap(High_spec_gp, sample.label = "Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
+ASVheatplot_ORD <- plot_heatmap(High_spec_gp, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Species", taxa.label = "Species")
 ASVheatplot_ORD + theme(axis.text.x = element_text(size = 9, angle = 80, hjust = 0.4), axis.text.y = element_text(size = 11))
 
 #Redo for figure (and a second asv one to compare with deseq manually)
@@ -783,7 +816,7 @@ plot_ORD + theme(axis.text.x = element_text(size = 9, angle = 80, hjust = 0.4), 
 #Species
 High_spec_SPE <- tax_glom(OBJ1_spec_ts,taxrank = "Species")
 High_spec_SPE  <- subset_taxa(High_spec_SPE, Kingdom == "Bacteria")
-High_spec_SPE  <- prune_taxa(names(sort(taxa_sums(High_spec_SPE),TRUE)[1:30]), High_spec_SPE)
+High_spec_SPE  <- prune_taxa(names(sort(taxa_sums(High_spec_SPE),TRUE)[1:50]), High_spec_SPE)
 plot_heatmap(High_spec_SPE, sample.label = "Location", taxa.label = "Species") # this will do the default phyloseq ordination based sorting
 plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
 plot_heatmap(High_spec_SPE, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Species", taxa.label = "Species", weighted = TRUE)
@@ -796,7 +829,7 @@ speciesheatplot_ORD + theme(axis.text.x = element_text(size = 9, angle = 80, hju
 #Genus
 High_spec_GEN <- tax_glom(OBJ1_spec_ts,taxrank = "Genus")
 High_spec_GEN  <- subset_taxa(High_spec_GEN, Kingdom == "Bacteria")
-High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:30]), High_spec_GEN)
+High_spec_GEN  <- prune_taxa(names(sort(taxa_sums(High_spec_GEN),TRUE)[1:50]), High_spec_GEN)
 plot_heatmap(High_spec_GEN, sample.label = "Location", taxa.label = "Genus") # this will do the default phyloseq ordination based sorting
 plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
 plot_heatmap(High_spec_GEN, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Genus", taxa.label = "Genus", weighted = TRUE)
@@ -806,7 +839,7 @@ heatmap(otu_table(High_spec_GEN))
 #Family
 High_spec_FAM <- tax_glom(OBJ1_spec_ts,taxrank = "Family")
 High_spec_FAM  <- subset_taxa(High_spec_FAM, Kingdom == "Bacteria")
-High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:30]), High_spec_FAM)
+High_spec_FAM  <- prune_taxa(names(sort(taxa_sums(High_spec_FAM),TRUE)[1:50]), High_spec_FAM)
 plot_heatmap(High_spec_FAM, sample.label = "Location", taxa.label = "Family")
 plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
 plot_heatmap(High_spec_FAM, method = "NMDS", distance = "unifrac", sample.order = "Treatment", sample.label = "Treatment", taxa.order = "Family", taxa.label = "Family", weighted = TRUE)
@@ -819,27 +852,27 @@ heatplot + theme(axis.text.x = element_text(size = 10, angle = 90, hjust = 0.4),
 #Order
 High_spec_ORD <- tax_glom(OBJ1_spec_ts,taxrank = "Order")
 High_spec_ORD  <- subset_taxa(High_spec_ORD, Kingdom == "Bacteria")
-High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:30]), High_spec_ORD)
+High_spec_ORD  <- prune_taxa(names(sort(taxa_sums(High_spec_ORD),TRUE)[1:50]), High_spec_ORD)
 plot_heatmap(High_spec_ORD, sample.label = "Location", taxa.label = "Order")
-plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.label = "Family", weighted = TRUE)
 plot_heatmap(High_spec_ORD, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Order", taxa.label = "Order", weighted = TRUE)
 heatmap(otu_table(High_spec_ORD))
 
 #Class
 High_spec_CLA <- tax_glom(OBJ1_spec_ts,taxrank = "Class")
 High_spec_CLA  <- subset_taxa(High_spec_CLA, Kingdom == "Bacteria")
-High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:30]), High_spec_CLA)
+High_spec_CLA  <- prune_taxa(names(sort(taxa_sums(High_spec_CLA),TRUE)[1:50]), High_spec_CLA)
 plot_heatmap(High_spec_CLA, sample.label = "Location", taxa.label = "Class")
-plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.label = "Family", weighted = TRUE)
 plot_heatmap(High_spec_CLA, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Class", taxa.label = "Class", weighted =  TRUE)
 heatmap(otu_table(High_spec_CLA))
 
 #Phyla
 High_spec_PHY <- tax_glom(OBJ1_spec_ts,taxrank = "Phylum")
 High_spec_PHY  <- subset_taxa(High_spec_PHY, Kingdom == "Bacteria")
-High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:30]), High_spec_PHY)
+High_spec_PHY  <- prune_taxa(names(sort(taxa_sums(High_spec_PHY),TRUE)[1:50]), High_spec_PHY)
 plot_heatmap(High_spec_PHY, sample.label = "Location", taxa.label = "Phylum")
-plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Time", sample.label = "Time", taxa.label = "Family", weighted = TRUE)
+plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Connection", sample.label = "Connection", taxa.label = "Family", weighted = TRUE)
 plot_heatmap(High_spec_PHY, method = "NMDS", distance = "unifrac", sample.order = "Location", sample.label = "Location", taxa.order = "Phylum", taxa.label = "Phylum", weighted = TRUE)
 heatmap(otu_table(High_spec_PHY))
 
@@ -1275,12 +1308,13 @@ NMDS_W14uTRIM <- ordinate(OBJ_W14_TRIM_tss, "NMDS", distance = "unifrac", weight
 NMDS_W14uTRIM
 
 #W14 with TRIMMED data (half set, so FINAL) TSS
+#Unweighted
 p4uTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14uTRIM, color = "Connection", shape = "Location", label = NULL)
 p4uTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14uTRIM, color = "Inoculum", shape = "Location", label = NULL)
 p4uTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14uTRIM, color = "Treatment", shape = "Location", label = NULL)
 p4uTRIM
 p4uTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
+#Weighted
 p4wTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14wTRIM, color = "Connection", shape = "Location", label = NULL)
 p4wTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14wTRIM, color = "Inoculum", shape = "Location", label = NULL)
 p4wTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14wTRIM, color = "Treatment", shape = "Location", label = NULL)
@@ -1289,29 +1323,24 @@ p4wTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size
 
 #Week0
 #weighted TSS
-NMDS_W0wTRIM <- ordinate(OBJ_W0_TRIMhalf, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W0wTRIM <- ordinate(OBJ_W0_TRIM_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS_W0wTRIM
 #unweighted TSS
-NMDS_W0uTRIM <- ordinate(OBJ_W0_TRIMhalf, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W0uTRIM <- ordinate(OBJ_W0_TRIM_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W0uTRIM
 
 #Unweighted TSS
-p1u <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0uTRIM, color = "Connection", shape = "Location", label = NULL)
-p1u <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0uTRIM, color = "Inoculum", shape = "Location", label = NULL)
-p1u <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0uTRIM, color = "Treatment", shape = "Location", label = NULL)
+p1u <- plot_ordination(OBJ_W0_TRIM_tss, NMDS_W0uTRIM, color = "Connection", shape = "Location", label = NULL)
+p1u <- plot_ordination(OBJ_W0_TRIM_tss, NMDS_W0uTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p1u <- plot_ordination(OBJ_W0_TRIM_tss, NMDS_W0uTRIM, color = "Treatment", shape = "Location", label = NULL)
 p1u
 p1u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 #Weighted TSS
-p1w <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0wTRIM, color = "Connection", shape = "Location", label = NULL)
-p1w <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0wTRIM, color = "Inoculum", shape = "Location", label = NULL)
-p1w <- plot_ordination(OBJ_W0_TRIMhalf, NMDS_W0wTRIM, color = "Treatment", shape = "Location", label = NULL)
+p1w <- plot_ordination(OBJ_W0_TRIM_tss, NMDS_W0wTRIM, color = "Connection", shape = "Location", label = NULL)
+p1w <- plot_ordination(OBJ_W0_TRIM_tss, NMDS_W0wTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p1w <- plot_ordination(OBJ_W0_TRIM_tss, NMDS_W0wTRIM, color = "Treatment", shape = "Location", label = NULL)
 p1w
 p1w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
-
-
-
-
-
 
 
 
@@ -1690,23 +1719,23 @@ W14_Inoc_ano
 
 #Using TRIMMED data
 #Weighted
-W14_Loc_ano_w <- anosim(distance(OBJ_W14_TRIM, "wunifrac"), Location)
+W14_Loc_ano_w <- anosim(distance(OBJ_W14_TRIM_tss, "wunifrac"), Location)
 W14_Loc_ano_w
 
-W14_Conn_ano_w <- anosim(distance(OBJ_W14_TRIM, "wunifrac"), Connection)
+W14_Conn_ano_w <- anosim(distance(OBJ_W14_TRIM_tss, "wunifrac"), Connection)
 W14_Conn_ano_w
 
-W14_Inoc_ano_w <- anosim(distance(OBJ_W14_TRIM, "wunifrac"), Inoculum)
+W14_Inoc_ano_w <- anosim(distance(OBJ_W14_TRIM_tss, "wunifrac"), Inoculum)
 W14_Inoc_ano_w
 
 #Unweighted
-W14_Loc_ano_u <- anosim(distance(OBJ_W14_TRIM, "unifrac"), Location)
+W14_Loc_ano_u <- anosim(distance(OBJ_W14_TRIM_tss, "unifrac"), Location)
 W14_Loc_ano_u
 
-W14_Conn_ano_u <- anosim(distance(OBJ_W14_TRIM, "unifrac"), Connection)
+W14_Conn_ano_u <- anosim(distance(OBJ_W14_TRIM_tss, "unifrac"), Connection)
 W14_Conn_ano_u
 
-W14_Inoc_ano_u <- anosim(distance(OBJ_W14_TRIM, "unifrac"), Inoculum)
+W14_Inoc_ano_u <- anosim(distance(OBJ_W14_TRIM_tss, "unifrac"), Inoculum)
 W14_Inoc_ano_u
 
 ##PERMANOVA (function adonis())is similar to anosim but can handle more complex designs
@@ -1757,9 +1786,58 @@ W14_Group_ado_w_F
 W14_Group_ado_w_G = adonis(OBJ1_W14perm_wu_G ~ Location * Connection * Inoculum, permutations = 9999)
 W14_Group_ado_w_G
 
-# TRIM PERMANOVA ----------------------------------------------------------
-#### Rerun of PERMANOVA for TRIMMMED DATA
+# FINAL DATA - TRIM PERMANOVA ----------------------------------------------------------
+library(vegan)
+#Cleaned up with FINAL cut dataset
 ##make distance matricies (these are weighted and unweighted unifrac. can also use 'bray')
+OBJ1_W0perm_W <- distance(OBJ_W0_TRIM_tss, "wunifrac")
+OBJ1_W0perm_U <- distance(OBJ_W0_TRIM_tss, "unifrac")
+OBJ1_W14perm_W <- distance(OBJ_W14_TRIM_tss, "wunifrac")
+OBJ1_W14perm_U <- distance(OBJ_W14_TRIM_tss, "unifrac")
+
+#Set up variable objects
+Location0 <- get_variable(OBJ_W0_TRIM_tss, "Location")
+Location14 <- get_variable(OBJ_W14_TRIM_tss, "Location")
+#By connection
+Connection0 <- get_variable(OBJ_W0_TRIM_tss, "Connection")
+Connection14 <- get_variable(OBJ_W14_TRIM_tss, "Connection")
+#By Inoculum 
+Inoculum0 <- get_variable(OBJ_W0_TRIM_tss, "Inoculum")
+Inoculum14 <- get_variable(OBJ_W14_TRIM_tss, "Inoculum")
+
+#Week 0
+W0_3Group_ado_U = adonis(OBJ1_W0perm_U ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
+W0_3Group_ado_U
+#compare adonis2
+W0_3Group_ado2_U = adonis2(OBJ1_W0perm_U ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
+W0_3Group_ado2_U
+
+W0_3Group_ado_W = adonis(OBJ1_W0perm_W ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
+W0_3Group_ado_W
+#compare adonis2
+W0_3Group_ado2_W = adonis2(OBJ1_W0perm_W ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
+W0_3Group_ado2_W
+
+#Week 14
+W14_3Group_ado_U = adonis(OBJ1_W14perm_U ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
+W14_3Group_ado_U
+#compare adonis2
+W14_3Group_ado2_U = adonis2(OBJ1_W14perm_U ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
+W14_3Group_ado2_U
+
+W14_3Group_ado_W = adonis(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
+W14_3Group_ado_W
+#compare adonis2
+W14_3Group_ado2_W = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
+W14_3Group_ado2_W
+
+#adonis2 test without ordering...
+W14_3Group_ado2_W_TEST = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999, by = NULL)
+W14_3Group_ado2_W_TEST
+
+#### Older run of PERMANOVA for TRIMMMED DATA for reference.... may have inconsistencyes re: raw vs tss 
+##make distance matricies (these are weighted and unweighted unifrac. can also use 'bray')
+
 OBJ1_W14perm_wu <- distance(OBJ_W14_TRIM, "wunifrac")
 OBJ1_W14perm_u <- distance(OBJ_W14_TRIM, "unifrac")
 
@@ -2158,6 +2236,91 @@ library(microbiome)
 #The ANCOM-BC methodology is developed for differential abundance analysis with regards to absolute abundances,
 #i.e. reading in raw counts data is required. Using fractional relative abundances is highly not recommended.
 
+
+#FINAL half-cut DATASET
+#HALFCUT DATASET
+out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#bind tax and print results
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_FINALcuthalf.csv")
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_coef4), ], "matrix"))
+write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_FINALcuthalf.csv")
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_q4), ], "matrix"))
+write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_FINALcuthalf.csv")
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_se4), ], "matrix"))
+write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_FINALcuthalf.csv")
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_w4), ], "matrix"))
+write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_FINALcuthalf.csv")
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_diff4), ], "matrix"))
+write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_FINALcuthalf.csv")
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_p4), ], "matrix"))
+write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_FINALcuthalf.csv")
+
+#WIP agglomerate half cut dataset to Family for higher level look at differential abundance
+#glom first
+OBJ_W14_TRIM_fam <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
+#ensure referring to agglomerated object
+out4 = ancombc(phyloseq = OBJ_W14_TRIM_fam, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#bind tax and print results
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_FINALcuthalf_fam.csv")
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_coef4), ], "matrix"))
+write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_FINALcuthalf_fam.csv")
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_q4), ], "matrix"))
+write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_FINALcuthalf_fam.csv")
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_se4), ], "matrix"))
+write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_FINALcuthalf_fam.csv")
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_w4), ], "matrix"))
+write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_FINALcuthalf_fam.csv")
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_diff4), ], "matrix"))
+write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_FINALcuthalf_fam.csv")
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_p4), ], "matrix"))
+write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_FINALcuthalf_fam.csv")
+
+
+
+
+
+
+
+
+
+
+
+
+
 #FULL DATASET
 #Unsure of formula structure re: direction change, etc...test if you can just test for location alone
 out = ancombc(phyloseq = OBJ_W14, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
@@ -2274,6 +2437,29 @@ tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[ro
 write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_cuthalf.csv")
 tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_p4), ], "matrix"))
 write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_cuthalf.csv")
+
+
+
+# MaAsLin2 ----------------------------------------------------------------
+#as a comparison point with deseq and ancombc
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("Maaslin2")
+library(Maaslin2)
+mas_1 <- Maaslin2(
+  input_data = data.frame(otu_table(ps)),
+  input_metadata = data.frame(sample_data(ps)),
+  output = "/Users/olljt2/desktop/Maaslin2_default_output",
+  min_abundance = 0.0,
+  min_prevalence = 0.0,
+  normalization = "TSS",
+  transform = "LOG",
+  analysis_method = "LM",
+  max_significance = 0.05,
+  fixed_effects = "location",
+  correction = "BH",
+  standardize = FALSE,
+  cores = 1)
 
 #Indicator species - Indicspecies-------------------------------------------------------------
 # first seems to be recommended that you have otus as columns instead of rows..so we need to transpose..
