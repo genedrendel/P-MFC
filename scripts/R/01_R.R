@@ -2229,6 +2229,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("ANCOMBC")
+
 library(ANCOMBC)
 library(microbiome)
 #As per: https://github.com/FrederickHuangLin/ANCOMBC/issues/19
@@ -2236,10 +2237,10 @@ library(microbiome)
 #The ANCOM-BC methodology is developed for differential abundance analysis with regards to absolute abundances,
 #i.e. reading in raw counts data is required. Using fractional relative abundances is highly not recommended.
 
-
+#### Final Cut Set ANCOM-BC LOCATION --------------------------------------------------
 #FINAL half-cut DATASET
 #HALFCUT DATASET
-out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location + Connection + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
               struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
 res4 = out4$res
 res_global4 = out4$res_global
@@ -2256,27 +2257,37 @@ tab_w4 = res4$W
 tab_diff4 = res4$diff_abn
 tab_p4 = res4$p_val
 
-#bind tax and print results
-res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
-write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_FINALcuthalf.csv")
-tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_coef4), ], "matrix"))
-write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_FINALcuthalf.csv")
-tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_q4), ], "matrix"))
-write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_FINALcuthalf.csv")
-tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_se4), ], "matrix"))
-write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_FINALcuthalf.csv")
-tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_w4), ], "matrix"))
-write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_FINALcuthalf.csv")
-tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_diff4), ], "matrix"))
-write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_FINALcuthalf.csv")
-tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_p4), ], "matrix"))
-write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_FINALcuthalf.csv")
+#Export as single excel file in separate worksheets
+library(openxlsx)
 
-#WIP agglomerate half cut dataset to Family for higher level look at differential abundance
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_coef4), ], "matrix"))
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_q4), ], "matrix"))
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_se4), ], "matrix"))
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_w4), ], "matrix"))
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_diff4), ], "matrix"))
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_p4), ], "matrix"))
+
+#Name blank ASV dataframe column as "ASV" so that it exports along with rest of dataframe
+colnames(res_global_tax4)
+res_global_tax4 <- data.frame("ASV" = rownames(res_global_tax4), res_global_tax4)
+tab_coef4 <- data.frame("ASV" = rownames(tab_coef4), tab_coef4)
+tab_q4 <- data.frame("ASV" = rownames(tab_q4), tab_q4)
+tab_se4 <- data.frame("ASV" = rownames(tab_se4), tab_se4)
+tab_w4 <- data.frame("ASV" = rownames(tab_w4), tab_w4)
+tab_diff4 <- data.frame("ASV" = rownames(tab_diff4), tab_diff4)
+tab_p4 <- data.frame("ASV" = rownames(tab_p4), tab_p4)
+colnames(res_global_tax4)
+
+dataset_names <- list('Global' = res_global_tax4, 'Coefficients' = tab_coef4,'P_value' = tab_p4, 'Q_AdjustedP' = tab_q4,'SE_Residuals' = tab_se4,'W_stat' = tab_w4,'Differential_Abundance' = tab_diff4)
+write.xlsx(dataset_names, file = 'ANCOMBC_W14_Loc_FINALcut_ASV.xlsx', asTable = TRUE, firstRow = TRUE)
+
+## final cut Version Agglomerated to family ---------------------------------------------------
+#agglomerate half cut dataset to Family for higher level look at differential abundance
 #glom first
 OBJ_W14_TRIM_fam <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
 #ensure referring to agglomerated object
-out4 = ancombc(phyloseq = OBJ_W14_TRIM_fam, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+out4 = ancombc(phyloseq = OBJ_W14_TRIM_fam, formula = "Location + Connection + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
               struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
 res4 = out4$res
 res_global4 = out4$res_global
@@ -2293,189 +2304,29 @@ tab_w4 = res4$W
 tab_diff4 = res4$diff_abn
 tab_p4 = res4$p_val
 
-#bind tax and print results
+#Export as single excel file in separate worksheets
+library(openxlsx)
+
 res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
-write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_FINALcuthalf_fam.csv")
 tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_coef4), ], "matrix"))
-write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_FINALcuthalf_fam.csv")
 tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_q4), ], "matrix"))
-write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_FINALcuthalf_fam.csv")
 tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_se4), ], "matrix"))
-write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_FINALcuthalf_fam.csv")
 tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_w4), ], "matrix"))
-write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_FINALcuthalf_fam.csv")
 tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_diff4), ], "matrix"))
-write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_FINALcuthalf_fam.csv")
 tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_p4), ], "matrix"))
-write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_FINALcuthalf_fam.csv")
 
+colnames(res_global_tax4)
+res_global_tax4 <- data.frame("ASV" = rownames(res_global_tax4), res_global_tax4)
+tab_coef4 <- data.frame("ASV" = rownames(tab_coef4), tab_coef4)
+tab_q4 <- data.frame("ASV" = rownames(tab_q4), tab_q4)
+tab_se4 <- data.frame("ASV" = rownames(tab_se4), tab_se4)
+tab_w4 <- data.frame("ASV" = rownames(tab_w4), tab_w4)
+tab_diff4 <- data.frame("ASV" = rownames(tab_diff4), tab_diff4)
+tab_p4 <- data.frame("ASV" = rownames(tab_p4), tab_p4)
+colnames(res_global_tax4)
 
-
-
-
-
-
-
-
-
-
-
-
-#FULL DATASET
-#Unsure of formula structure re: direction change, etc...test if you can just test for location alone
-out = ancombc(phyloseq = OBJ_W14, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
-              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
-res1 = out$res
-res_global1 = out$res_global
-
-#This one should be essentially the same but adjust for connection diffferences? Overall seems VERY similar comparong the two, some very slight shifts
-out2 = ancombc(phyloseq = OBJ_W14, formula = "Location + Connection", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
-               struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
-res2 = out2$res
-res_global2 = out2$res_global
-
-#Append coefficients, adjusted-P values etc
-tab_coef = res1$beta
-tab_q = res1$q
-tab_se = res1$se
-tab_w = res1$W
-tab_diff = res1$diff_abn
-tab_p = res1$p_val
-
-#ignore the binds for now, just export as seperate .csv's, columns get too confusing with the same names
-res_global2 <- cbind(res_global2, tab_coef, tab_q)
-res_global2 <- cbind(res_global2, tab_q)
-
-res_global_tax1 = cbind(as(res_global1, "data.frame"), as(tax_table(OBJ_W14)[rownames(res_global1), ], "matrix"))
-write.csv(as.data.frame(res_global_tax1), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL.csv")
-tab_coef = cbind(as(tab_coef, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_coef), ], "matrix"))
-write.csv(as.data.frame(tab_coef), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef.csv")
-tab_q = cbind(as(tab_q, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_q), ], "matrix"))
-write.csv(as.data.frame(tab_q), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP.csv")
-tab_se = cbind(as(tab_se, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_se), ], "matrix"))
-write.csv(as.data.frame(tab_se), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid.csv")
-tab_w = cbind(as(tab_w, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_w), ], "matrix"))
-write.csv(as.data.frame(tab_w), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat.csv")
-tab_diff = cbind(as(tab_diff, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_diff), ], "matrix"))
-write.csv(as.data.frame(tab_diff), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA.csv")
-tab_p = cbind(as(tab_p, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_p), ], "matrix"))
-write.csv(as.data.frame(tab_p), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval.csv")
-
-#for printing out results of the second comparison.,ignore for now
-res_global_tax2 = cbind(as(res_global2, "data.frame"), as(tax_table(OBJ_W14)[rownames(res_global2), ], "matrix"))
-res_global_tax2
-write.csv(as.data.frame(res_global_tax2), file = "ANCOM-BC_ALL_ASV_W14_Loc-Conn.csv")
-
-##Full CUT DATASET
-out3 = ancombc(phyloseq = OBJ_W14_TRIMfull, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
-              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
-res3 = out3$res
-res_global3 = out3$res_global
-
-#Append coefficients, adjusted-P values etc
-tab_coef3 = res3$beta
-tab_q3 = res3$q
-tab_se3 = res3$se
-tab_w3 = res3$W
-tab_diff3 = res3$diff_abn
-tab_p3 = res3$p_val
-
-#bind tax and print results
-res_global_tax3 = cbind(as(res_global3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(res_global3), ], "matrix"))
-write.csv(as.data.frame(res_global_tax3), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_CUT.csv")
-tab_coef3 = cbind(as(tab_coef3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_coef3), ], "matrix"))
-write.csv(as.data.frame(tab_coef3), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_CUT.csv")
-tab_q3 = cbind(as(tab_q3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_q3), ], "matrix"))
-write.csv(as.data.frame(tab_q3), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_CUT.csv")
-tab_se3 = cbind(as(tab_se3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_se3), ], "matrix"))
-write.csv(as.data.frame(tab_se3), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_CUT.csv")
-tab_w3 = cbind(as(tab_w3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_w3), ], "matrix"))
-write.csv(as.data.frame(tab_w3), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_CUT.csv")
-tab_diff3 = cbind(as(tab_diff3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_diff3), ], "matrix"))
-write.csv(as.data.frame(tab_diff3), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_CUT.csv")
-tab_p3 = cbind(as(tab_p3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_p3), ], "matrix"))
-write.csv(as.data.frame(tab_p3), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_CUT.csv")
-
-#Bind results sheets with OTU Taxa
-res_global_tax3 = cbind(as(res_global3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(res_global3), ], "matrix"))
-res_global_tax3
-#for printing out results
-write.csv(as.data.frame(res_global_tax), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut.csv")
-write.csv(as.data.frame(tab_coef), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut_coefficients.csv")
-write.csv(as.data.frame(tab_q), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut_adjusted_P.csv")
-
-#HALFCUT DATASET
-out4 = ancombc(phyloseq = OBJ_W14_TRIMhalf, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
-              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
-res4 = out4$res
-res_global4 = out4$res_global
-
-#Bind results sheets with OTU Taxa
-res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(res_global4), ], "matrix"))
-res_global_tax4
-
-#Append coefficients, adjusted-P values etc
-tab_coef4 = res4$beta
-tab_q4 = res4$q
-tab_se4 = res4$se
-tab_w4 = res4$W
-tab_diff4 = res4$diff_abn
-tab_p4 = res4$p_val
-
-#bind tax and print results
-res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(res_global4), ], "matrix"))
-write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_cuthalf.csv")
-tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_coef4), ], "matrix"))
-write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_cuthalf.csv")
-tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_q4), ], "matrix"))
-write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_cuthalf.csv")
-tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_se4), ], "matrix"))
-write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_cuthalf.csv")
-tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_w4), ], "matrix"))
-write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_cuthalf.csv")
-tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_diff4), ], "matrix"))
-write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_cuthalf.csv")
-tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_p4), ], "matrix"))
-write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_cuthalf.csv")
-
-
-
-# MaAsLin2 ----------------------------------------------------------------
-#as a comparison point with deseq and ancombc
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install("Maaslin2")
-library(Maaslin2)
-mas_1 <- Maaslin2(
-  input_data = data.frame(otu_table(ps)),
-  input_metadata = data.frame(sample_data(ps)),
-  output = "/Users/olljt2/desktop/Maaslin2_default_output",
-  min_abundance = 0.0,
-  min_prevalence = 0.0,
-  normalization = "TSS",
-  transform = "LOG",
-  analysis_method = "LM",
-  max_significance = 0.05,
-  fixed_effects = "location",
-  correction = "BH",
-  standardize = FALSE,
-  cores = 1)
-
-#Indicator species - Indicspecies-------------------------------------------------------------
-# first seems to be recommended that you have otus as columns instead of rows..so we need to transpose..
-#starting with otu_table, lets make a new transposed one
-library(indicspecies)
-#Overall
-otu_transposed <- data.frame(t(otu_table))
-abund = otu_transposed[,2:ncol(otu_transposed)]
-location = treat$Location
-inv = multipatt(abund, location, func = "r.g", control = how(nperm = 9999))
-
-#Week 14 full
-
-#Week 14 cut
-
-#Week 14 half-cut
+dataset_names <- list('Global' = res_global_tax4, 'Coefficients' = tab_coef4,'P_value' = tab_p4, 'Q_AdjustedP' = tab_q4,'SE_Residuals' = tab_se4,'W_stat' = tab_w4,'Differential_Abundance' = tab_diff4)
+write.xlsx(dataset_names, file = 'ANCOMBC_W14_Loc_FINALcut_Family.xlsx', asTable = TRUE, firstRow = TRUE)
 
 # Heirarchical Clustering -------------------------------------------------
 
@@ -3152,4 +3003,414 @@ write.csv(as.data.frame(sigtab_otuC),
 write.csv(as.data.frame(specialist_res_subset), 
           file = "DESeq2_specialist_subset_TEST.csv")
 ## END SUBSETTING WIP
+
+
+###### Deprecated: ANCOM of Full Dataset OLD -----------------------------------------------
+
+
+#FULL DATASET
+#Unsure of formula structure re: direction change, etc...test if you can just test for location alone
+out = ancombc(phyloseq = OBJ_W14, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res1 = out$res
+res_global1 = out$res_global
+
+#This one should be essentially the same but adjust for connection diffferences? Overall seems VERY similar comparong the two, some very slight shifts
+out2 = ancombc(phyloseq = OBJ_W14, formula = "Location + Connection", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
+               struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res2 = out2$res
+res_global2 = out2$res_global
+
+#Append coefficients, adjusted-P values etc
+tab_coef = res1$beta
+tab_q = res1$q
+tab_se = res1$se
+tab_w = res1$W
+tab_diff = res1$diff_abn
+tab_p = res1$p_val
+
+#ignore the binds for now, just export as seperate .csv's, columns get too confusing with the same names
+res_global2 <- cbind(res_global2, tab_coef, tab_q)
+res_global2 <- cbind(res_global2, tab_q)
+
+res_global_tax1 = cbind(as(res_global1, "data.frame"), as(tax_table(OBJ_W14)[rownames(res_global1), ], "matrix"))
+write.csv(as.data.frame(res_global_tax1), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL.csv")
+tab_coef = cbind(as(tab_coef, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_coef), ], "matrix"))
+write.csv(as.data.frame(tab_coef), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef.csv")
+tab_q = cbind(as(tab_q, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_q), ], "matrix"))
+write.csv(as.data.frame(tab_q), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP.csv")
+tab_se = cbind(as(tab_se, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_se), ], "matrix"))
+write.csv(as.data.frame(tab_se), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid.csv")
+tab_w = cbind(as(tab_w, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_w), ], "matrix"))
+write.csv(as.data.frame(tab_w), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat.csv")
+tab_diff = cbind(as(tab_diff, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_diff), ], "matrix"))
+write.csv(as.data.frame(tab_diff), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA.csv")
+tab_p = cbind(as(tab_p, "data.frame"), as(tax_table(OBJ_W14)[rownames(tab_p), ], "matrix"))
+write.csv(as.data.frame(tab_p), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval.csv")
+
+#for printing out results of the second comparison.,ignore for now
+res_global_tax2 = cbind(as(res_global2, "data.frame"), as(tax_table(OBJ_W14)[rownames(res_global2), ], "matrix"))
+res_global_tax2
+write.csv(as.data.frame(res_global_tax2), file = "ANCOM-BC_ALL_ASV_W14_Loc-Conn.csv")
+
+##Full CUT DATASET
+out3 = ancombc(phyloseq = OBJ_W14_TRIMfull, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location",
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res3 = out3$res
+res_global3 = out3$res_global
+
+#Append coefficients, adjusted-P values etc
+tab_coef3 = res3$beta
+tab_q3 = res3$q
+tab_se3 = res3$se
+tab_w3 = res3$W
+tab_diff3 = res3$diff_abn
+tab_p3 = res3$p_val
+
+#bind tax and print results
+res_global_tax3 = cbind(as(res_global3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(res_global3), ], "matrix"))
+write.csv(as.data.frame(res_global_tax3), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_CUT.csv")
+tab_coef3 = cbind(as(tab_coef3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_coef3), ], "matrix"))
+write.csv(as.data.frame(tab_coef3), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_CUT.csv")
+tab_q3 = cbind(as(tab_q3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_q3), ], "matrix"))
+write.csv(as.data.frame(tab_q3), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_CUT.csv")
+tab_se3 = cbind(as(tab_se3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_se3), ], "matrix"))
+write.csv(as.data.frame(tab_se3), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_CUT.csv")
+tab_w3 = cbind(as(tab_w3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_w3), ], "matrix"))
+write.csv(as.data.frame(tab_w3), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_CUT.csv")
+tab_diff3 = cbind(as(tab_diff3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_diff3), ], "matrix"))
+write.csv(as.data.frame(tab_diff3), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_CUT.csv")
+tab_p3 = cbind(as(tab_p3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(tab_p3), ], "matrix"))
+write.csv(as.data.frame(tab_p3), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_CUT.csv")
+
+#Bind results sheets with OTU Taxa
+res_global_tax3 = cbind(as(res_global3, "data.frame"), as(tax_table(OBJ_W14_TRIMfull)[rownames(res_global3), ], "matrix"))
+res_global_tax3
+#for printing out results
+write.csv(as.data.frame(res_global_tax), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut.csv")
+write.csv(as.data.frame(tab_coef), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut_coefficients.csv")
+write.csv(as.data.frame(tab_q), file = "ANCOM-BC_ALL_ASV_W14_Loc_Cut_adjusted_P.csv")
+
+#HALFCUT DATASET
+out4 = ancombc(phyloseq = OBJ_W14_TRIMhalf, formula = "Location", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5,max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#bind tax and print results
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(res_global4), ], "matrix"))
+write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_cuthalf.csv")
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_coef4), ], "matrix"))
+write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_cuthalf.csv")
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_q4), ], "matrix"))
+write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_cuthalf.csv")
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_se4), ], "matrix"))
+write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_cuthalf.csv")
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_w4), ], "matrix"))
+write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_cuthalf.csv")
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_diff4), ], "matrix"))
+write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_cuthalf.csv")
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIMhalf)[rownames(tab_p4), ], "matrix"))
+write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_cuthalf.csv")
+
+
+
+# MaAsLin2 ----------------------------------------------------------------
+#as a comparison point with deseq and ancombc
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("Maaslin2")
+library(Maaslin2)
+mas_1 <- Maaslin2(
+  input_data = data.frame(otu_table(ps)),
+  input_metadata = data.frame(sample_data(ps)),
+  output = "/Users/olljt2/desktop/Maaslin2_default_output",
+  min_abundance = 0.0,
+  min_prevalence = 0.0,
+  normalization = "TSS",
+  transform = "LOG",
+  analysis_method = "LM",
+  max_significance = 0.05,
+  fixed_effects = "location",
+  correction = "BH",
+  standardize = FALSE,
+  cores = 1)
+
+#Indicator species - Indicspecies-------------------------------------------------------------
+# first seems to be recommended that you have otus as columns instead of rows..so we need to transpose..
+#starting with otu_table, lets make a new transposed one
+library(indicspecies)
+#Overall
+otu_transposed <- data.frame(t(otu_table))
+abund = otu_transposed[,2:ncol(otu_transposed)]
+location = treat$Location
+inv = multipatt(abund, location, func = "r.g", control = how(nperm = 9999))
+
+#Week 14 full
+
+#Week 14 cut
+
+#Week 14 half-cut
+
+####### FINAL Cut set CONNECTION ------------------------------------------------
+##   ANCOM OF CONNECTION / LACK ODF CONNECTION
+
+#### Final Cut Set ANCOM-BC LOCATION --------------------------------------------------
+#FINAL half-cut DATASET
+#HALFCUT DATASET
+out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location + Connection + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#bind tax and print results
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ASV_W14_Loc_GLOBAL_FINALcut.csv")
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_coef4), ], "matrix"))
+write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ASV_W14_Loc_Coef_FINALcut.csv")
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_q4), ], "matrix"))
+write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ASV_W14_Loc_Q_adjustedP_FINALcut.csv")
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_se4), ], "matrix"))
+write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ASV_W14_Loc_resid_FINALcut.csv")
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_w4), ], "matrix"))
+write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ASV_W14_Loc_Wstat_FINALcut.csv")
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_diff4), ], "matrix"))
+write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ASV_W14_Loc_DA_FINALcut.csv")
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_p4), ], "matrix"))
+write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ASV_W14_Loc_Pval_FINALcut.csv")
+
+## final cut Version Agglomerated to family ---------------------------------------------------
+#agglomerate half cut dataset to Family for higher level look at differential abundance
+#glom first
+OBJ_W14_TRIM_fam <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
+#ensure referring to agglomerated object
+out4 = ancombc(phyloseq = OBJ_W14_TRIM_fam, formula = "Location + Connection + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#Export as single excel file in separate worksheets
+library(openxlsx)
+
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_coef4), ], "matrix"))
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_q4), ], "matrix"))
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_se4), ], "matrix"))
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_w4), ], "matrix"))
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_diff4), ], "matrix"))
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_p4), ], "matrix"))
+
+colnames(res_global_tax4)
+res_global_tax4 <- data.frame("ASV" = rownames(res_global_tax4), res_global_tax4)
+tab_coef4 <- data.frame("ASV" = rownames(tab_coef4), tab_coef4)
+tab_q4 <- data.frame("ASV" = rownames(tab_q4), tab_q4)
+tab_se4 <- data.frame("ASV" = rownames(tab_se4), tab_se4)
+tab_w4 <- data.frame("ASV" = rownames(tab_w4), tab_w4)
+tab_diff4 <- data.frame("ASV" = rownames(tab_diff4), tab_diff4)
+tab_p4 <- data.frame("ASV" = rownames(tab_p4), tab_p4)
+colnames(res_global_tax4)
+
+dataset_names <- list('Global' = res_global_tax4, 'Coefficients' = tab_coef4,'P_value' = tab_p4, 'Q_AdjustedP' = tab_q4,'SE_Residuals' = tab_se4,'W_stat' = tab_w4,'Differential_Abundance' = tab_diff4)
+write.xlsx(dataset_names, file = 'ANCOMBC_W14_Loc_FINALcut_Family.xlsx', asTable = TRUE, firstRow = TRUE)
+
+#bind tax and print results
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_W14_Loc_GLOBAL_FINALcut_fam.csv")
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_coef4), ], "matrix"))
+write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_W14_Loc_Coef_FINALcut_fam.csv")
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_q4), ], "matrix"))
+write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_W14_Loc_Q_adjustedP_FINALcut_fam.csv")
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_se4), ], "matrix"))
+write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_W14_Loc_resid_FINALcut_fam.csv")
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_w4), ], "matrix"))
+write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_W14_Loc_Wstat_FINALcut_fam.csv")
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_diff4), ], "matrix"))
+write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_W14_Loc_DA_FINALcut_fam.csv")
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_p4), ], "matrix"))
+write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_W14_Loc_Pval_FINALcut_fam.csv")
+
+
+
+
+out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Connection", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Connection", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#bind tax and print results
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Con_GLOBAL_FINALcuthalf.csv")
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_coef4), ], "matrix"))
+write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Con_Coef_FINALcuthalf.csv")
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_q4), ], "matrix"))
+write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Con_Q_adjustedP_FINALcuthalf.csv")
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_se4), ], "matrix"))
+write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Con_resid_FINALcuthalf.csv")
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_w4), ], "matrix"))
+write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Con_Wstat_FINALcuthalf.csv")
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_diff4), ], "matrix"))
+write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Con_DA_FINALcuthalf.csv")
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_p4), ], "matrix"))
+write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Con_Pval_FINALcuthalf.csv")
+
+#WIP agglomerate half cut dataset to Family for higher level look at differential abundance
+#glom first
+OBJ_W14_TRIM_fam <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
+#ensure referring to agglomerated object
+out4 = ancombc(phyloseq = OBJ_W14_TRIM_fam, formula = "Connection", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Connection", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#bind tax and print results
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Con_GLOBAL_FINALcuthalf_fam.csv")
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_coef4), ], "matrix"))
+write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Con_Coef_FINALcuthalf_fam.csv")
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_q4), ], "matrix"))
+write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Con_Q_adjustedP_FINALcuthalf_fam.csv")
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_se4), ], "matrix"))
+write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Con_resid_FINALcuthalf_fam.csv")
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_w4), ], "matrix"))
+write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Con_Wstat_FINALcuthalf_fam.csv")
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_diff4), ], "matrix"))
+write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Con_DA_FINALcuthalf_fam.csv")
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_p4), ], "matrix"))
+write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Con_Pval_FINALcuthalf_fam.csv")
+
+
+
+
+
+# Test of final cut dataset using additional facotrs in the ancom  --------
+
+#HALFCUT DATASET
+out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location + Connection + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#bind tax and print results
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_FINALcuthalf.csv")
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_coef4), ], "matrix"))
+write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_FINALcuthalf.csv")
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_q4), ], "matrix"))
+write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_FINALcuthalf.csv")
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_se4), ], "matrix"))
+write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_FINALcuthalf.csv")
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_w4), ], "matrix"))
+write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_FINALcuthalf.csv")
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_diff4), ], "matrix"))
+write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_FINALcuthalf.csv")
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_p4), ], "matrix"))
+write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_FINALcuthalf.csv")
+
+
+#HALFCUT DATASET - account for all facgors and global test for conection changes
+out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location + Connection + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Connection", 
+              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#bind tax and print results
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
+write.csv(as.data.frame(res_global_tax4), file = "ANCOM-BC_ALL_ASV_W14_Loc_GLOBAL_FINALcuthalf.csv")
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_coef4), ], "matrix"))
+write.csv(as.data.frame(tab_coef4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Coef_FINALcuthalf.csv")
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_q4), ], "matrix"))
+write.csv(as.data.frame(tab_q4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Q_adjustedP_FINALcuthalf.csv")
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_se4), ], "matrix"))
+write.csv(as.data.frame(tab_se4), file = "ANCOM-BC_ALL_ASV_W14_Loc_resid_FINALcuthalf.csv")
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_w4), ], "matrix"))
+write.csv(as.data.frame(tab_w4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Wstat_FINALcuthalf.csv")
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_diff4), ], "matrix"))
+write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_FINALcuthalf.csv")
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_p4), ], "matrix"))
+write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_FINALcuthalf.csv")
+
 
