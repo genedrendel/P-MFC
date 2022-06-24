@@ -35,6 +35,9 @@ setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phy
 #Quick import all to skip the below
 library(phyloseq)
 library(ape)
+library(magrittr)
+library(ggplot2)
+
 otu_table <- as.data.frame(read.csv("raw_readmap.csv", header = TRUE,row.names = "OTU_ID"))
 taxmat <- as.matrix(read.csv("tax_table.csv", row.names = 1, header = TRUE))
 treat <- as.data.frame(read.csv("mapping_file.csv", row.names = 1, header = TRUE))
@@ -43,13 +46,68 @@ OTU = otu_table(otu_table, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat)
 TREAT = sample_data(treat)
 OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
-library(magrittr)
+
+OBJ1 <- subset_taxa(OBJ1, !is.na(Phylum) & !Phylum %in% c("", "uncharacterized"))
 OBJ1 <- OBJ1 %>%
   subset_taxa(
     Kingdom == "Bacteria" &
+    Order  != "Rickettsiales" &
     Family  != "mitochondria" &
     Class   != "Chloroplast"
   )
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+
+OBJ1_exp = filter_taxa(OBJ1_exp, function(x) sum(x > 2) > (0.01*length(x)), TRUE)
+
+######################################### test
+#prevalence FILTERING??
+# Subset to the remaining phyla
+# Create table, number of features for each phyla
+table(tax_table(OBJ1_exp)[, "Phylum"], exclude = NULL)
+OBJ1_exp <- subset_taxa(OBJ1_exp, !is.na(Phylum) & !Phylum %in% c("", "uncharacterized"))
+
+# Compute prevalence of each feature, store as data.frame
+prevdf = apply(X = otu_table(OBJ1_exp),
+               MARGIN = ifelse(taxa_are_rows(OBJ1_exp), yes = 1, no = 2),
+               FUN = function(x){sum(x > 0)})
+# Add taxonomy and total read counts to this data.frame
+prevdf = data.frame(Prevalence = prevdf,
+                    TotalAbundance = taxa_sums(OBJ1_exp),
+                    tax_table(OBJ1_exp))
+
+plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$Prevalence))})
+
+# Subset to the remaining phyla, line at 1% prevelance
+prevdf1 = subset(prevdf, Phylum %in% get_taxa_unique(OBJ1_exp, "Phylum"))
+ggplot(prevdf1, aes(TotalAbundance, Prevalence / nsamples(OBJ1_exp),color = Phylum)) +
+  # Include a guess for parameter
+  geom_hline(yintercept = 0.03, alpha = 0.5, linetype = 2) +  geom_point(size = 2, alpha = 0.7) +
+  scale_x_log10() +  xlab("Total Abundance") + ylab("Prevalence [Frac. Samples]") +
+  facet_wrap(~Phylum) + theme(legend.position = "none")
+
+# Define prevalence threshold as 1% of total samples
+prevalenceThreshold = 0.01 * nsamples(OBJ1_exp)
+prevalenceThreshold
+
+keepTaxa = rownames(prevdf1)[(prevdf1$Prevalence >= prevalenceThreshold)]
+OBJ1_exp = prune_taxa(keepTaxa, OBJ1_exp)
+
+
+# Compute prevalence of each feature, store as data.frame
+prevdf = apply(X = otu_table(OBJ1_exp),
+               MARGIN = ifelse(taxa_are_rows(OBJ1_exp), yes = 1, no = 2),
+               FUN = function(x){sum(x > 0)})
+# Add taxonomy and total read counts to this data.frame
+prevdf = data.frame(Prevalence = prevdf,
+                    TotalAbundance = taxa_sums(OBJ1_exp),
+                    tax_table(OBJ1_exp))
+
+plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$Prevalence))})
+
+
+
+############
+
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
 #Half cut that retains Pseudomonas (use these ones moving forward from now!)
@@ -71,6 +129,74 @@ OBJ_W0_TRIM
 OBJ_W0_TRIM_tss
 OBJ_W14_TRIM
 OBJ_W14_TRIM_tss
+
+####TEMP SECTION FOR TESTING / IMPORVING TRANFOMATION (TSS vs CSS vs Anderson log)
+install.packages("remotes")
+remotes::install_github("vmikk/metagMisc")
+
+library(metagMisc)
+#metaGmisc TSS total sum scaling (this can also use any other method available within decostand) https://rdrr.io/rforge/vegan/man/decostand.html
+OBJ1_exp_tss = phyloseq_standardize_otu_abundance(OBJ1_exp, method = "total")
+#Anderson log, a modified version of log (x+1)
+OBJ1_exp_anderson = physeq_transform_anderson_log(OBJ1_exp)
+#CSS cumulative sum scaling
+OBJ1_exp_css = phyloseq_transform_css(OBJ1_exp, norm = TRUE, log = TRUE)
+
+OBJ_Overall_TRIM <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
+OBJ_Overall_TRIM_tss <- subset_samples(OBJ1_exp_tss, Treatment_Half_Trim == "Retain")
+OBJ_W0 <- subset_samples(OBJ1_exp, Week == "Zero")
+OBJ_W0_TRIM <- subset_samples(OBJ_W0, Treatment_Half_Trim == "Retain")
+OBJ_W0_tss <- subset_samples(OBJ1_exp_tss, Week == "Zero")
+OBJ_W0_TRIM_tss <- subset_samples(OBJ_W0_tss, Treatment_Half_Trim == "Retain")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+OBJ_W14_TRIM <- subset_samples(OBJ_W14, Treatment_Half_Trim == "Retain")
+OBJ_W14_tss <- subset_samples(OBJ1_exp_tss, Week == "Fourteen")
+OBJ_W14_TRIM_tss <- subset_samples(OBJ_W14_tss, Treatment_Half_Trim == "Retain")
+#CSS
+OBJ_Overall_TRIM_css <- subset_samples(OBJ1_exp_css, Treatment_Half_Trim == "Retain")
+OBJ_W0_css <- subset_samples(OBJ1_exp_css, Week == "Zero")
+OBJ_W0_TRIM_css <- subset_samples(OBJ_W0_css, Treatment_Half_Trim == "Retain")
+OBJ_W14_css <- subset_samples(OBJ1_exp_css, Week == "Fourteen")
+OBJ_W14_TRIM_css <- subset_samples(OBJ_W14_css, Treatment_Half_Trim == "Retain")
+#Anderson log
+OBJ_Overall_TRIM_anderson <- subset_samples(OBJ1_exp_anderson, Treatment_Half_Trim == "Retain")
+OBJ_W0_anderson <- subset_samples(OBJ1_exp_anderson, Week == "Zero")
+OBJ_W0_TRIM_anderson <- subset_samples(OBJ_W0_anderson, Treatment_Half_Trim == "Retain")
+OBJ_W14_anderson <- subset_samples(OBJ1_exp_anderson, Week == "Fourteen")
+OBJ_W14_TRIM_anderson <- subset_samples(OBJ_W14_anderson, Treatment_Half_Trim == "Retain")
+########
+
+
+
+
+
+####POTENTIALLY IGNORE ALL OF THIS...t be continued and investigated vs ANCOM-BC..
+# spoke to Johs and hes just uses TSS for everything....even picrust
+
+#okay so if the story is that we need to use TSS + log x+1 for everything that was previously just TSS'd, let's do a test of the adnerson log
+#from meta g misc pacakge with miscelaneous functions
+##Using metagMiscpackage to do both TSS and anderson log
+##metagmisc standardise function using "total" is the same as the old method of manually doing the TSS transform (as below)
+#PHYLO_tss_manual = transform_sample_counts(Path_PHYLO, function(OTU) OTU/sum(OTU) )
+#https://github.com/vmikk/metagMisc/
+#https://rdrr.io/github/vmikk/metagMisc/
+#anderson log
+#Old version of the below commands
+#Path_PHYLO_tss <- phyloseq_standardize_otu_abundance(Path_PHYLO, method = "total")
+#Path_PHYLO_tss 
+#Path_PHYLO_log <- phyloseq_standardize_otu_abundance(Path_PHYLO_tss, method = "log")
+#Path_PHYLO_log
+#devtools::install_github("vmikk/metagMisc")
+
+install.packages("remotes")
+remotes::install_github("vmikk/metagMisc")
+library(metagMisc)
+OBJ1_exp_tss = transform_sample_counts(OBJ1_exp, function(OTU) OTU/sum(OTU) )
+OBJ1_exp_tss = phyloseq_standardize_otu_abundance(OBJ1_exp, method = "total")
+OBJ1_exp_tss = physeq_transform_anderson_log(OBJ1_exp_tss)
+OBJ1_exp_tss = physeq_transform_anderson_log(OBJ1_exp)
+######################
+
 
 #Deprecated, see above for half cut import workflow including overall, 0, 14, and raw vs tss
 # CHOOSE ONE. -note after comparisons, unless anything else comes to light, should only need/use the half cut dataset from now on
@@ -1298,7 +1424,7 @@ OBJ_Overall_TRIM_tss
 OBJ_W0_TRIM_tss
 OBJ_W14_TRIM_tss
 
-#Note re: Rstudio export, using SVG format and dimensions 1150 x 900 results in square ordination when accounting for legend size 
+#Note re: Rstudio export, using SVG format and dimensions 1150 x 900 seems to result in a "close enough to" square ordination when accounting for legend size 
 
 #weighted TSS
 NMDS_W14wTRIM <- ordinate(OBJ_W14_TRIM_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
@@ -1806,32 +1932,32 @@ Inoculum0 <- get_variable(OBJ_W0_TRIM_tss, "Inoculum")
 Inoculum14 <- get_variable(OBJ_W14_TRIM_tss, "Inoculum")
 
 #Week 0
-W0_3Group_ado_U = adonis(OBJ1_W0perm_U ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
-W0_3Group_ado_U
+#W0_3Group_ado_U = adonis(OBJ1_W0perm_U ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
+#W0_3Group_ado_U
 #compare adonis2
 W0_3Group_ado2_U = adonis2(OBJ1_W0perm_U ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
 W0_3Group_ado2_U
 
-W0_3Group_ado_W = adonis(OBJ1_W0perm_W ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
-W0_3Group_ado_W
+#W0_3Group_ado_W = adonis(OBJ1_W0perm_W ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
+#W0_3Group_ado_W
 #compare adonis2
 W0_3Group_ado2_W = adonis2(OBJ1_W0perm_W ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
 W0_3Group_ado2_W
 
 #Week 14
-W14_3Group_ado_U = adonis(OBJ1_W14perm_U ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
-W14_3Group_ado_U
+#W14_3Group_ado_U = adonis(OBJ1_W14perm_U ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
+#W14_3Group_ado_U
 #compare adonis2
 W14_3Group_ado2_U = adonis2(OBJ1_W14perm_U ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
 W14_3Group_ado2_U
 
-W14_3Group_ado_W = adonis(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
-W14_3Group_ado_W
+#W14_3Group_ado_W = adonis(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
+#W14_3Group_ado_W
 #compare adonis2
 W14_3Group_ado2_W = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
 W14_3Group_ado2_W
 
-#adonis2 test without ordering...
+#adonis2 test without ordering
 W14_3Group_ado2_W_TEST = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999, by = NULL)
 W14_3Group_ado2_W_TEST
 
@@ -1882,7 +2008,7 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 BiocManager::install("DESeq2")
 
 library(ggplot2)
-library("DESeq2")
+library(DESeq2)
 
 #Reminder if not already done: remove unwanted samples (the sampling control set, not relevant for logchange etc)
 #i.e don't use the TSS transformed data
@@ -2225,6 +2351,50 @@ t1 <- t1 + scale_x_discrete(labels = c(rep("0 mg",5),rep("20 mg",5), rep("100 mg
 t1
 
 # ANCOM-BC ----------------------------------------------------------------
+#As per: https://github.com/FrederickHuangLin/ANCOMBC/issues/19
+#Using transofrmed/fractional counts is NOT recommended for ANCOM, it is 
+#The ANCOM-BC methodology is developed for differential abundance analysis with regards to absolute abundances,
+#i.e. reading in raw counts data is required. Using fractional relative abundances is highly not recommended.
+#Re: formula structure when you are putting in your data, see: https://github.com/FrederickHuangLin/ANCOMBC/discussions/24
+#yuor FIRST variable in the fomrula is what you are looking for a difference in, while adjusting for the effects of further variables
+#Therefore, in your case, if the variable of interest is location, and you specify formula = "location + connection", it means you are trying to detect differentially abundant taxa with regards to location while adjusting connection effect
+
+#Note on "setting" your reference point if you wish to do so.....ANCOMBC always does it's compairons in alphabetical order
+#So if for example you want logfold change AWAY FROM uninoculated to Geo/Pseudo...it will not do this by default, and will instead use Geobacter inoculum as its;'s baseline/reference
+#to fix this simply rename the uninoculated variable to A_uninoculated so that it is compareed correctly
+
+#IMPORTANT NOTE: because of the above note about alphabetical ordering of groups will no be using a customised treatment table file
+#3from now on, when the matter of concern is to change the ordering of ANCOM results in any way you must modifiy the column names of the .csv
+#The relevant .csv file for re-ordering groups alphabetically is called: ANCOM_mapping_file.csv
+#As of now, the renamed columns will be:
+#Location column: A_Root , B_Anode so that root is the baseline for location (this will allow for all comparison directions)
+#Inoculum column: A_Uninoculated
+setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
+library(phyloseq)
+library(ape)
+otu_table <- as.data.frame(read.csv("raw_readmap.csv", header = TRUE,row.names = "OTU_ID"))
+taxmat <- as.matrix(read.csv("tax_table.csv", row.names = 1, header = TRUE))
+treat <- as.data.frame(read.csv("ANCOM_mapping_file.csv", row.names = 1, header = TRUE))
+TREE <- read.tree("rooted_tree.nwk")
+OTU = otu_table(otu_table, taxa_are_rows = TRUE)
+TAX = tax_table(taxmat)
+TREAT = sample_data(treat)
+OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
+library(magrittr)
+OBJ1 <- OBJ1 %>%
+  subset_taxa(
+    Kingdom == "Bacteria" &
+    Family  != "mitochondria" &
+    Class   != "Chloroplast"
+  )
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+#Half cut that retains Pseudomonas (use these ones moving forward from now!)
+OBJ_Overall_TRIM <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
+OBJ_W0 <- subset_samples(OBJ1_exp, Week == "Zero")
+OBJ_W0_TRIM <- subset_samples(OBJ_W0, Treatment_Half_Trim == "Retain")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+OBJ_W14_TRIM <- subset_samples(OBJ_W14, Treatment_Half_Trim == "Retain")
+
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
@@ -2232,16 +2402,12 @@ BiocManager::install("ANCOMBC")
 
 library(ANCOMBC)
 library(microbiome)
-#As per: https://github.com/FrederickHuangLin/ANCOMBC/issues/19
-#Using transofrmed/fractional counts is NOT recommended for ANCOM, it is 
-#The ANCOM-BC methodology is developed for differential abundance analysis with regards to absolute abundances,
-#i.e. reading in raw counts data is required. Using fractional relative abundances is highly not recommended.
 
 #### Final Cut Set ANCOM-BC LOCATION --------------------------------------------------
 #FINAL half-cut DATASET
-#HALFCUT DATASET
+#HALFCUT DATASET, looking at location, controlling for connection/inoculum
 out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location + Connection + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
-              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+              struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
 res4 = out4$res
 res_global4 = out4$res_global
 
@@ -2280,7 +2446,7 @@ tab_p4 <- data.frame("ASV" = rownames(tab_p4), tab_p4)
 colnames(res_global_tax4)
 
 dataset_names <- list('Global' = res_global_tax4, 'Coefficients' = tab_coef4,'P_value' = tab_p4, 'Q_AdjustedP' = tab_q4,'SE_Residuals' = tab_se4,'W_stat' = tab_w4,'Differential_Abundance' = tab_diff4)
-write.xlsx(dataset_names, file = 'ANCOMBC_W14_Loc_FINALcut_ASV.xlsx', asTable = TRUE, firstRow = TRUE)
+write.xlsx(dataset_names, file = 'ANCOMBC_W14_Location_FINALcut_ASV.xlsx', asTable = TRUE, firstRow = TRUE)
 
 ## final cut Version Agglomerated to family ---------------------------------------------------
 #agglomerate half cut dataset to Family for higher level look at differential abundance
@@ -2288,7 +2454,7 @@ write.xlsx(dataset_names, file = 'ANCOMBC_W14_Loc_FINALcut_ASV.xlsx', asTable = 
 OBJ_W14_TRIM_fam <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
 #ensure referring to agglomerated object
 out4 = ancombc(phyloseq = OBJ_W14_TRIM_fam, formula = "Location + Connection + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
-              struc_zero = TRUE, neg_lb = FALSE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.0549, global = TRUE)
+              struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
 res4 = out4$res
 res_global4 = out4$res_global
 
@@ -2326,7 +2492,142 @@ tab_p4 <- data.frame("ASV" = rownames(tab_p4), tab_p4)
 colnames(res_global_tax4)
 
 dataset_names <- list('Global' = res_global_tax4, 'Coefficients' = tab_coef4,'P_value' = tab_p4, 'Q_AdjustedP' = tab_q4,'SE_Residuals' = tab_se4,'W_stat' = tab_w4,'Differential_Abundance' = tab_diff4)
-write.xlsx(dataset_names, file = 'ANCOMBC_W14_Loc_FINALcut_Family.xlsx', asTable = TRUE, firstRow = TRUE)
+write.xlsx(dataset_names, file = 'ANCOMBC_W14_Location_FINALcut_Family.xlsx', asTable = TRUE, firstRow = TRUE)
+
+###### WIP Connection ancom family level -------------------------------------------
+OBJ_W14_TRIM_fam <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
+#ensure referring to agglomerated object
+out4 = ancombc(phyloseq = OBJ_W14_TRIM_fam, formula = "Connection + Location + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Connection", 
+              struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+out4
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#Export as single excel file in separate worksheets
+library(openxlsx)
+
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_coef4), ], "matrix"))
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_q4), ], "matrix"))
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_se4), ], "matrix"))
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_w4), ], "matrix"))
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_diff4), ], "matrix"))
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_p4), ], "matrix"))
+
+colnames(res_global_tax4)
+res_global_tax4 <- data.frame("ASV" = rownames(res_global_tax4), res_global_tax4)
+tab_coef4 <- data.frame("ASV" = rownames(tab_coef4), tab_coef4)
+tab_q4 <- data.frame("ASV" = rownames(tab_q4), tab_q4)
+tab_se4 <- data.frame("ASV" = rownames(tab_se4), tab_se4)
+tab_w4 <- data.frame("ASV" = rownames(tab_w4), tab_w4)
+tab_diff4 <- data.frame("ASV" = rownames(tab_diff4), tab_diff4)
+tab_p4 <- data.frame("ASV" = rownames(tab_p4), tab_p4)
+colnames(res_global_tax4)
+
+dataset_names <- list('Coefficients' = tab_coef4,'P_value' = tab_p4, 'Q_AdjustedP' = tab_q4,'SE_Residuals' = tab_se4,'W_stat' = tab_w4,'Differential_Abundance' = tab_diff4)
+write.xlsx(dataset_names, file = 'ANCOMBC_W14_Connection_FINALcut_Family.xlsx', asTable = TRUE, firstRow = TRUE)
+
+##### WIP inocula ANCOM family level -----------------------------------------------------------------
+OBJ_W14_TRIM_fam <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
+#ensure referring to agglomerated object
+out4 = ancombc(phyloseq = OBJ_W14_TRIM_fam, formula = "Inoculum + Location + Connection", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Inoculum", 
+              struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+out4
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#Export as single excel file in separate worksheets
+library(openxlsx)
+
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(res_global4), ], "matrix"))
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_coef4), ], "matrix"))
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_q4), ], "matrix"))
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_se4), ], "matrix"))
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_w4), ], "matrix"))
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_diff4), ], "matrix"))
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM_fam)[rownames(tab_p4), ], "matrix"))
+
+colnames(res_global_tax4)
+res_global_tax4 <- data.frame("ASV" = rownames(res_global_tax4), res_global_tax4)
+tab_coef4 <- data.frame("ASV" = rownames(tab_coef4), tab_coef4)
+tab_q4 <- data.frame("ASV" = rownames(tab_q4), tab_q4)
+tab_se4 <- data.frame("ASV" = rownames(tab_se4), tab_se4)
+tab_w4 <- data.frame("ASV" = rownames(tab_w4), tab_w4)
+tab_diff4 <- data.frame("ASV" = rownames(tab_diff4), tab_diff4)
+tab_p4 <- data.frame("ASV" = rownames(tab_p4), tab_p4)
+colnames(res_global_tax4)
+
+dataset_names <- list('Global' = res_global_tax4, 'Coefficients' = tab_coef4,'P_value' = tab_p4, 'Q_AdjustedP' = tab_q4,'SE_Residuals' = tab_se4,'W_stat' = tab_w4,'Differential_Abundance' = tab_diff4)
+write.xlsx(dataset_names, file = 'ANCOMBC_W14_Inoculum_FINALcut_Family.xlsx', asTable = TRUE, firstRow = TRUE)
+
+#### WIP inocula ANCOM GENUS level -----------------------------------------------------------------
+OBJ_W14_TRIM_Genus <- tax_glom(OBJ_W14_TRIM,taxrank = "Genus")
+#ensure referring to agglomerated object
+out4 = ancombc(phyloseq = OBJ_W14_TRIM_Genus, formula = "Inoculum + Location + Connection", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Inoculum", 
+              struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+out4
+
+#Bind results sheets with OTU Taxa
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_Genus)[rownames(res_global4), ], "matrix"))
+res_global_tax4
+
+#Append coefficients, adjusted-P values etc
+tab_coef4 = res4$beta
+tab_q4 = res4$q
+tab_se4 = res4$se
+tab_w4 = res4$W
+tab_diff4 = res4$diff_abn
+tab_p4 = res4$p_val
+
+#Export as single excel file in separate worksheets
+library(openxlsx)
+
+res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM_Genus)[rownames(res_global4), ], "matrix"))
+tab_coef4 = cbind(as(tab_coef4, "data.frame"), as(tax_table(OBJ_W14_TRIM_Genus)[rownames(tab_coef4), ], "matrix"))
+tab_q4 = cbind(as(tab_q4, "data.frame"), as(tax_table(OBJ_W14_TRIM_Genus)[rownames(tab_q4), ], "matrix"))
+tab_se4 = cbind(as(tab_se4, "data.frame"), as(tax_table(OBJ_W14_TRIM_Genus)[rownames(tab_se4), ], "matrix"))
+tab_w4 = cbind(as(tab_w4, "data.frame"), as(tax_table(OBJ_W14_TRIM_Genus)[rownames(tab_w4), ], "matrix"))
+tab_diff4 = cbind(as(tab_diff4, "data.frame"), as(tax_table(OBJ_W14_TRIM_Genus)[rownames(tab_diff4), ], "matrix"))
+tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM_Genus)[rownames(tab_p4), ], "matrix"))
+
+colnames(res_global_tax4)
+res_global_tax4 <- data.frame("ASV" = rownames(res_global_tax4), res_global_tax4)
+tab_coef4 <- data.frame("ASV" = rownames(tab_coef4), tab_coef4)
+tab_q4 <- data.frame("ASV" = rownames(tab_q4), tab_q4)
+tab_se4 <- data.frame("ASV" = rownames(tab_se4), tab_se4)
+tab_w4 <- data.frame("ASV" = rownames(tab_w4), tab_w4)
+tab_diff4 <- data.frame("ASV" = rownames(tab_diff4), tab_diff4)
+tab_p4 <- data.frame("ASV" = rownames(tab_p4), tab_p4)
+colnames(res_global_tax4)
+
+dataset_names <- list('Global' = res_global_tax4, 'Coefficients' = tab_coef4,'P_value' = tab_p4, 'Q_AdjustedP' = tab_q4,'SE_Residuals' = tab_se4,'W_stat' = tab_w4,'Differential_Abundance' = tab_diff4)
+write.xlsx(dataset_names, file = 'ANCOMBC_W14_Inoculum_FINALcut_Genus.xlsx', asTable = TRUE, firstRow = TRUE)
 
 # Heirarchical Clustering -------------------------------------------------
 
@@ -2614,12 +2915,16 @@ Path_PHYLO_tss_manual
 #https://github.com/vmikk/metagMisc
 #https://rdrr.io/github/vmikk/metagMisc/man/phyloseq_standardize_otu_abundance.html
 #anderson log
-devtools::install_github("vmikk/metagMisc")
+#Old version of the below commands
+#Path_PHYLO_tss <- phyloseq_standardize_otu_abundance(Path_PHYLO, method = "total")
+#Path_PHYLO_tss 
+#Path_PHYLO_log <- phyloseq_standardize_otu_abundance(Path_PHYLO_tss, method = "log")
+#Path_PHYLO_log
+#devtools::install_github("vmikk/metagMisc")
+
+install.packages("remotes")
+remotes::install_github("vmikk/metagMisc")
 library(metagMisc)
-Path_PHYLO_tss <- phyloseq_standardize_otu_abundance(Path_PHYLO, method = "total")
-Path_PHYLO_tss 
-Path_PHYLO_log <- phyloseq_standardize_otu_abundance(Path_PHYLO_tss, method = "log")
-Path_PHYLO_log
 
 #and cut out unwanted samples
 Path_PHYLO_log <- subset_samples(Path_PHYLO_log, Experiment == "Y")
@@ -3413,4 +3718,193 @@ write.csv(as.data.frame(tab_diff4), file = "ANCOM-BC_ALL_ASV_W14_Loc_DA_FINALcut
 tab_p4 = cbind(as(tab_p4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(tab_p4), ], "matrix"))
 write.csv(as.data.frame(tab_p4), file = "ANCOM-BC_ALL_ASV_W14_Loc_Pval_FINALcuthalf.csv")
 
+
+
+
+
+
+# TEST section for ordination and permanova of css vs tss vs ander --------
+
+#some ordinations first
+library("ggplot2")
+library("RColorBrewer")
+
+#NOTE: Added to mapping file additional columns with more groupings based on: 
+#Group all samples per soil columns: Soil_Column
+#Group based on whether soil based subtrate (root/anode) vs Water for cathode samples: Substrate
+
+
+#Note re: Rstudio export, using SVG format and dimensions 1150 x 900 results in square ordination when accounting for legend size 
+
+#weighted TSS
+NMDS_W14wTRIM <- ordinate(OBJ_W14_TRIM_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W14wTRIM
+#unweighted TSS
+NMDS_W14uTRIM <- ordinate(OBJ_W14_TRIM_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W14uTRIM
+
+#W14 with TRIMMED data (half set, so FINAL) TSS
+#Unweighted
+p4uTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14uTRIM, color = "Connection", shape = "Location", label = NULL)
+p4uTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14uTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p4uTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14uTRIM, color = "Treatment", shape = "Location", label = NULL)
+p4uTRIM
+p4uTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+#Weighted
+p4wTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14wTRIM, color = "Connection", shape = "Location", label = NULL)
+p4wTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14wTRIM, color = "Inoculum", shape = "Location", label = NULL)
+p4wTRIM <- plot_ordination(OBJ_W14_TRIM_tss, NMDS_W14wTRIM, color = "Treatment", shape = "Location", label = NULL)
+p4wTRIM
+p4wTRIM + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+
+
+#CSS
+
+#weighted CSS
+NMDS_W14wTRIMcss <- ordinate(OBJ_W14_TRIM_css, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W14wTRIMcss
+#unweighted CSS
+NMDS_W14uTRIMcss <- ordinate(OBJ_W14_TRIM_css, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W14uTRIMcss
+
+#W14 with TRIMMED data (half set, so FINAL) CSS
+#Unweighted
+p4uTRIMcss <- plot_ordination(OBJ_W14_TRIM_css, NMDS_W14uTRIMcss, color = "Connection", shape = "Location", label = NULL)
+p4uTRIMcss <- plot_ordination(OBJ_W14_TRIM_css, NMDS_W14uTRIMcss, color = "Inoculum", shape = "Location", label = NULL)
+p4uTRIMcss <- plot_ordination(OBJ_W14_TRIM_css, NMDS_W14uTRIMcss, color = "Treatment", shape = "Location", label = NULL)
+p4uTRIMcss
+p4uTRIMcss + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+#Weighted
+p4wTRIMcss <- plot_ordination(OBJ_W14_TRIM_css, NMDS_W14wTRIMcss, color = "Connection", shape = "Location", label = NULL)
+p4wTRIMcss <- plot_ordination(OBJ_W14_TRIM_css, NMDS_W14wTRIMcss, color = "Inoculum", shape = "Location", label = NULL)
+p4wTRIMcss <- plot_ordination(OBJ_W14_TRIM_css, NMDS_W14wTRIMcss, color = "Treatment", shape = "Location", label = NULL)
+p4wTRIMcss
+p4wTRIMcss + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+
+#Anderson log
+
+#weighted Anderson log
+NMDS_W14wTRIManderson <- ordinate(OBJ_W14_TRIM_anderson, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
+NMDS_W14wTRIManderson
+#unweighted Anderson log
+NMDS_W14uTRIManderson <- ordinate(OBJ_W14_TRIM_anderson, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
+NMDS_W14uTRIManderson
+
+#W14 with TRIMMED data (half set, so FINAL) Anderson log
+#Unweighted
+p4uTRIManderson <- plot_ordination(OBJ_W14_TRIM_anderson, NMDS_W14uTRIManderson, color = "Connection", shape = "Location", label = NULL)
+p4uTRIManderson <- plot_ordination(OBJ_W14_TRIM_anderson, NMDS_W14uTRIManderson, color = "Inoculum", shape = "Location", label = NULL)
+p4uTRIManderson <- plot_ordination(OBJ_W14_TRIM_anderson, NMDS_W14uTRIManderson, color = "Treatment", shape = "Location", label = NULL)
+p4uTRIManderson
+p4uTRIManderson + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+#Weighted
+p4wTRIManderson <- plot_ordination(OBJ_W14_TRIM_anderson, NMDS_W14wTRIManderson, color = "Connection", shape = "Location", label = NULL)
+p4wTRIManderson <- plot_ordination(OBJ_W14_TRIM_anderson, NMDS_W14wTRIManderson, color = "Inoculum", shape = "Location", label = NULL)
+p4wTRIManderson <- plot_ordination(OBJ_W14_TRIM_anderson, NMDS_W14wTRIManderson, color = "Treatment", shape = "Location", label = NULL)
+p4wTRIManderson
+p4wTRIManderson + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
+
+#PERMANOVA TSS
+library(vegan)
+#Cleaned up with FINAL cut dataset
+##make distance matricies (these are weighted and unweighted unifrac. can also use 'bray')
+OBJ1_W14perm_W <- distance(OBJ_W14_TRIM_tss, "wunifrac")
+OBJ1_W14perm_U <- distance(OBJ_W14_TRIM_tss, "unifrac")
+
+#Set up variable objects
+Location14 <- get_variable(OBJ_W14_TRIM_tss, "Location")
+#By connection
+Connection14 <- get_variable(OBJ_W14_TRIM_tss, "Connection")
+#By Inoculum 
+Inoculum14 <- get_variable(OBJ_W14_TRIM_tss, "Inoculum")
+
+#Week 14
+#compare adonis2
+W14_3Group_ado2_U = adonis2(OBJ1_W14perm_U ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
+W14_3Group_ado2_U
+
+#compare adonis2
+W14_3Group_ado2_W = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
+W14_3Group_ado2_W
+
+#adonis2 test without ordering
+W14_3Group_ado2_W_TEST = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999, by = NULL)
+W14_3Group_ado2_W_TEST
+
+#PERMANOVA CSS
+library(vegan)
+#Cleaned up with FINAL cut dataset
+##make distance matricies (these are weighted and unweighted unifrac. can also use 'bray')
+OBJ1_W14perm_Wcss <- distance(OBJ_W14_TRIM_css, "wunifrac")
+OBJ1_W14perm_Ucss <- distance(OBJ_W14_TRIM_css, "unifrac")
+
+#Set up variable objects
+Location14css <- get_variable(OBJ_W14_TRIM_css, "Location")
+#By connection
+Connection14css <- get_variable(OBJ_W14_TRIM_css, "Connection")
+#By Inoculum 
+Inoculum14css <- get_variable(OBJ_W14_TRIM_tss, "Inoculum")
+
+#Week 14
+#compare adonis2
+W14_3Group_ado2_Ucss = adonis2(OBJ1_W14perm_Ucss ~ Location14css * Connection14css * Inoculum14css, permutations = 9999)
+W14_3Group_ado2_Ucss
+
+#compare adonis2
+W14_3Group_ado2_Wcss = adonis2(OBJ1_W14perm_Wcss ~ Location14css * Connection14css * Inoculum14css, permutations = 9999)
+W14_3Group_ado2_Wcss
+
+#adonis2 test without ordering
+W14_3Group_ado2_W_TESTcss = adonis2(OBJ1_W14perm_Wcss ~ Location14css * Connection14css * Inoculum14css, permutations = 9999, by = NULL)
+W14_3Group_ado2_W_TESTcss
+
+#PERMANOVA anderson log
+library(vegan)
+#Cleaned up with FINAL cut dataset
+##make distance matricies (these are weighted and unweighted unifrac. can also use 'bray')
+OBJ1_W14perm_Wanderson <- distance(OBJ_W14_TRIM_anderson, "wunifrac")
+OBJ1_W14perm_Uanderson <- distance(OBJ_W14_TRIM_anderson, "unifrac")
+
+#Set up variable objects
+Location14anderson <- get_variable(OBJ_W14_TRIM_anderson, "Location")
+#By connection
+Connection14anderson <- get_variable(OBJ_W14_TRIM_anderson, "Connection")
+#By Inoculum 
+Inoculum14anderson <- get_variable(OBJ_W14_TRIM_anderson, "Inoculum")
+
+#compare adonis2
+W14_3Group_ado2_Wanderson = adonis2(OBJ1_W14perm_Wanderson ~ Location14anderson * Connection14anderson * Inoculum14anderson, permutations = 9999)
+W14_3Group_ado2_Wanderson
+
+#adonis2 test without ordering
+W14_3Group_ado2_W_TESTanderson = adonis2(OBJ1_W14perm_Wanderson ~ Location14anderson * Connection14anderson * Inoculum14anderson, permutations = 9999, by = NULL)
+W14_3Group_ado2_W_TESTanderson
+
+
+
+### quick dirty test for t-SNE plotting
+library(vegan)
+library(microbiome)
+library(Rtsne) # Load package
+
+method <- "tsne"
+trans <- "hellinger"
+distance <- "euclidean"
+
+# Distance matrix for samples
+ps <- microbiome::transform(OBJ1_exp, trans)
+
+# Calculate sample similarities
+dm <- vegdist(otu_table(OBJ1_exp), distance)
+
+# Run TSNE
+tsne_out <- Rtsne(dm, dims = 2) 
+proj <- tsne_out$Y
+rownames(proj) <- rownames(otu_table(OBJ1_exp))
+
+library(ggplot2)
+p <- plot_landscape(proj, legend = T, size = 1) 
+print(p)
 
