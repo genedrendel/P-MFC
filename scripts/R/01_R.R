@@ -22,6 +22,11 @@
 ##otherwise R will not read it. also convert 'OTU ID' to 'OTU_ID'
 ##you can also make a excel file and read in as a .csv
 
+
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install(version = "3.15")
+
 #For installing Phyloseq and associated packages, use Bioconductor / Biocmanager
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
@@ -518,11 +523,6 @@ write.csv(TAXdf3,"TSS_Genus_tax.csv", row.names = TRUE)
 # Alpha Diversity ---------------------------------------------------------
 ##ALPHA DIVERSITY_____________________________________________________________________________
 ##BOXPLOTS, ANOVA, TUKEY TEST
-
-# Update to latest version as of 3/2/21
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install(version = "3.12")
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
