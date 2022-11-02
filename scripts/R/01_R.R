@@ -52,6 +52,35 @@ TAX = tax_table(taxmat)
 TREAT = sample_data(treat)
 OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
 
+#Calculate stats for dataset (before any subsetting)
+OBJ1
+sample_sums(OBJ1)
+sort(sample_sums(OBJ1))
+hist(sample_sums(OBJ1), main = "Histogram: Read Counts", xlab = "Total Reads", 
+     border = "blue", col = "green", las = 1, breaks = 24)
+TREAT$total_reads <- sample_sums(OBJ1)
+TREAT$total_reads
+print(mean(TREAT$total_reads))
+print(var(TREAT$total_reads))
+print(sd(TREAT$total_reads))
+
+
+#Calculate stats for dataset (subsetted for just those being used in paper #1: wk0 and wk14)
+OBJ1_paper <- subset_samples(OBJ1, Paper_Subset == "Included")
+OBJ1_paper <- subset_samples(OBJ1, Treatment_Half_Trim == "Retain")
+
+sample_sums(OBJ1_paper)
+sort(sample_sums(OBJ1_paper))
+hist(sample_sums(OBJ1_paper), main = "Histogram: Read Counts", xlab = "Total Reads", 
+     border = "blue", col = "green", las = 1, breaks = 24)
+total_reads <- sample_sums(OBJ1_paper)
+total_reads
+print(mean(total_reads))
+print(var(total_reads))
+print(sd(total_reads))
+
+
+#continue processing for data anlysis
 OBJ1 <- subset_taxa(OBJ1, !is.na(Phylum) & !Phylum %in% c("", "uncharacterized"))
 OBJ1 <- OBJ1 %>%
   subset_taxa(
@@ -176,7 +205,7 @@ OBJ_W14_TRIM_anderson <- subset_samples(OBJ_W14_anderson, Treatment_Half_Trim ==
 
 
 ####POTENTIALLY IGNORE ALL OF THIS...t be continued and investigated vs ANCOM-BC..
-# spoke to Johs and hes just uses TSS for everything....even picrust
+# spoke to Josh and he just uses TSS for everything....even picrust
 
 #okay so if the story is that we need to use TSS + log x+1 for everything that was previously just TSS'd, let's do a test of the adnerson log
 #from meta g misc pacakge with miscelaneous functions
@@ -862,9 +891,7 @@ TREE <- read.tree("rooted_tree.nwk")
 
 ### Top specialists ---------------------------------------------------------
 
-
-# FINAL dataset - specialist list derived from set with montebello --------
-
+# FINAL dataset - specialist list derived from set without montebello -------
 
 ### FINAL dataset - specialist list derived from set with montebello treatment cut out....
 #will make a few different sheet options here....
@@ -887,7 +914,6 @@ taxmat_spec <- as.matrix(read.csv("Tax_FINALGeoONLY.csv", row.names = 1, header 
 
 #not done for new cut...yet, use this one instead of the line above now as I have appended higher taxonomy to levels that were missing to make figures clearer
 #taxmat_spec <- as.matrix(read.csv("tax_spec_index_append_hi_tax.csv", row.names = 1, header = TRUE))
-
 
 
 #####Old spec import
@@ -1944,6 +1970,10 @@ W0_3Group_ado2_U
 W0_3Group_ado2_W = adonis2(OBJ1_W0perm_W ~ Location0 * Connection0 * Inoculum0, permutations = 9999)
 W0_3Group_ado2_W
 
+#W0 weighted adonis2 test without ordering (check if model as a whole is significant: model)
+W0_3Group_ado2_W_model = adonis2(OBJ1_W0perm_W ~ Location0 * Connection0 * Inoculum0, permutations = 9999, by = NULL)
+W0_3Group_ado2_W_model
+
 #Week 14
 #W14_3Group_ado_U = adonis(OBJ1_W14perm_U ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
 #W14_3Group_ado_U
@@ -1957,9 +1987,14 @@ W14_3Group_ado2_U
 W14_3Group_ado2_W = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999)
 W14_3Group_ado2_W
 
-#adonis2 test without ordering
+#adonis2 test without ordering (check if model as a whole is significant: model)
 W14_3Group_ado2_W_TEST = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999, by = NULL)
 W14_3Group_ado2_W_TEST
+
+#adonis2 test without ordering (when don't want order to matter: margin)
+W14_3Group_ado2_W_TEST = adonis2(OBJ1_W14perm_W ~ Location14 * Connection14 * Inoculum14, permutations = 9999, by = "margin")
+W14_3Group_ado2_W_TEST
+
 
 #### Older run of PERMANOVA for TRIMMMED DATA for reference.... may have inconsistencyes re: raw vs tss 
 ##make distance matricies (these are weighted and unweighted unifrac. can also use 'bray')
@@ -2448,7 +2483,6 @@ colnames(res_global_tax4)
 dataset_names <- list('Global' = res_global_tax4, 'Coefficients' = tab_coef4,'P_value' = tab_p4, 'Q_AdjustedP' = tab_q4,'SE_Residuals' = tab_se4,'W_stat' = tab_w4,'Differential_Abundance' = tab_diff4)
 write.xlsx(dataset_names, file = 'ANCOMBC_W14_Location_FINALcut_ASV.xlsx', asTable = TRUE, firstRow = TRUE)
 
-## final cut Version Agglomerated to family ---------------------------------------------------
 #agglomerate half cut dataset to Family for higher level look at differential abundance
 #glom first
 OBJ_W14_TRIM_fam <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
