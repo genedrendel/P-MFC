@@ -25,13 +25,15 @@
 
 if (!require("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
-BiocManager::install(version = "3.15")
+BiocManager::install(version = "3.16")
 
 #For installing Phyloseq and associated packages, use Bioconductor / Biocmanager
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 
 BiocManager::install("phyloseq")
+
+BiocManager::valid()
 
 # Working Directory -------------------------------------------------------
 #Set your working directory, location for data tables, tree, etc
@@ -91,6 +93,10 @@ OBJ1 <- OBJ1 %>%
   )
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
 
+
+
+
+#filter
 OBJ1_exp = filter_taxa(OBJ1_exp, function(x) sum(x > 2) > (0.01*length(x)), TRUE)
 
 ######################################### test
@@ -2402,8 +2408,9 @@ t1
 #3from now on, when the matter of concern is to change the ordering of ANCOM results in any way you must modifiy the column names of the .csv
 #The relevant .csv file for re-ordering groups alphabetically is called: ANCOM_mapping_file.csv
 #As of now, the renamed columns will be:
-#Location column: A_Root , B_Anode so that root is the baseline for location (this will allow for all comparison directions)
-#Inoculum column: A_Uninoculated
+#Location column: A_Root , B_Anode (this means that the plant root is used as the the baseline for location (this will allow for all comparison directions)
+#Inoculum column: A_Uninoculated (this will mean that the uninolculated treatment will now correctly be used as the baseline for inoculum)
+
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 library(phyloseq)
 library(ape)
@@ -2441,7 +2448,7 @@ library(microbiome)
 #### Final Cut Set ANCOM-BC LOCATION --------------------------------------------------
 #FINAL half-cut DATASET
 #HALFCUT DATASET, looking at location, controlling for connection/inoculum
-out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location + Connection + Inoculum", p_adj_method = "holm", zero_cut = 0.90, lib_cut = 10000,group = "Location", 
+out4 = ancombc(phyloseq = OBJ_W14_TRIM, formula = "Location + Connection + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 10000,group = "Location", 
               struc_zero = TRUE, neg_lb = TRUE, tol = 1e-5, max_iter = 100, conserve = TRUE, alpha = 0.05, global = TRUE)
 res4 = out4$res
 res_global4 = out4$res_global
@@ -2449,6 +2456,16 @@ res_global4 = out4$res_global
 #Bind results sheets with OTU Taxa
 res_global_tax4 = cbind(as(res_global4, "data.frame"), as(tax_table(OBJ_W14_TRIM)[rownames(res_global4), ], "matrix"))
 res_global_tax4
+
+#binding the tax table from phyloseq is suddenly no longer working so maybe will have to export seperately?
+Tax_trim_forstitch = as(tax_table(OBJ_W14_TRIM), "matrix")
+# transpose if necessary
+#only if transposing:# if(taxa_are_rows(OBJ1_exp_tss)){OTU1 <- t(OTU1)}
+# Coerce to data.frame
+Tax_trim_forstitch = as.data.frame(Tax_trim_forstitch)
+write.csv(Tax_trim_forstitch,"Tax_ANCOM_stitch.csv", row.names = TRUE)
+
+
 
 #Append coefficients, adjusted-P values etc
 tab_coef4 = res4$beta
@@ -3941,4 +3958,252 @@ rownames(proj) <- rownames(otu_table(OBJ1_exp))
 library(ggplot2)
 p <- plot_landscape(proj, legend = T, size = 1) 
 print(p)
+
+
+# anocom2 adaptation ------------------------------------------------------
+
+#Quick test for adapting old ANCOMBC script to ANCOMBC2 
+#at minimum need to double check that prv_cut in the enw one is equal to zero_cut in the old one, necase zero_cut no longer exists apparently!
+
+setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
+library(phyloseq)
+library(ape)
+otu_table <- as.data.frame(read.csv("raw_readmap.csv", header = TRUE,row.names = "OTU_ID"))
+taxmat <- as.matrix(read.csv("tax_table.csv", row.names = 1, header = TRUE))
+treat <- as.data.frame(read.csv("ANCOM_mapping_file.csv", row.names = 1, header = TRUE))
+TREE <- read.tree("rooted_tree.nwk")
+OTU = otu_table(otu_table, taxa_are_rows = TRUE)
+TAX = tax_table(taxmat)
+TREAT = sample_data(treat)
+OBJ1 = phyloseq(OTU,TAX,TREAT,TREE)
+library(magrittr)
+OBJ1 <- OBJ1 %>%
+  subset_taxa(
+    Kingdom == "Bacteria" &
+    Family  != "mitochondria" &
+    Class   != "Chloroplast"
+  )
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+#Half cut that retains Pseudomonas (use these ones moving forward from now!)
+OBJ_Overall_TRIM <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
+OBJ_W0 <- subset_samples(OBJ1_exp, Week == "Zero")
+OBJ_W0_TRIM <- subset_samples(OBJ_W0, Treatment_Half_Trim == "Retain")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+OBJ_W14_TRIM <- subset_samples(OBJ_W14, Treatment_Half_Trim == "Retain")
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("ANCOMBC")
+
+library(ANCOMBC)
+library(microbiome)
+library(dplyr)
+library(ggplot2)
+library(data.table)
+
+#### Final Cut Dataset import for ANCOM-BC2 test --------------------------------------------------
+#FINAL half-cut DATASET - DONT RUN THIS ONE WAS JUST FOR INITIAL TESTING AND KEEPING FOR REFERENCE< 
+#START AT THE BELOW VERIOSNS FOR EAACH TAXAT LEVEL AND FACTOR
+#HALFCUT DATASET, looking at location, controlling for connection/inoculum
+out4 = ancombc2(data = OBJ_W14_TRIM, fix_formula = "Location + Connection + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Location", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+res4 = out4$res
+res_global4 = out4$res_global
+
+
+
+# Start HERE for fixing updated anocom2bc with FINAL cut and trim data sets for version ----------------------------------------------------
+
+
+#CONNECTION, using unconnnected as base
+
+#So i'll need 3 (4 if doing species too) sets of results for each group and taxa level, and each of those (except connection), will result in a primary and a global
+
+#Connection at FAMILY
+output_CON_FAM = ancombc2(data = OBJ_W14_TRIM, tax_level = "Family" , fix_formula = "Connection + Location + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Connection", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_CON_FAM = output_CON_FAM$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_CON_FAM %>%
+    data.table(caption = "ANCOM-BC2 Primary Results Connection Family")
+write.csv(res_prim_CON_FAM,"ANCOM-BC2 Primary Results_Connection_Family.csv", row.names = TRUE)
+
+
+#Connection at GENUS
+output_CON_GEN = ancombc2(data = OBJ_W14_TRIM, tax_level = "Genus" , fix_formula = "Connection + Location + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Connection", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_CON_GEN = output_CON_GEN$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_CON_GEN %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_Connection_Genus")
+write.csv(res_prim_CON_GEN,"ANCOM-BC2 Primary Results_Connection_Genus.csv", row.names = TRUE)
+
+
+#Connection at SPECIES
+output_CON_Spe = ancombc2(data = OBJ_W14_TRIM, tax_level = "Species" , fix_formula = "Connection + Location + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Connection", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_CON_Spe = output_CON_Spe$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_CON_Spe %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_Conn_Species")
+write.csv(res_prim_CON_Spe,"ANCOM-BC2 Primary Results_Conn_Species.csv", row.names = TRUE)
+
+
+#Connection  at ASV
+output_CON_ASV = ancombc2(data = OBJ_W14_TRIM, tax_level = NULL , fix_formula = "Connection + Location + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Connection", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_CON_ASV = output_CON_ASV$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_CON_ASV %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_Conn_ASV")
+write.csv(res_prim_CON_ASV,"ANCOM-BC2 Primary Results_Conn_ASV.csv", row.names = TRUE)
+
+
+
+
+#LOCATION
+#Location, controlling for inoculum and connection,
+
+#Location: controlling for conn/in at FAMILY level and using roots as base
+output_LOC_FAM = ancombc2(data = OBJ_W14_TRIM, tax_level = "Family" , fix_formula = "Location + Connection + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Location", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_LOC_FAM = output_LOC_FAM$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_LOC_FAM %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_LOC_FAM")
+write.csv(res_prim_LOC_FAM,"ANCOM-BC2 Primary Results_LOC_FAM.csv", row.names = TRUE)
+
+res_global_LOC_FAM = output_LOC_FAM$res_global %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_global_LOC_FAM %>%
+    data.table(caption = "ANCOM-BC2 Global Results_LOC_FAM")
+write.csv(res_global_LOC_FAM,"ANCOM-BC2 Global Results_LOC_FAM.csv", row.names = TRUE)
+
+#Location: controlling for conn/in at GENUS level and using uninoculated as base
+output_LOC_GEN = ancombc2(data = OBJ_W14_TRIM, tax_level = "Genus" , fix_formula = "Location + Connection + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Location", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_LOC_GEN = output_LOC_GEN$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_LOC_GEN %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_LOC_GEN")
+write.csv(res_prim_LOC_GEN,"ANCOM-BC2 Primary Results_LOC_GEN.csv", row.names = TRUE)
+
+res_global_LOC_GEN = output_LOC_GEN$res_global %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_global_LOC_GEN %>%
+    data.table(caption = "ANCOM-BC2 Global Results_LOC_GEN")
+write.csv(res_global_LOC_GEN,"ANCOM-BC2 Global Results_LOC_GEN.csv", row.names = TRUE)
+
+#Location: controlling for conn/in at SPECIES level and using uninoculated as base
+output_LOC_SPE = ancombc2(data = OBJ_W14_TRIM, tax_level = "Species" , fix_formula = "Location + Connection + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Location", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_LOC_SPE = output_LOC_SPE$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_LOC_SPE %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_LOC_SPE")
+write.csv(res_prim_LOC_SPE,"ANCOM-BC2 Primary Results_LOC_SPE.csv", row.names = TRUE)
+
+res_global_LOC_SPE = output_LOC_SPE$res_global %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_global_LOC_SPE %>%
+    data.table(caption = "ANCOM-BC2 Global Results_LOC_SPE")
+write.csv(res_global_LOC_SPE,"ANCOM-BC2 Global Results_LOC_SPE.csv", row.names = TRUE)
+
+#Location: controlling for conn/in at ASV level and using uninoculated as base
+output_LOC_ASV = ancombc2(data = OBJ_W14_TRIM, tax_level = NULL , fix_formula = "Location + Connection + Inoculum", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Location", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_LOC_ASV = output_LOC_ASV$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_LOC_ASV %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_LOC_ASV")
+write.csv(res_prim_LOC_ASV,"ANCOM-BC2 Primary Results_LOC_ASV.csv", row.names = TRUE)
+
+res_global_LOC_ASV = output_LOC_ASV$res_global %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_global_LOC_ASV %>%
+    data.table(caption = "ANCOM-BC2 Global Results_LOC_ASV")
+write.csv(res_global_LOC_ASV,"ANCOM-BC2 Global Results_LOC_ASV.csv", row.names = TRUE)
+
+
+
+
+
+#INOCULUM
+
+#Inoculum at FAMILY controlling for location and connection, uninoculated as baseline
+
+output_INO_FAM = ancombc2(data = OBJ_W14_TRIM, tax_level = "Family" , fix_formula = "Inoculum + Location + Connection", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Inoculum", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_INO_FAM = output_INO_FAM$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_INO_FAM %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_INO_FAM")
+write.csv(res_prim_INO_FAM,"ANCOM-BC2 Primary Results_INO_FAM.csv", row.names = TRUE)
+
+res_global_INO_FAM = output_INO_FAM$res_global %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_global_INO_FAM %>%
+    data.table(caption = "ANCOM-BC2 Global Results_INO_FAM")
+write.csv(res_global_INO_FAM,"ANCOM-BC2 Global Results_INO_FAM.csv", row.names = TRUE)
+
+#Inoculum at GENUS controlling for location and connection, uninoculated as baseline
+
+output_INO_GEN = ancombc2(data = OBJ_W14_TRIM, tax_level = "Genus" , fix_formula = "Inoculum + Location + Connection", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Inoculum", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_INO_GEN = output_INO_GEN$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_INO_GEN %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_INO_GEN")
+write.csv(res_prim_INO_GEN,"ANCOM-BC2 Primary Results_INO_GEN.csv", row.names = TRUE)
+
+res_global_INO_GEN = output_INO_GEN$res_global %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_global_INO_GEN %>%
+    data.table(caption = "ANCOM-BC2 Global Results_INO_GEN")
+write.csv(res_global_INO_GEN,"ANCOM-BC2 Global Results_INO_GEN.csv", row.names = TRUE)
+
+#Inoculum at SPECIES controlling for location and connection, uninoculated as baseline
+
+output_INO_SPE = ancombc2(data = OBJ_W14_TRIM, tax_level = "Species" , fix_formula = "Inoculum + Location + Connection", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Inoculum", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_INO_SPE = output_INO_SPE$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_INO_SPE %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_INO_SPE")
+write.csv(res_prim_INO_SPE,"ANCOM-BC2 Primary Results_INO_SPE.csv", row.names = TRUE)
+
+res_global_INO_SPE = output_INO_SPE$res_global %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_global_INO_SPE %>%
+    data.table(caption = "ANCOM-BC2 Global Results_INO_SPE")
+write.csv(res_global_INO_SPE,"ANCOM-BC2 Global Results_INO_SPE.csv", row.names = TRUE)
+
+#Inoculum at ASV controlling for location and connection, uninoculated as baseline
+
+output_INO_ASV = ancombc2(data = OBJ_W14_TRIM, tax_level = NULL , fix_formula = "Inoculum + Location + Connection", p_adj_method = "holm", prv_cut = 0.10, lib_cut = 0,group = "Inoculum", 
+              struc_zero = TRUE, neg_lb = TRUE, alpha = 0.05, global = TRUE)
+
+res_prim_INO_ASV = output_INO_ASV$res %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_prim_INO_ASV %>%
+    data.table(caption = "ANCOM-BC2 Primary Results_INO_ASV")
+write.csv(res_prim_INO_ASV,"ANCOM-BC2 Primary Results_INO_ASV.csv", row.names = TRUE)
+
+res_global_INO_ASV = output_INO_ASV$res_global %>%
+    mutate_if(is.numeric, function(x) round(x, 2))
+res_global_INO_ASV %>%
+    data.table(caption = "ANCOM-BC2 Global Results_INO_ASV")
+write.csv(res_global_INO_ASV,"ANCOM-BC2 Global Results_INO_ASV.csv", row.names = TRUE)
 
