@@ -555,6 +555,20 @@ TAX3 = as(tax_table(OBJ1_tss_GEN), "matrix")
 TAXdf3 = as.data.frame(TAX3)
 write.csv(TAXdf3,"TSS_Genus_tax.csv", row.names = TRUE)
 
+
+##### Agglomerated taxa sheet export for some manual digging 1/12/22 ------------------
+#agglomerated, taxa, family , export , csv, downstream
+Family_Agglomerated <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
+Family_Agglomerated
+FamilyAgglomerated_OTUs = as(otu_table(Family_Agglomerated), "matrix")
+FamGlomframe = as.data.frame(FamilyAgglomerated_OTUs)
+write.csv(as.data.frame(FamGlomframe), 
+          file = "Family_AglloomeratedOTUsfor_VisualisingCalcs.csv")
+Fam_AgllomTax = as(tax_table(Family_Agglomerated), "matrix")
+FamGlomTaxFrame = as.data.frame(Fam_AgllomTax)
+write.csv(FamGlomTaxFrame,"Family_AgloomeratedTaxa_forvisualisingcalcs.csv", row.names = TRUE)
+
+
 # Alpha Diversity ---------------------------------------------------------
 ##ALPHA DIVERSITY_____________________________________________________________________________
 ##BOXPLOTS, ANOVA, TUKEY TEST
@@ -1458,10 +1472,10 @@ OBJ_W14_TRIM_tss
 
 #Note re: Rstudio export, using SVG format and dimensions 1150 x 900 seems to result in a "close enough to" square ordination when accounting for legend size 
 
-#weighted TSS
+# Week 14 weighted TSS
 NMDS_W14wTRIM <- ordinate(OBJ_W14_TRIM_tss, "NMDS", distance = "unifrac", weighted = TRUE, parallel = TRUE)
 NMDS_W14wTRIM
-#unweighted TSS
+# Week 14 unweighted TSS
 NMDS_W14uTRIM <- ordinate(OBJ_W14_TRIM_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W14uTRIM
 
@@ -1487,6 +1501,7 @@ NMDS_W0wTRIM
 NMDS_W0uTRIM <- ordinate(OBJ_W0_TRIM_tss, "NMDS", distance = "unifrac", weighted = FALSE, parallel = TRUE)
 NMDS_W0uTRIM
 
+#WWeek 0
 #Unweighted TSS
 p1u <- plot_ordination(OBJ_W0_TRIM_tss, NMDS_W0uTRIM, color = "Connection", shape = "Location", label = NULL)
 p1u <- plot_ordination(OBJ_W0_TRIM_tss, NMDS_W0uTRIM, color = "Inoculum", shape = "Location", label = NULL)
@@ -1500,7 +1515,106 @@ p1w <- plot_ordination(OBJ_W0_TRIM_tss, NMDS_W0wTRIM, color = "Treatment", shape
 p1w
 p1w + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#141414","#7A7A7A"))
 
+#New section to reformat the above ordinations for publication
+#### Ordination Publication export -------------------------------------------
 
+#with legend
+#EXPORT: using SVG format and dimensions 1150 x 900 ....too big lets try smaller
+#734x528 seems quite good
+
+#when plotting without legend...need to test a different set of resolutions....prsumably a square 1:1 pixel ratio SHOULD be feasible in this case..
+
+#Line below for trying to force the axis decimals to beahve the same between diff. plots....so far unseuccessful
+# scale_x_continuous(breaks = 0.01) + scale_y_continuous(breaks = 0.1) 
+
+#TESTING FOR TWEAKED THEME
+#Week 0 unweighted plots (for supps)
+p1u + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+    legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
+
+#Week 0 - weighted 
+p1w + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
+
+#Week 14 - unweighted
+p4uTRIM + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
+
+#Week 14 weighted
+p4wTRIM + geom_point(size = 3.5) + xlab("Axis 1") + ylab("Axis 2") + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
+  #remove legend (for matching sizes of plots and/or exporting with the aim of combining 2 plots with just one legend for both)
+  legend.position = "none",
+  # get rid of panel grids
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  # Change plot axes and panel background
+  axis.text.x = element_text(colour = "black", size = 12),
+  axis.text.y = element_text(colour = "black", size = 12),
+  axis.ticks = element_line(colour = "black"),
+  #axis.line = element_line(colour = "gray"),
+  panel.border = element_rect(colour = "black", fill = NA),
+  plot.background = element_rect(fill = "white"),
+  panel.background = element_rect(fill = 'white'),
+  # Change legend 
+  legend.background = element_rect(fill = "white", color = NA),
+  legend.key = element_rect(color = "white", fill = "white"),
+  legend.title = element_text(color = "black"),
+  legend.text = element_text(color = "black")
+  )
 
 
 ########EXPERIEMNT OUT OF CURISOITY - ordination for half cut set with raw non-TSS...just to compare
@@ -1697,7 +1811,7 @@ p14U_u + theme_grey() + theme(text = element_text(size = 14)) + geom_point(size 
 OBJ1_W14_connected_tss 
 OBJ1_W14_unconnected_tss 
 
-#### Cleaned up plot element controls (for poster format) ----------------------------------------
+###### Cleaned up plot element controls (for poster format) ----------------------------------------
 
 #TESTING FOR CUSTOM THEME - DARK
 p1w + geom_point(size = 3.5) + scale_color_manual(values = c("#177BB5","#56B4E9","#BF8300","#E09900","#008F47","#00B85C","#f0f0f0","#7A7A7A")) + theme(
@@ -2038,7 +2152,7 @@ W14_Group_ado_w_G
 
 # DESeq2 -------------------------------------------------------------------
 
-#html and bioclite may just be leftovers from old install processs, but keeping here in case they end up being needed
+#html and bioclite may just be leftovers from old install process, but keeping here in case they end up being needed
 # BiocManager should handle it all though
 install.packages("htmltools")
 library(htmltools)
@@ -4206,4 +4320,88 @@ res_global_INO_ASV = output_INO_ASV$res_global %>%
 res_global_INO_ASV %>%
     data.table(caption = "ANCOM-BC2 Global Results_INO_ASV")
 write.csv(res_global_INO_ASV,"ANCOM-BC2 Global Results_INO_ASV.csv", row.names = TRUE)
+
+
+
+# Use deseq to get basemean for each taxa level compared in results -------
+library(ggplot2)
+library("DESeq2")
+#Start above with import for ancombx2 and experimental/cut subesetting etc first
+
+#Agglomerate at desired taxa level (if you want to, otherwise proceed to and will get individual ASV changes)
+OBJ_W14_TRIM # use this one for getting individual ASV values
+OBJ1_exp_Species <- tax_glom(OBJ_W14_TRIM,taxrank = "Species")
+OBJ1_exp_Genus <- tax_glom(OBJ_W14_TRIM,taxrank = "Genus")
+OBJ1_exp_Family <- tax_glom(OBJ_W14_TRIM,taxrank = "Family")
+
+#And create subset for use later when assigning taxa (NOT for analysis, just to bind taxa to results)
+OBJ_Genus_W14 <- subset_samples(OBJ1_exp_Genus, Week == "Fourteen")
+
+
+#Week 0 one, for getting baseMean as a comparison point
+OBJ1_expW1_Family <- tax_glom(OBJ_W0_TRIM,taxrank = "Family")
+diagdds = phyloseq_to_deseq2(OBJ_W0_TRIM, ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+
+
+
+##Import to deseq and order factors to be compared (overall, not agglomerated)
+diagdds = phyloseq_to_deseq2(OBJ_W14_TRIM, ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+##Import agglomerated species
+diagdds = phyloseq_to_deseq2(OBJ1_exp_Species, ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+##Import agglomerated genus
+diagdds = phyloseq_to_deseq2(OBJ1_exp_Genus, ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+#import agglomerated family
+diagdds = phyloseq_to_deseq2(OBJ1_exp_Family , ~ Location + Connection) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+
+
+## Compare connection with lack of connection (only at wk 14) with trimmed data fir final paper tables looking at
+diagdds = phyloseq_to_deseq2(OBJ1_exp_Family , ~ Connection + Location) #Re: order of factors here, this would be testing for the effect of location, controlling for connection
+
+
+diagdds$Location <- relevel(diagdds$Connection, ref = "Unconnected") # sets the reference point, baseline or control to be compared against
+
+#Subset Week 14
+diagdds <- diagdds[ , diagdds$Week == "Fourteen" ]
+#check that subset was done as expected
+as.data.frame( colData(diagdds) )
+
+#Because of the way the data is nested between groups need to do some finangling to allow the model to distinguish between them correctly
+#Have added a new column that groups samples by the soil column they were in (without location data, so e.g W14UP4 for all three cathode/anode/root sampeles)
+
+#Run model and factors
+diagdds = DESeq(diagdds, test = "Wald", fitType = "parametric")
+res = results(diagdds, cooksCutoff = FALSE)
+res # print out results
+
+#Shouldnt need these anymore for agglomerated, but retain for overall
+OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
+OBJ1_exp <- subset_samples(OBJ1, Treatment_Half_Trim == "Retain")
+OBJ_W14 <- subset_samples(OBJ1_exp, Week == "Fourteen")
+
+#Bind taxonomy to results
+res = cbind(as(res, "data.frame"), as(tax_table(OBJ1_exp_Family)[rownames(res), ], "matrix"))
+res
+
+#Export .csv
+write.csv(as.data.frame(res), 
+          file = "DESeq2_W14_ConnectionBaseMeans.csv")
+
+#For Agglomerated
+#Different Comparison Direction Sheets
+sigtabC_U = results(diagdds, contrast = c("Connection","Connected","Unconnected")) #a positive number here should represent an Increase in Connected FROM Unconnected
+sigtabU_C = results(diagdds, contrast = c("Connection","Unconnected","Connected")) #postive here should be switched, so a postive = Increase in Unconnected FROM Connected
+# So i think A should be the one to use...feels more logical to look at change towards connection (and makes discussion of electroactive enrichemnet easier)
+
+#Bind results sheets with OTU Taxa
+sigtab_taxC_U = cbind(as(sigtabC_U, "data.frame"), as(tax_table(OBJ_Genus_W14)[rownames(sigtabC_U), ], "matrix"))
+sigtab_taxC_U
+
+sigtab_taxU_C = cbind(as(sigtabU_C, "data.frame"), as(tax_table(OBJ_Genus_W14)[rownames(sigtabU_C), ], "matrix"))
+sigtab_taxU_C
+
+#Export .csv
+write.csv(as.data.frame(sigtab_taxC_U), 
+          file = "DESeq2_resultsC_U.csv")
+write.csv(as.data.frame(sigtab_taxU_C), 
+          file = "DESeq2_resultsU_C.csv")
 
