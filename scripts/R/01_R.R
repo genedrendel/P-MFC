@@ -4077,7 +4077,7 @@ print(p)
 # anocom2 adaptation ------------------------------------------------------
 
 #Quick test for adapting old ANCOMBC script to ANCOMBC2 
-#at minimum need to double check that prv_cut in the enw one is equal to zero_cut in the old one, necase zero_cut no longer exists apparently!
+#at minimum need to double check that prv_cut in v2 is is equal to zero_cut in v1, in anycase zero_cut no longer exists so that feature must now either be an unchanging default or have it's name changed
 
 setwd("~/Documents/University/Analysis/PMFC_18/2020 rerun outputs/Format for phyloseq")
 library(phyloseq)
@@ -4098,7 +4098,7 @@ OBJ1 <- OBJ1 %>%
     Class   != "Chloroplast"
   )
 OBJ1_exp <- subset_samples(OBJ1, Experiment == "Y")
-#Half cut that retains Pseudomonas (use these ones moving forward from now!)
+#Half cut that retains Pseudomonas (final paper#1 data set)
 OBJ_Overall_TRIM <- subset_samples(OBJ1_exp, Treatment_Half_Trim == "Retain")
 OBJ_W0 <- subset_samples(OBJ1_exp, Week == "Zero")
 OBJ_W0_TRIM <- subset_samples(OBJ_W0, Treatment_Half_Trim == "Retain")
