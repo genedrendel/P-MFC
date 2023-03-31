@@ -1,0 +1,299 @@
+#!/bin/bash
+#SBATCH --cpus-per-task=1
+#SBATCH --mem-per-cpu=50000
+#SBATCH --time=50:00:00
+#SBATCH --partition=compute
+
+#### For anything that might run forever or have large memory requirements
+#### mem per cpu 100000
+#### time 168 00 00
+
+### Make a blurb summary for project setup primers etc ***
+
+
+
+### REFERENCE FOR THE ABOVE PARAMETERS
+### CPUs per task 1 is probably fine unless you know you'll benefit from more, can go up to 8 at least, but according to online HPC docs, possibly up to 100-1000 ???
+### MEM per CPU goes up to 128 GB (input 128000 in MB) on regular compute (or up to 256 GB [input 256000 in MB] on BIGMEM)
+### TIME on regulat compute can be up to 7 days (input 168 hours)
+### PARTITION 'compute' is likely fine for most things. Otherwise: 'bigmem' for jobs in excess of 128 GB memory, 'long' for long-term jobs, up to 200 days, '8hour' for short jobs requiring less than 8 CPUs
+
+
+
+### START SCRIPT AND PRINT TIME
+
+echo "Starting at: $(date)"
+
+### LOAD QIIME2
+### Old versions of QIIME2 that have been used for this script in the past, test these if a command is not recognised
+#module load qiime2/2017.12
+#module load qiime2/2020.02
+
+module load qiime2/2020.8
+
+### CURRENT WORKING DIRECTORY (OR SET MANUALLY THROUGH TERMINAL)
+
+cd /data/group/frankslab/project/GeneDrendel/Orsi_Bacteria
+
+### ALTERNATIVE IMPORT (DOES NOT REQUIRE MANIFEST FILE)
+    
+#Paired End
+#qiime tools import --type SampleData[PairedEndSequencesWithQuality] --input-path Reads/ --output-path reads_qza/Paired_reads.qza --input-format CasavaOneEightSingleLanePerSampleDirFmt
+
+#Single End
+#qiime tools import --type SampleData[SequencesWithQuality] --input-path ForwardReads/ --output-path reads_qza/F_reads.qza  --input-format CasavaOneEightSingleLanePerSampleDirFmt
+
+
+## VISUALISE FOR QUALITY CONTROL COMPARISONS
+
+#Paired
+#qiime demux summarize --i-data Paired_reads.qza --o-visualization ReadsView_PreCut_Paired.qzv
+
+#Single
+#qiime demux summarize --i-data F_reads.qza --o-visualization ReadsView_PreCut_Forward.qzv
+
+### ORSI's DATA - Primers to test for, document here and look through lit to double check the fungal ones because not familiar with them.
+#Bacterial - should be easier. Eitehr v4 or v3-v4
+#Assuming V4 primers were used, seems most likely : f GTGYCAGCMGCCGCGGTAA r GGACTACNVGGGTWTCTAAT
+#v3v4: f CCTACGGGNGGCWGCAG r GACTACHVGGGTATCTAATCC 
+
+#Fungal:
+#ITS4 primers? search journals to confirm which regions :
+#f AGGTGARTCATCGAATCTTTG 
+##(appears to be ITS7)
+#r TCCTCCGCTTATTGATATGC 
+##(this is definitely ITS4 R)
+
+#After asking Josh re: pirmers for fITS 7 - ITS 4:
+#fITS7 GTGARTCATCGAATCTTTG
+#ITS4 TCCTCCGCTTATTGATATGC
+
+##ORSI DATA: Remove primers , run v4 then v3v4 sequentially to compare cuts (assuming that v3-v4 should noticably not cut as would be expected)
+# V4 primers, F and R
+
+#TRIM FOR EACH COMBINATION - Bacterial
+
+#module load cutadapt-gcc/2.10 
+
+#Trim paired primers V3-V4
+#qiime cutadapt trim-paired --i-demultiplexed-sequences Paired_reads.qza --p-front-f CCTACGGGNGGCWGCAG --p-front-r GACTACHVGGGTATCTAATCC --p-discard-untrimmed --p-no-indels --o-trimmed-sequences reads_qza/paired_reads_trimmed_v34.qza --verbose
+
+#Trim paired primers V4
+#qiime cutadapt trim-paired --i-demultiplexed-sequences Paired_reads.qza --p-front-f GTGYCAGCMGCCGCGGTAA --p-front-r GGACTACNVGGGTWTCTAAT --p-discard-untrimmed --p-no-indels --o-trimmed-sequences reads_qza/paired_reads_trimmed_v4.qza --verbose
+
+#Trim single primers V4
+#qiime cutadapt trim-single --i-demultiplexed-sequences F_reads.qza --p-front GTGYCAGCMGCCGCGGTAA --p-discard-untrimmed --p-no-indels --o-trimmed-sequences reads_qza/single_reads_trimmed_v4.qza --verbose
+
+#qiime demux summarize --i-data reads_qza/paired_reads_trimmed_v34.qza --o-visualization reads_qza/pairedreads_trimmed_summary_v34.qzv
+#qiime demux summarize --i-data reads_qza/paired_reads_trimmed_v4.qza --o-visualization reads_qza/pairedreads_trimmed_summary_v4.qzv
+#qiime demux summarize --i-data reads_qza/single_reads_trimmed_v4.qza --o-visualization reads_qza/singlereads_trimmed_summary_v4.qzv
+
+## VISUALISE TRIM FOR COMPARISON
+
+#time qiime demux summarize --i-data demux-trimmed.qza --o-visualization demux-trimmed.qzv
+
+### DENOISING AND TRUNCATING
+
+## To choose truncate values visulaise trimmed sequences and decide on quality scores that you deem sufficient based on your runs overall quality. Keep in mind for paired end data you want to retain overlap of [at least 10-12 bp..?] for assembly
+
+####ORSIs DATA BACTERIAL - DENOISING AND TRUNCATING ORSIs DATA
+
+#V4 Single
+#qiime dada2 denoise-single --i-demultiplexed-seqs reads_qza/single_reads_trimmed_v4.qza --p-trunc-len 274 --p-max-ee 2 --o-table single_table_denoised --o-representative-sequences single_reads_denoised.qza --o-denoising-stats single_stats.qza --verbose
+
+#qiime metadata tabulate --m-input-file single_stats.qza --o-visualization single_stats_dada2.qzv
+
+#V4 Paired - relaxed reverse cut 239
+#qiime dada2 denoise-paired --i-demultiplexed-seqs reads_qza/paired_reads_trimmed_v4.qza --p-trunc-len-f 274 --p-trunc-len-r 239 --p-max-ee-f 2 --p-max-ee-r 2 --o-table paired_table_denoised_239 --o-representative-sequences paired_rep_seqs_denoised_239.qza --o-denoising-stats paired_stats_239.qza --verbose
+
+#qiime metadata tabulate --m-input-file paired_stats_239.qza --o-visualization paired_stats_239_viewdada2.qzv
+
+#V4 Paired - strict reverse cut 207
+#qiime dada2 denoise-paired --i-demultiplexed-seqs reads_qza/paired_reads_trimmed_v4.qza --p-trunc-len-f 274 --p-trunc-len-r 207 --p-max-ee-f 2 --p-max-ee-r 2 --o-table paired_table_denoised_207 --o-representative-sequences paired_rep_seqs_denoised_207.qza --o-denoising-stats paired_stats_207.qza --verbose
+
+#qiime metadata tabulate --m-input-file paired_stats_207.qza --o-visualization paired_stats_207_viewdada2.qzv
+
+#V4 Paired - stricter reverse cut 196
+#qiime dada2 denoise-paired --i-demultiplexed-seqs reads_qza/paired_reads_trimmed_v4.qza --p-trunc-len-f 274 --p-trunc-len-r 196 --p-max-ee-f 2 --p-max-ee-r 2 --o-table paired_table_denoised_196 --o-representative-sequences paired_rep_seqs_denoised_196.qza --o-denoising-stats paired_stats_196.qza --verbose
+
+#qiime metadata tabulate --m-input-file paired_stats_196.qza --o-visualization paired_stats_196_viewdada2.qzv
+
+#V4 Paired - strictest reverse cut 180
+#qiime dada2 denoise-paired --i-demultiplexed-seqs reads_qza/paired_reads_trimmed_v4.qza --p-trunc-len-f 274 --p-trunc-len-r 180 --p-max-ee-f 2 --p-max-ee-r 2 --o-table paired_table_denoised_180 --o-representative-sequences paired_rep_seqs_denoised_180.qza --o-denoising-stats paired_stats_180.qza --verbose
+
+#qiime metadata tabulate --m-input-file paired_stats_180.qza --o-visualization paired_stats_180_viewdada2.qzv
+
+#V4 Paired - one more (probably final) even stricter reverse cut, just to confirm if we are passing the opint of overlap/merging or not...let's try  173
+#qiime dada2 denoise-paired --i-demultiplexed-seqs reads_qza/paired_reads_trimmed_v4.qza --p-trunc-len-f 274 --p-trunc-len-r 173 --p-max-ee-f 2 --p-max-ee-r 2 --o-table paired_table_denoised_173 --o-representative-sequences paired_rep_seqs_denoised_173.qza --o-denoising-stats paired_stats_173.qza --verbose
+
+#qiime metadata tabulate --m-input-file paired_stats_173.qza --o-visualization paired_stats_173_viewdada2.qzv
+
+#test first...
+#qiime tools export --input-path dada2_output_fwd/denoising_stats.qza --output-path dada2_output_fwd
+#qiime feature-table summarize --i-table dada2_output_fwd/table.qza --o-visualization dada2_output_fwd/table.qzv
+
+#FIRST DENOISE TEST OF ORSIS DATA:
+# Cut Forward reads at 274. Cut Reverse reads at 239....will run more comparisons
+#For single reads: cut at 274 
+#Running both F only AND paired end to see how it affects the OTU table. 
+
+#####
+###FINAL CUT chosen at: 274 and 173 seems best
+
+
+
+
+
+
+
+### TRAINING CLASSIFIERS (ALL 99%)
+
+### TRAINING SILVA 132
+
+## NOTE: THIS SCRIPT WILL UTILISE THE 99%, MAJORITY, LEVEL 7, TAXONOMY FILE FOUND IN THE SILVA RESOURCES, IN SUMMARY THIS IS PREFERABLE TO CREATING A CLASSIFIER USING THE RAW AND/OR ALL TAX FILES. RAW CAN LEAD TO INCORRECT CONFIDENCE OF ASSIGNMENTS, AND ALL WILL CONFUSE MOST TAXONOMY CLASSIFIERS DOWNSTREAM). MAJOIRTY TAX FILE INSTEAD ASSIGNS BASED ON GREATER THAN OR EQUAL TO 90% OF TAXONOY STRINGS FOR EACH CLUSTER, AND WILL FALL BACK TO HIGHER TAXONOMY LEVELS IF MAJORITY CONDITIONS ARE NOT MET. SEE SILVA DOCUMENTATION FOR FURTHER DETAILS.
+
+### DOWNLOAD
+#wget https://www.arb-silva.de/fileadmin/silva_databases/qiime/Silva_132_release.zip
+#unzip Silva_132_release.zip
+#rm Silva_132_release.zip
+
+#within this you'll find multiple folders with diff. levels of % similarity etc...you will want the 99 files, there's not really any point using anything less anymore, and the majority Tax versions of tax files are apparently considered to bebetter as they play better with downstream tools and result in better confidence for tax assignment (other version might give you a FALSE increase in tax certainty, resulting in fale positives id calls that you will think are actually eprfectly fine)
+
+#below lines will assume that you've dug through and manually moved the required files to your present deirectory, 
+
+## IMPORT (IF TRAINING MULTIPLE CLASSIFIERS THEYWILL USE THE SAME OUTPUT FROM HERE REGARDLESS OF DOWNSTREAM PRIMER CHOICE SO ONLY NEED TO DO THIS THE ONE TIME )
+#time qiime tools import --type 'FeatureData[Sequence]' --input-path silva_132_99_16S.fna --output-path SILVA_Ref_99_otus.qza
+#time qiime tools import --type 'FeatureData[Taxonomy]' --input-format HeaderlessTSVTaxonomyFormat --input-path majority_taxonomy_7_levels.txt --output-path SILVA_ref_99_Majority_taxonomy.qza
+
+#lets add in raw unzipped folder structure so that we can generate these without manaul fiddling around....:
+
+#qiime tools import --type 'FeatureData[Sequence]' --input-path SILVA_132_QIIME_release/rep_set/rep_set_16S_only/99/silva_132_99_16S.fna --output-path SILVA_Ref_99_otus.qza
+#qiime tools import --type 'FeatureData[Taxonomy]' --input-format HeaderlessTSVTaxonomyFormat --input-path SILVA_132_QIIME_release/taxonomy/16S_only/99/majority_taxonomy_7_levels.txt --output-path SILVA_ref_99_Majority_taxonomy.qza
+
+
+
+
+
+
+
+
+#ORSI's DATA PRIMER EXTRACT  (V4 paired and single versions)
+
+#PAIRED
+#time qiime feature-classifier extract-reads --i-sequences SILVA_Ref_99_otus.qza --p-f-primer GTGYCAGCMGCCGCGGTAA --p-r-primer GGACTACNVGGGTWTCTAAT --p-identity 0.9 --p-min-length 100 --p-max-length 300 --o-reads Paired-Silva132_99_16S-V4_515-806.qza --verbose
+
+#SINGLE
+#time qiime feature-classifier extract-reads --i-sequences SILVA_Ref_99_otus.qza --p-f-primer GTGYCAGCMGCCGCGGTAA --p-identity 0.9 --p-min-length 100 --p-max-length 300 --o-reads Single-Silva132_99_16S-V4_515-806.qza --verbose
+
+
+#TRAIN ORSI DATASET
+
+##ORSIS DATA TRAINING STEP
+
+#Paired
+#time qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads Paired-Silva132_99_16S-V4_515-806.qza --i-reference-taxonomy SILVA_ref_99_Majority_taxonomy.qza --o-classifier Paired-Silva_132_99_16S_V4_515-806_majority-tax_classifier.qza
+
+
+#Single
+#time qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads Single-Silva132_99_16S-V4_515-806.qza --i-reference-taxonomy SILVA_ref_99_Majority_taxonomy.qza --o-classifier Single-Silva_132_99_16S_V4_515-806_majority-tax_classifier.qza
+
+
+
+
+### ASIGNING TAXONOMY
+
+
+##### ORSIS DATA - ASSIGNING TAXONOMY SILVA 132 99% 515 - 806
+
+# SINGLE V4
+
+#time qiime feature-classifier classify-sklearn --i-classifier Paired-Silva_132_99_16S_V4_515-806_majority-tax_classifier.qza --i-reads single_reads_denoised.qza --o-classification single_taxonomy_SILVA.qza
+
+#time qiime metadata tabulate --m-input-file single_taxonomy_SILVA.qza --o-visualization single_taxonomy_SILVA.qzv
+
+#time qiime taxa barplot --i-table single_table_denoised.qza --i-taxonomy single_taxonomy_SILVA.qza --m-metadata-file metadata_malleefowl_minibeast.tsv --o-visualization single_taxa_bar_plots_SILVA.qzv
+
+
+# PAIRED V4 cut f274 r173
+
+#time qiime feature-classifier classify-sklearn --i-classifier Paired-Silva_132_99_16S_V4_515-806_majority-tax_classifier.qza --i-reads paired_rep_seqs_denoised_173.qza --o-classification paired_taxonomy_SILVA.qza
+
+#time qiime metadata tabulate --m-input-file paired_taxonomy_SILVA.qza --o-visualization paired_taxonomy_SILVA.qzv
+
+#time qiime taxa barplot --i-table paired_table_denoised_173.qza --i-taxonomy paired_taxonomy_SILVA.qza --m-metadata-file metadata_malleefowl_minibeast.tsv --o-visualization paired_taxa_bar_plots_SILVA.qzv
+
+
+
+
+## ORSI's DATA FILTERING
+
+#Single
+#qiime taxa filter-table --i-table single_table_denoised.qza --i-taxonomy single_taxonomy_SILVA.qza --p-include D_1__ --p-exclude mitochondria,chloroplast --o-filtered-table single_table_filtered.qza
+
+#time qiime taxa barplot --i-table single_table_denoised.qza --i-taxonomy single_taxonomy_SILVA.qza --m-metadata-file metadata_malleefowl_minibeast.tsv --o-visualization single_taxa_bar_plots_SILVA_filtered.qzv
+
+
+#Paired
+#qiime taxa filter-table --i-table paired_table_denoised_173.qza --i-taxonomy paired_taxonomy_SILVA.qza --p-include D_1__ --p-exclude mitochondria,chloroplast --o-filtered-table paired_table_filtered.qza
+
+#time qiime taxa barplot --i-table paired_table_denoised_173.qza --i-taxonomy paired_taxonomy_SILVA.qza --m-metadata-file metadata_malleefowl_minibeast.tsv --o-visualization paired_taxa_bar_plots_SILVA_filtered.qzv
+
+
+
+
+#ORSI's DATA - Make Tree based on FILTERED sequences
+
+
+#Single
+
+#time qiime alignment mafft --i-sequences single_reads_denoised.qza  --o-alignment aligned-single-rep-seqs.qza
+
+#time qiime alignment mask --i-alignment aligned-single-rep-seqs.qza --o-masked-alignment masked-aligned-single-rep-seqs.qza
+
+#time qiime phylogeny fasttree --i-alignment masked-aligned-single-rep-seqs.qza --o-tree single_unrooted-tree.qza
+
+#time qiime phylogeny midpoint-root --i-tree single_unrooted-tree.qza --o-rooted-tree single_rooted-tree.qza
+
+#qiime tools export --input-path single_rooted-tree.qza --output-path single-exported-tree-unrooted
+
+#qiime tools export --input-path single_unrooted-tree.qza --output-path single-exported-tree-rooted
+
+
+
+#Paired
+
+#time qiime alignment mafft --i-sequences paired_rep_seqs_denoised_173.qza  --o-alignment aligned-paired-rep-seqs.qza
+
+#time qiime alignment mask --i-alignment aligned-paired-rep-seqs.qza --o-masked-alignment masked-aligned-paired-rep-seqs.qza
+
+#time qiime phylogeny fasttree --i-alignment masked-aligned-paired-rep-seqs.qza --o-tree paired_unrooted-tree.qza
+
+#time qiime phylogeny midpoint-root --i-tree paired_unrooted-tree.qza --o-rooted-tree paired_rooted-tree.qza
+
+#qiime tools export --input-path paired_rooted-tree.qza --output-path paired-exported-tree-unrooted
+
+#qiime tools export --input-path paired_unrooted-tree.qza --output-path paired-exported-tree-rooted
+
+
+
+
+#ORSI'S DATA - raw table exports
+
+#Single Export
+#qiime tools export --input-path single_table_filtered.qza --output-path single_export_table
+
+#qiime tools export --input-path single_taxonomy_SILVA.qza --output-path single_export_taxonomy
+
+#biom convert -i single_export_table/feature-table.biom -o single_export_table/feature-table.tsv --to-tsv
+
+#Paired Export
+qiime tools export --input-path paired_table_filtered.qza --output-path paired_export_table
+
+#qiime tools export --input-path paired_taxonomy_SILVA.qza --output-path paired_export_taxonomy
+
+#biom convert -i paired_export_table/feature-table.biom -o paired_export_table/feature-table.tsv --to-tsv
+
+
+
+
+echo "Finished at: $(date)"
