@@ -584,7 +584,7 @@ library(microbiome)
 ##https://www.bioconductor.org/packages/release/bioc/html/microbiome.html
 
 #RAW
-a <- plot_richness(OBJ1, x = "Location")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
+a <- plot_richness(OBJ_W14, x = "Location")# measures=c("Simpson","Chao1", "Shannon"))#+ theme_bw()
 a
 
 #TSS Rounded
